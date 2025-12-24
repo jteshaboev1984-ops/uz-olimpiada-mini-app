@@ -7,11 +7,9 @@ if (user && user.first_name) {
   document.getElementById('user-name').textContent = user.first_name;
 }
 
-// Supabase через бесплатный CORS-прокси (обходит блокировку)
+// Supabase через прокси для обхода CORS
 const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
 const supabaseAnonKey = 'sb_publishable_yvzU8kY8Y5eCM1_gfhN7nw_XVod-unn';
-
-// Прокси (бесплатный, надёжный)
 const proxy = 'https://corsproxy.io/?';
 
 const supabase = Supabase.createClient(proxy + supabaseUrl, supabaseAnonKey);
@@ -25,7 +23,7 @@ async function loadQuestions() {
   const { data, error } = await supabase
     .from('questions')
     .select('*')
-    .limit(15); // 15 вопросов в туре
+    .limit(15);
 
   if (error) {
     alert('Ошибка загрузки вопросов: ' + error.message);
@@ -73,7 +71,6 @@ function showQuestion() {
       }
     });
   } else {
-    // Для numerical
     const input = document.createElement('input');
     input.type = 'text';
     input.placeholder = 'Введите ответ';
@@ -92,7 +89,6 @@ document.getElementById('start-tour').addEventListener('click', loadQuestions);
 
 // Кнопка "Далее"
 document.getElementById('next-button').addEventListener('click', () => {
-  // Пока просто алерт — потом добавим сохранение ответа
   alert('Ответ принят: ' + (selectedAnswer || 'пусто'));
 
   currentQuestionIndex++;
