@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Олимпиада Cambridge</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container" id="main-screen">
+    <h1>Привет, <span id="user-name">участник</span>!</h1>
+    <p>Межпредметная олимпиада Cambridge-уровня</p>
+    
+    <div class="progress-grid">
+      <div class="subject-card">
+        <h3>Математика</h3>
+        <div class="progress-bar"><div class="progress-fill" style="width: 60%"></div></div>
+        <p>60% завершено</p>
+      </div>
+      <div class="subject-card">
+        <h3>Химия</h3>
+        <div class="progress-bar"><div class="progress-fill" style="width: 45%"></div></div>
+        <p>45% завершено</p>
+      </div>
+      <div class="subject-card">
+        <h3>Биология</h3>
+        <div class="progress-bar"><div class="progress-fill" style="width: 70%"></div></div>
+        <p>70% завершено</p>
+      </div>
+      <div class="subject-card">
+        <h3>Информатика</h3>
+        <div class="progress-bar"><div class="progress-fill" style="width: 30%"></div></div>
+        <p>30% завершено</p>
+      </div>
+      <div class="subject-card">
+        <h3>Экономика</h3>
+        <div class="progress-bar"><div class="progress-fill" style="width: 55%"></div></div>
+        <p>55% завершено</p>
+      </div>
+      <div class="subject-card">
+        <h3>SAT/IELTS</h3>
+        <div class="progress-bar"><div class="progress-fill" style="width: 40%"></div></div>
+        <p>40% завершено</p>
+      </div>
+    </div>
+
+    <button id="start-tour" class="big-button">Начать тур</button>
+  </div>
+
+  <!-- Экран с вопросом (скрыт по умолчанию) -->
+  <div class="container" id="quiz-screen" style="display: none;">
+    <div class="progress-top">
+      <span id="question-number">1</span> / <span id="total-questions">15</span>
+    </div>
+    <h2 id="subject-tag"></h2>
+    <p id="question-text"></p>
+    <div id="options-container"></div>
+    <button id="next-button" class="big-button" disabled>Далее</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
