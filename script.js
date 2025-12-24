@@ -1,5 +1,4 @@
 (function() {
-  // Ждём загрузки Supabase
   function waitForSupabase(callback) {
     if (typeof Supabase !== 'undefined' && Supabase.createClient) {
       callback();
@@ -9,18 +8,16 @@
   }
 
   waitForSupabase(() => {
-    console.log('Supabase загружен');
+    console.log('Supabase библиотека загружена');
 
     Telegram.WebApp.ready();
     Telegram.WebApp.expand();
 
-    // Имя пользователя
     const user = Telegram.WebApp.initDataUnsafe.user;
     if (user && user.first_name) {
       document.getElementById('user-name').textContent = user.first_name;
     }
 
-    // Подключение к Supabase
     const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
     const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI';
 
@@ -32,27 +29,27 @@
     let currentQuestionIndex = 0;
     let selectedAnswer = null;
 
-    // Загрузка вопросов
     async function loadQuestions() {
-      alert('Начинаем загрузку вопросов...');
+      console.log('Запуск запроса к таблице questions...');
 
-      const { data, error } = await supabaseClient
+      const { data, error, status } = await supabaseClient
         .from('questions')
         .select('*')
         .limit(15);
 
+      console.log('Ответ от Supabase:', { data, error, status });
+
       if (error) {
-        alert('ОШИБКА: ' + error.message + '\nДетали: ' + JSON.stringify(error));
-        console.error('Supabase error:', error);
+        alert('ОШИБКА Supabase: ' + error.message + ' (status: ' + status + ')');
         return;
       }
 
-      if (data.length === 0) {
-        alert('Вопросы не найдены в базе (data пустой).');
+      if (!data || data.length === 0) {
+        alert('Данные пустые! Проверь таблицу questions — там должно быть 15 строк.');
         return;
       }
 
-      alert('Успешно загружено ' + data.length + ' вопросов!');
+      alert('УСПЕШНО! Загружено ' + data.length + ' вопросов. Показываю первый.');
 
       questions = data;
       currentQuestionIndex = 0;
@@ -61,7 +58,6 @@
       document.getElementById('quiz-screen').style.display = 'block';
     }
 
-    // Показ вопроса
     function showQuestion() {
       const q = questions[currentQuestionIndex];
       document.getElementById('question-number').textContent = currentQuestionIndex + 1;
@@ -104,10 +100,8 @@
       }
     }
 
-    // Кнопка "Начать тур"
     document.getElementById('start-tour').addEventListener('click', loadQuestions);
 
-    // Кнопка "Далее"
     document.getElementById('next-button').addEventListener('click', () => {
       alert('Ответ принят: ' + (selectedAnswer || 'пусто'));
 
@@ -122,4 +116,3 @@
     });
   });
 })();
-
