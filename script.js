@@ -7,14 +7,14 @@ if (user && user.first_name) {
   document.getElementById('user-name').textContent = user.first_name;
 }
 
-// Supabase через прокси (чтобы обойти CORS)
+// Supabase через бесплатный CORS-прокси (обходит блокировку)
 const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
 const supabaseAnonKey = 'sb_publishable_yvzU8kY8Y5eCM1_gfhN7nw_XVod-unn';
 
-// Прокси для обхода CORS (заменил на свой из corsproxy.io)
-const proxyUrl = 'https://corsproxy.io/?key=b8b2498c&url=https://example.com';
+// Прокси (бесплатный, надёжный)
+const proxy = 'https://corsproxy.io/?';
 
-const supabase = Supabase.createClient(proxyUrl + supabaseUrl, supabaseAnonKey);
+const supabase = Supabase.createClient(proxy + supabaseUrl, supabaseAnonKey);
 
 let questions = [];
 let currentQuestionIndex = 0;
@@ -25,7 +25,7 @@ async function loadQuestions() {
   const { data, error } = await supabase
     .from('questions')
     .select('*')
-    .limit(15);
+    .limit(15); // 15 вопросов в туре
 
   if (error) {
     alert('Ошибка загрузки вопросов: ' + error.message);
@@ -50,51 +50,50 @@ function showQuestion() {
   const q = questions[currentQuestionIndex];
   document.getElementById('question-number').textContent = currentQuestionIndex + 1;
   document.getElementById('total-questions').textContent = questions.length;
-  document.getElementById('subject-tag').textContent = q.subject;
-  document.getElementById('question-text').innerHTML = q.question_text;
+  document.getElementById('subject-tag').textContent = q.subject || 'Предмет';
+  document.getElementById('question-text').innerHTML = q.question_text || 'Вопрос не загружен';
 
   const optionsContainer = document.getElementById('options-container');
   optionsContainer.innerHTML = '';
 
-  if (q.type === 'multiple_choice' && q.options_text) {
+  if (q.options_text) {
     const options = q.options_text.split('\n');
     options.forEach(option => {
-      const button = document.createElement('button');
-      button.className = 'option-button';
-      button.textContent = option.trim();
-      button.onclick = () => {
-        document.querySelectorAll('.option-button').forEach(btn => btn.classList.remove('selected'));
-        button.classList.add('selected');
-        selectedAnswer = option.trim().charAt(0);
-        document.getElementById('next-button').disabled = false;
-      };
-      optionsContainer.appendChild(button);
+      if (option.trim()) {
+        const button = document.createElement('button');
+        button.className = 'option-button';
+        button.textContent = option.trim();
+        button.onclick = () => {
+          document.querySelectorAll('.option-button').forEach(btn => btn.classList.remove('selected'));
+          button.classList.add('selected');
+          selectedAnswer = option.trim().charAt(0);
+          document.getElementById('next-button').disabled = false;
+        };
+        optionsContainer.appendChild(button);
+      }
     });
   } else {
+    // Для numerical
     const input = document.createElement('input');
-    input.type = 'number';
-    input.placeholder = 'Введите число';
-    input.style.width = '100%';
-    input.style.padding = '16px';
-    input.style.fontSize = '18px';
-    input.style.margin = '20px 0';
-    input.style.borderRadius = '16px';
-    input.style.border = '2px solid #e5e5ea';
+    input.type = 'text';
+    input.placeholder = 'Введите ответ';
+    input.className = 'option-button';
+    input.style.textAlign = 'center';
     input.oninput = () => {
-      selectedAnswer = input.value;
-      document.getElementById('next-button').disabled = false;
+      selectedAnswer = input.value.trim();
+      document.getElementById('next-button').disabled = selectedAnswer === '';
     };
     optionsContainer.appendChild(input);
   }
 }
 
-// Кнопка Начать тур
+// Кнопка "Начать тур"
 document.getElementById('start-tour').addEventListener('click', loadQuestions);
 
-// Кнопка Далее
+// Кнопка "Далее"
 document.getElementById('next-button').addEventListener('click', () => {
-  // Здесь потом сохраним ответ
-  alert('Ответ принят: ' + selectedAnswer);
+  // Пока просто алерт — потом добавим сохранение ответа
+  alert('Ответ принят: ' + (selectedAnswer || 'пусто'));
 
   currentQuestionIndex++;
   if (currentQuestionIndex < questions.length) {
@@ -102,7 +101,7 @@ document.getElementById('next-button').addEventListener('click', () => {
     document.getElementById('next-button').disabled = true;
     showQuestion();
   } else {
-    alert('Тур завершён! Результаты скоро...');
+    alert('Тур завершён! Молодец!');
     location.reload();
   }
 });
