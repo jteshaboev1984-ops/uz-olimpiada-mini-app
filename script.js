@@ -1,7 +1,7 @@
 (function() {
-  // Ждём загрузки библиотеки Supabase
+  // Ждём загрузки Supabase
   function waitForSupabase(callback) {
-    if (typeof Supabase !== 'undefined') {
+    if (typeof Supabase !== 'undefined' && Supabase.createClient) {
       callback();
     } else {
       setTimeout(() => waitForSupabase(callback), 100);
@@ -9,7 +9,7 @@
   }
 
   waitForSupabase(() => {
-    // Теперь Supabase точно загружен
+    console.log('Supabase загружен');
 
     Telegram.WebApp.ready();
     Telegram.WebApp.expand();
@@ -26,27 +26,33 @@
 
     const supabaseClient = Supabase.createClient(supabaseUrl, supabaseAnonKey);
 
+    console.log('Supabase клиент создан');
+
     let questions = [];
     let currentQuestionIndex = 0;
     let selectedAnswer = null;
 
     // Загрузка вопросов
     async function loadQuestions() {
+      alert('Начинаем загрузку вопросов...');
+
       const { data, error } = await supabaseClient
         .from('questions')
         .select('*')
         .limit(15);
 
       if (error) {
-        alert('Ошибка загрузки вопросов: ' + error.message);
-        console.error(error);
+        alert('ОШИБКА: ' + error.message + '\nДетали: ' + JSON.stringify(error));
+        console.error('Supabase error:', error);
         return;
       }
 
       if (data.length === 0) {
-        alert('Вопросы не найдены в базе.');
+        alert('Вопросы не найдены в базе (data пустой).');
         return;
       }
+
+      alert('Успешно загружено ' + data.length + ' вопросов!');
 
       questions = data;
       currentQuestionIndex = 0;
