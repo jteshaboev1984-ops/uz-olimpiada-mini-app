@@ -7,10 +7,14 @@ if (user && user.first_name) {
   document.getElementById('user-name').textContent = user.first_name;
 }
 
-// Supabase подключение
+// Supabase через прокси (чтобы обойти CORS)
 const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
 const supabaseAnonKey = 'sb_publishable_yvzU8kY8Y5eCM1_gfhN7nw_XVod-unn';
-const supabase = Supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+// Прокси для обхода CORS (заменил на свой из corsproxy.io)
+const proxyUrl = 'https://corsproxy.io/?key=b8b2498c&url=https://example.com';
+
+const supabase = Supabase.createClient(proxyUrl + supabaseUrl, supabaseAnonKey);
 
 let questions = [];
 let currentQuestionIndex = 0;
@@ -21,10 +25,11 @@ async function loadQuestions() {
   const { data, error } = await supabase
     .from('questions')
     .select('*')
-    .limit(15); // 15 вопросов в туре
+    .limit(15);
 
   if (error) {
     alert('Ошибка загрузки вопросов: ' + error.message);
+    console.error(error);
     return;
   }
 
@@ -58,16 +63,14 @@ function showQuestion() {
       button.className = 'option-button';
       button.textContent = option.trim();
       button.onclick = () => {
-        // Снимаем выделение со всех
         document.querySelectorAll('.option-button').forEach(btn => btn.classList.remove('selected'));
         button.classList.add('selected');
-        selectedAnswer = option.trim().charAt(0); // A, B, C, D
+        selectedAnswer = option.trim().charAt(0);
         document.getElementById('next-button').disabled = false;
       };
       optionsContainer.appendChild(button);
     });
   } else {
-    // Для numerical — поле ввода
     const input = document.createElement('input');
     input.type = 'number';
     input.placeholder = 'Введите число';
@@ -100,6 +103,6 @@ document.getElementById('next-button').addEventListener('click', () => {
     showQuestion();
   } else {
     alert('Тур завершён! Результаты скоро...');
-    location.reload(); // пока возвращаем на главную
+    location.reload();
   }
 });
