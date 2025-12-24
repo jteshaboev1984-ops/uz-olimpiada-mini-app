@@ -7,7 +7,7 @@ if (user && user.first_name) {
   document.getElementById('user-name').textContent = user.first_name;
 }
 
-// Supabase через прокси для обхода CORS
+// Supabase через прокси (одна строка — без дубликатов)
 const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
 const supabaseAnonKey = 'sb_publishable_yvzU8kY8Y5eCM1_gfhN7nw_XVod-unn';
 const proxy = 'https://corsproxy.io/?';
