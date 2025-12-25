@@ -1,126 +1,295 @@
+/* Общие стили */
+* {
+  box-sizing: border-box;
+}
+
 body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: linear-gradient(to bottom, #f0f0f0, #ffffff);
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  background-color: #f2f2f7;
-  color: #000;
+  padding: 0;
+  color: #000000;
   min-height: 100vh;
 }
 
 .container {
-  padding: 20px;
   max-width: 480px;
   margin: 0 auto;
-  text-align: center;
+  padding: 20px;
 }
 
+/* Скрытый экран */
+.screen.hidden {
+  display: none;
+}
+
+/* Заголовки */
 h1 {
   font-size: 28px;
-  margin-bottom: 8px;
+  text-align: center;
+  margin: 30px 0 10px;
+  font-weight: 600;
 }
 
-p {
-  color: #666;
+.description {
+  text-align: center;
+  font-size: 18px;
+  color: #333333;
   margin-bottom: 30px;
 }
 
+/* Главный экран — карточки предметов */
 .progress-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 15px;
-  margin-bottom: 40px;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 30px 0;
 }
 
 .subject-card {
   background: white;
-  border-radius: 16px;
-  padding: 16px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  text-align: center;
 }
 
 .subject-card h3 {
   margin: 0 0 12px 0;
   font-size: 18px;
+  font-weight: 600;
 }
 
 .progress-bar {
-  height: 8px;
-  background: #e5e5ea;
-  border-radius: 4px;
+  background: #e5e5e5;
+  border-radius: 8px;
+  height: 10px;
   overflow: hidden;
-  margin-bottom: 8px;
+  margin: 12px 0;
 }
 
 .progress-fill {
-  height: 100%;
   background: #007aff;
-  border-radius: 4px;
+  height: 100%;
+  border-radius: 8px;
+  width: 0%; /* будет обновляться в JS */
+  transition: width 0.4s ease;
 }
 
+.subject-card p {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+}
+
+/* Кнопки */
 .big-button {
   background: #007aff;
   color: white;
   border: none;
   border-radius: 16px;
-  font-size: 20px;
   padding: 18px;
+  font-size: 20px;
   width: 100%;
+  margin: 16px 0;
   cursor: pointer;
-  margin-top: 30px;
+  font-weight: 600;
 }
 
 .big-button:disabled {
-  background: #999;
+  background: #cccccc;
   cursor: not-allowed;
 }
 
-.big-button:active:not(:disabled) {
-  background: #0066cc;
+.big-button.secondary {
+  background: #f0f0f0;
+  color: #007aff;
+}
+
+/* Викторина */
+.quiz-header {
+  text-align: center;
+  margin: 20px 0;
 }
 
 .progress-top {
   font-size: 18px;
-  color: #666;
-  margin-bottom: 20px;
+  color: #666666;
+}
+
+.timer {
+  margin-left: 20px;
+  font-weight: bold;
+  color: #007aff;
 }
 
 #subject-tag {
-  font-size: 18px;
-  color: #007aff;
+  display: inline-block;
+  background: #007aff;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: 600;
   margin: 20px 0;
 }
 
 #question-text {
-  font-size: 20px;
-  margin: 30px 0;
+  font-size: 21px;
   line-height: 1.5;
+  margin: 30px 0;
+  text-align: left;
+}
+
+/* Варианты ответа */
+#options-container {
+  margin: 30px 0;
 }
 
 .option-button {
   background: white;
-  border: 2px solid #e5e5ea;
-  border-radius: 16px;
-  padding: 16px;
-  margin: 10px 0;
+  border: 2px solid #e0e0e0;
+  border-radius: 20px;
+  padding: 20px;
+  margin: 12px 0;
+  font-size: 19px;
   text-align: left;
-  font-size: 18px;
   width: 100%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s;
 }
 
 .option-button.selected {
   border-color: #007aff;
-  background: #f0f8ff;
+  background: #e6f0ff;
+  box-shadow: 0 4px 16px rgba(0, 122, 255, 0.2);
 }
 
-/* Тёмная тема */
-@media (prefers-color-scheme: dark) {
-  body {
-    background: #000;
-    color: #fff;
-  }
-  .subject-card, .option-button {
-    background: #1c1c1e;
-  }
-  .progress-bar {
-    background: #3a3a3c;
-  }
+/* Поле ввода для открытых вопросов */
+#options-container input {
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 20px;
+  padding: 20px;
+  font-size: 19px;
+  text-align: center;
+  width: 100%;
+  margin: 30px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+#options-container input:focus {
+  outline: none;
+  border-color: #007aff;
+  box-shadow: 0 4px 16px rgba(0, 122, 255, 0.2);
+}
+
+/* Экран результата */
+.result-container {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.result-text {
+  font-size: 24px;
+  color: #333;
+  margin: 20px 0;
+}
+
+.result-score {
+  font-size: 28px;
+  font-weight: bold;
+  margin: 20px 0;
+}
+
+.result-percent {
+  font-size: 72px;
+  font-weight: bold;
+  color: #007aff;
+  margin: 40px 0;
+}
+
+/* Модальные окна */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.modal-content h2 {
+  font-size: 26px;
+  margin-bottom: 20px;
+}
+
+.modal-content p {
+  font-size: 18px;
+  line-height: 1.5;
+  margin: 15px 0;
+}
+
+.modal-buttons {
+  margin-top: 30px;
+}
+
+.modal-buttons .big-button {
+  margin: 10px 0;
+}
+
+/* Форма профиля */
+.form-group {
+  margin: 20px 0;
+}
+
+.form-group label {
+  display: block;
+  font-size: 18px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.form-group select,
+.form-group input {
+  width: 100%;
+  padding: 16px;
+  font-size: 18px;
+  border-radius: 16px;
+  border: 2px solid #e0e0e0;
+  background: white;
+}
+
+.form-group select:disabled {
+  background: #f0f0f0;
+  color: #999;
+}
+
+.checkbox label {
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+}
+
+.checkbox input {
+  margin-right: 10px;
+  width: auto;
 }
