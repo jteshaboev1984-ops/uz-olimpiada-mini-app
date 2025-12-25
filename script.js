@@ -225,6 +225,11 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('result-screen').classList.add('hidden');
     document.getElementById('home-screen').classList.remove('hidden');
   });
-
+  
+document.getElementById('profile-btn').addEventListener('click', () => {
+  document.getElementById('home-screen').classList.add('hidden');
+  document.getElementById('profile-screen').classList.remove('hidden');
+});
   checkProfile();
 });
+
