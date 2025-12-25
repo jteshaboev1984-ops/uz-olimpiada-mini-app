@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
   let selectedAnswer = null;
   let timerInterval = null;
   let tourCompleted = false;
+  let questionStartTime = null;
 
   const regions = {
     "Ташкент": ["Алмазарский", "Бектемирский", "Мирабадский", "Мирзо-Улугбекский", "Сергелийский", "Учтепинский", "Чиланзарский", "Шайхантахурский", "Юнусабадский", "Яккасарайский", "Яшнабадский"],
@@ -49,6 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Заполнение регионов
   const regionSelect = document.getElementById('region-select');
+  regionSelect.innerHTML = '<option value="">Выберите регион</option>';
   Object.keys(regions).sort().forEach(region => {
     const option = document.createElement('option');
     option.value = region;
@@ -73,21 +75,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Классы 8-11
   const classSelect = document.getElementById('class-select');
-  classSelect.innerHTML = `
-    <option value="">Выберите класс</option>
-    <option value="8">8 класс</option>
-    <option value="9">9 класс</option>
-    <option value="10">10 класс</option>
-    <option value="11">11 класс</option>
-  `;
+  classSelect.innerHTML = '<option value="">Выберите класс</option>';
+  for (let i = 8; i <= 11; i++) {
+    const option = document.createElement('option');
+    option.value = i;
+    option.textContent = i + ' класс';
+    classSelect.appendChild(option);
+  }
 
-  document.getElementById('school-input').placeholder = "Номер школы";
+  document.getElementById('district-select').innerHTML = '<option value="">Выберите район</option>';
+  document.getElementById('school-input').placeholder = "Введите номер школы";
 
   // Проверка профиля
   async function checkProfile() {
     const { data, error } = await supabaseClient
       .from('users')
-      .select('*')
+      .select('class, region, district, school, tour_completed')
       .eq('telegram_id', telegramUserId)
       .single();
 
@@ -103,8 +106,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // Сохранение профиля с подтверждением
-  document.getElementById('save-profile').addEventListener('click', () => {
+  // Сохранение профиля
+  document.getElementById('save-profile').addEventListener('click', async () => {
     const classVal = document.getElementById('class-select').value;
     const region = document.getElementById('region-select').value;
     const district = document.getElementById('district-select').value;
@@ -116,12 +119,6 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    if (confirm('Данные нельзя будет изменить после сохранения. Вы уверены?')) {
-      saveProfileToDB(classVal, region, district, school, consent);
-    }
-  });
-
-  async function saveProfileToDB(classVal, region, district, school, consent) {
     const { error } = await supabaseClient
       .from('users')
       .upsert({
@@ -131,7 +128,7 @@ document.addEventListener('DOMContentLoaded', function() {
         district: district,
         school: school,
         research_consent: consent
-      });
+      }, { onConflict: 'telegram_id' });
 
     if (error) {
       alert('Ошибка сохранения профиля: ' + error.message);
@@ -141,7 +138,7 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('home-screen').classList.remove('hidden');
       checkProfile();
     }
-  }
+  });
 
   // Активация кнопки сохранения
   const requiredFields = document.querySelectorAll('#class-select, #region-select, #district-select, #school-input');
@@ -158,13 +155,13 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('home-screen').classList.remove('hidden');
   });
 
-  // Кнопка "Мой профиль" на главном
+  // Кнопка "Мой профиль"
   document.getElementById('profile-btn').addEventListener('click', () => {
     document.getElementById('home-screen').classList.add('hidden');
     document.getElementById('profile-screen').classList.remove('hidden');
   });
 
-  // Кнопки "О проекте" и "Лидерборд"
+  // Модальное "О проекте"
   document.getElementById('about-btn').addEventListener('click', () => {
     document.getElementById('about-modal').classList.remove('hidden');
   });
@@ -173,14 +170,20 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('about-modal').classList.add('hidden');
   });
 
+  // Крестик в модальном окне
+  document.querySelector('#about-modal .modal-content > div > button').addEventListener('click', () => {
+    document.getElementById('about-modal').classList.add('hidden');
+  });
+
+  // Лидерборд
   document.getElementById('leaderboard-btn').addEventListener('click', () => {
     alert('Лидерборд в разработке — скоро будет топ участников!');
   });
 
-  // "Начать тур"
+  // Начать тур
   document.getElementById('start-tour').addEventListener('click', () => {
     if (tourCompleted) {
-      alert('Вы уже прошли тур. Результаты сохранены. Повтор невозможен.');
+      alert('Вы уже прошли тур. Результаты сохранены. Повтор тура невозможен.');
       return;
     }
     document.getElementById('warning-modal').classList.remove('hidden');
@@ -190,15 +193,152 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('warning-modal').classList.add('hidden');
   });
 
-  document.getElementById('confirm-start').addEventListener('click', () => {
+  document.getElementById('confirm-start').addEventListener('click', async () => {
     document.getElementById('warning-modal').classList.add('hidden');
     startTour();
   });
 
   async function startTour() {
-    alert('Тур запускается — вопросы загружаются... (полный код викторины в следующей версии)');
-    // Здесь будет полный код викторины
+    const { data, error } = await supabaseClient
+      .from('questions')
+      .select('*')
+      .orderByRaw('random()')
+      .limit(15);
+
+    if (error || !data || data.length === 0) {
+      alert('Ошибка загрузки вопросов');
+      return;
+    }
+
+    questions = data;
+    currentQuestionIndex = 0;
+    correctCount = 0;
+
+    document.getElementById('home-screen').classList.add('hidden');
+    document.getElementById('quiz-screen').classList.remove('hidden');
+
+    startTimer(40 * 60);
+    showQuestion();
   }
+
+  function startTimer(seconds) {
+    let timeLeft = seconds;
+    const timerEl = document.getElementById('timer');
+    timerInterval = setInterval(() => {
+      const mins = Math.floor(timeLeft / 60);
+      const secs = timeLeft % 60;
+      timerEl.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+      if (timeLeft <= 0) {
+        clearInterval(timerInterval);
+        finishTour();
+      }
+      timeLeft--;
+    }, 1000);
+  }
+
+  function showQuestion() {
+    const q = questions[currentQuestionIndex];
+    questionStartTime = Date.now();
+
+    document.getElementById('question-number').textContent = currentQuestionIndex + 1;
+    document.getElementById('subject-tag').textContent = q.subject || 'Предмет';
+    document.getElementById('question-text').innerHTML = q.question_text;
+
+    const container = document.getElementById('options-container');
+    container.innerHTML = '';
+
+    const nextBtn = document.getElementById('next-button');
+    nextBtn.disabled = true;
+
+    if (q.options_text && q.options_text.trim() !== '') {
+      const options = q.options_text.split('\n');
+      options.forEach(option => {
+        if (option.trim()) {
+          const btn = document.createElement('button');
+          btn.className = 'option-button';
+          btn.textContent = option.trim();
+          btn.onclick = () => {
+            document.querySelectorAll('.option-button').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            selectedAnswer = option.trim().charAt(0).toUpperCase();
+            nextBtn.disabled = false;
+          };
+          container.appendChild(btn);
+        }
+      });
+    } else {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = 'Введите ответ';
+      input.oninput = (e) => {
+        selectedAnswer = e.target.value.trim();
+        nextBtn.disabled = !selectedAnswer;
+      };
+      container.appendChild(input);
+      input.focus();
+    }
+  }
+
+  document.getElementById('next-button').addEventListener('click', async () => {
+    const q = questions[currentQuestionIndex];
+
+    let isCorrect = false;
+    if (q.options_text && q.options_text.trim() !== '') {
+      isCorrect = selectedAnswer === q.correct_answer?.trim().toUpperCase();
+    } else {
+      const userAns = selectedAnswer?.toLowerCase().trim();
+      const correctAns = (q.correct_answer || '').toLowerCase().trim().split(',');
+      isCorrect = correctAns.some(a => a.trim() === userAns);
+    }
+
+    if (isCorrect) correctCount++;
+
+    const { error } = await supabaseClient
+      .from('user_answers')
+      .upsert({
+        user_id: telegramUserId,
+        question_id: q.id,
+        answer: selectedAnswer,
+        is_correct: isCorrect
+      }, { onConflict: 'user_id,question_id' });
+
+    if (error) console.error('Ошибка сохранения ответа:', error);
+
+    currentQuestionIndex++;
+
+    if (currentQuestionIndex < questions.length) {
+      showQuestion();
+    } else {
+      finishTour();
+    }
+  });
+
+  async function finishTour() {
+    clearInterval(timerInterval);
+
+    await supabaseClient
+      .from('users')
+      .update({ tour_completed: true })
+      .eq('telegram_id', telegramUserId);
+
+    const percent = Math.round((correctCount / questions.length) * 100);
+
+    document.getElementById('quiz-screen').classList.add('hidden');
+    document.getElementById('result-screen').classList.remove('hidden');
+
+    document.getElementById('correct-count').textContent = `${correctCount} из ${questions.length}`;
+    document.getElementById('result-percent').textContent = `${percent}%`;
+  }
+
+  document.getElementById('back-home').addEventListener('click', () => {
+    document.getElementById('result-screen').classList.add('hidden');
+    document.getElementById('home-screen').classList.remove('hidden');
+  });
+
+  // Кнопка сертификата (заготовка)
+  document.getElementById('download-certificate').addEventListener('click', () => {
+    alert('Сертификат в разработке — скоро будет скачивание!');
+  });
 
   checkProfile();
 });
