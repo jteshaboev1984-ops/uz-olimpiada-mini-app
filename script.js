@@ -116,7 +116,6 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('profile-screen').classList.remove('hidden');
       enableProfileEdit();
     } else {
-      // Профиль заполнен — только чтение
       document.getElementById('class-select').value = data.class;
       document.getElementById('region-select').value = data.region;
       document.getElementById('district-select').value = data.district;
@@ -204,6 +203,34 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('home-screen').classList.add('hidden');
     document.getElementById('profile-screen').classList.remove('hidden');
     checkProfile();
+  });
+
+  // НОВАЯ КНОПКА "Прогресс"
+  document.getElementById('progress-btn').addEventListener('click', async () => {
+    const { data, error } = await supabaseClient
+      .from('user_answers')
+      .select('is_correct')
+      .eq('user_id', telegramUserId);
+
+    if (error) {
+      alert('Ошибка загрузки прогресса');
+      return;
+    }
+
+    const total = data.length;
+    const correct = data.filter(a => a.is_correct).length;
+    const percent = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+    alert(`Ваш прогресс:\nПравильных ответов: ${correct} из ${total}\nПроцент: ${percent}%`);
+  });
+
+  // НОВАЯ КНОПКА "Выход"
+  document.getElementById('exit-btn').addEventListener('click', () => {
+    if (window.Telegram && Telegram.WebApp) {
+      Telegram.WebApp.close();
+    } else {
+      alert('Выход из приложения');
+    }
   });
 
   document.getElementById('about-btn').addEventListener('click', () => {
@@ -337,7 +364,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
       container.appendChild(textarea);
 
-      // Фокус и клавиатура в Telegram WebView
       setTimeout(() => {
         textarea.focus();
         if (window.Telegram && Telegram.WebApp) {
