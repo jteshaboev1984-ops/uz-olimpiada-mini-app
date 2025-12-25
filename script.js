@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log('Приложение запущено');
 
   let telegramUserId;
-  if (window.Telegram && Telegram.WebApp) {
+  if (window.Telegram && window.Telegram.WebApp) {
     Telegram.WebApp.ready();
     Telegram.WebApp.expand();
 
@@ -14,12 +14,23 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   if (!telegramUserId) {
-    telegramUserId = 999999999;
+    let storedId = localStorage.getItem('test_user_id');
+    if (!storedId) {
+      storedId = Math.floor(Math.random() * 1000000000);
+      localStorage.setItem('test_user_id', storedId);
+    }
+    telegramUserId = Number(storedId);
     document.getElementById('user-name').textContent = 'Тестовый участник';
+    console.warn('Тестовый режим. ID:', telegramUserId);
   }
 
   const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
   const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI';
+
+  if (typeof supabase === 'undefined') {
+    alert('Ошибка: Библиотека Supabase не загружена');
+    return;
+  }
 
   const { createClient } = supabase;
   const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
@@ -47,7 +58,6 @@ document.addEventListener('DOMContentLoaded', function() {
     "Каракалпакстан": ["Амударьинский", "Берунийский", "Бозатауский", "Кегейлийский", "Канлыкульский", "Караузякский", "Кунградский", "Муйнакский", "Нукусский", "Тахтакупырский", "Турткульский", "Ходжейлийский", "Чимбайский", "Шуманайский", "Элликкалинский"]
   };
 
-  // Заполнение регионов
   const regionSelect = document.getElementById('region-select');
   regionSelect.innerHTML = '<option value="" disabled selected>Выберите регион</option>';
   Object.keys(regions).sort().forEach(region => {
@@ -72,7 +82,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Классы 8-11
   const classSelect = document.getElementById('class-select');
   classSelect.innerHTML = '<option value="" disabled selected>Выберите класс</option>';
   for (let i = 8; i <= 11; i++) {
@@ -82,17 +91,25 @@ document.addEventListener('DOMContentLoaded', function() {
     classSelect.appendChild(option);
   }
 
-  document.getElementById('district-select').innerHTML = '<option value="" disabled selected>Выберите район</option>';
-  document.getElementById('school-input').placeholder = "Введите номер школы";
+  const dSelect = document.getElementById('district-select');
+  if (dSelect) dSelect.innerHTML = '<option value="" disabled selected>Выберите район</option>';
+
+  const sInput = document.getElementById('school-input');
+  if (sInput) sInput.placeholder = "Введите номер школы";
 
   async function checkProfile() {
     const { data, error } = await supabaseClient
       .from('users')
-      .select('class, region, district, school, tour_completed')
+      .select('*')
       .eq('telegram_id', telegramUserId)
-      .single();
+      .maybeSingle();
 
-    if (error || !data || !data.class || !data.region || !data.district || !data.school) {
+    if (error) {
+      console.error("Ошибка проверки профиля:", error);
+      return;
+    }
+
+    if (!data || !data.class || !data.region || !data.district || !data.school) {
       document.getElementById('home-screen').classList.add('hidden');
       document.getElementById('profile-screen').classList.remove('hidden');
     } else {
@@ -163,9 +180,12 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('about-modal').classList.add('hidden');
   });
 
-  document.querySelector('#about-modal .modal-content > div > button').addEventListener('click', () => {
-    document.getElementById('about-modal').classList.add('hidden');
-  });
+  const aboutCloseBtn = document.querySelector('#about-modal .modal-content > div > button');
+  if (aboutCloseBtn) {
+    aboutCloseBtn.addEventListener('click', () => {
+      document.getElementById('about-modal').classList.add('hidden');
+    });
+  }
 
   document.getElementById('leaderboard-btn').addEventListener('click', () => {
     alert('Лидерборд в разработке — скоро будет топ участников!');
@@ -192,15 +212,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const { data, error } = await supabaseClient
       .from('questions')
       .select('*')
-      .orderByRaw('random()')
-      .limit(15);
+      .limit(50);
 
     if (error || !data || data.length === 0) {
       alert('Ошибка загрузки вопросов');
+      console.error(error);
       return;
     }
 
-    questions = data;
+    questions = data.sort(() => Math.random() - 0.5).slice(0, 15);
+
     currentQuestionIndex = 0;
     correctCount = 0;
 
@@ -214,6 +235,8 @@ document.addEventListener('DOMContentLoaded', function() {
   function startTimer(seconds) {
     let timeLeft = seconds;
     const timerEl = document.getElementById('timer');
+    if (timerInterval) clearInterval(timerInterval);
+
     timerInterval = setInterval(() => {
       const mins = Math.floor(timeLeft / 60);
       const secs = timeLeft % 60;
@@ -239,6 +262,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const nextBtn = document.getElementById('next-button');
     nextBtn.disabled = true;
 
+    selectedAnswer = null;
+
     if (q.options_text && q.options_text.trim() !== '') {
       const options = q.options_text.split('\n');
       options.forEach(option => {
@@ -249,7 +274,8 @@ document.addEventListener('DOMContentLoaded', function() {
           btn.onclick = () => {
             document.querySelectorAll('.option-button').forEach(b => b.classList.remove('selected'));
             btn.classList.add('selected');
-            selectedAnswer = option.trim().charAt(0).toUpperCase();
+            const optText = option.trim();
+            selectedAnswer = optText.match(/^[A-DА-Г]/i) ? optText.charAt(0).toUpperCase() : optText;
             nextBtn.disabled = false;
           };
           container.appendChild(btn);
@@ -272,12 +298,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const q = questions[currentQuestionIndex];
 
     let isCorrect = false;
+    const correctDB = q.correct_answer ? q.correct_answer.trim() : '';
     if (q.options_text && q.options_text.trim() !== '') {
-      isCorrect = selectedAnswer === q.correct_answer?.trim().toUpperCase();
+      isCorrect = selectedAnswer.toLowerCase() === correctDB.toLowerCase();
     } else {
-      const userAns = selectedAnswer?.toLowerCase().trim();
-      const correctAns = (q.correct_answer || '').toLowerCase().trim().split(',');
-      isCorrect = correctAns.some(a => a.trim() === userAns);
+      const userAns = selectedAnswer?.toLowerCase();
+      const correctOptions = correctDB.toLowerCase().split(',').map(s => s.trim());
+      isCorrect = correctOptions.some(a => a === userAns);
     }
 
     if (isCorrect) correctCount++;
@@ -313,4 +340,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const percent = Math.round((correctCount / questions.length) * 100);
 
     document.getElementById('quiz-screen').classList.add('hidden');
-    document.getElementById('
+    document.getElementById('result-screen').classList.remove('hidden');
+
+    document.getElementById('correct-count').textContent = `${correctCount} из ${questions.length}`;
+    document.getElementById('result-percent').textContent = `${percent}%`;
+  }
+
+  document.getElementById('back-home').addEventListener('click', () => {
+    document.getElementById('result-screen').classList.add('hidden');
+    document.getElementById('home-screen').classList.remove('hidden');
+  });
+
+  document.getElementById('download-certificate').addEventListener('click', () => {
+    alert('Сертификат в разработке — скоро будет скачивание!');
+  });
+
+  checkProfile();
+});
