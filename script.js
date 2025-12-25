@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Заполнение регионов
   const regionSelect = document.getElementById('region-select');
-  regionSelect.innerHTML = '<option value="">Выберите регион</option>';
+  regionSelect.innerHTML = '<option value="" disabled selected>Выберите регион</option>';
   Object.keys(regions).sort().forEach(region => {
     const option = document.createElement('option');
     option.value = region;
@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   regionSelect.addEventListener('change', () => {
     const districtSelect = document.getElementById('district-select');
-    districtSelect.innerHTML = '<option value="">Выберите район</option>';
+    districtSelect.innerHTML = '<option value="" disabled selected>Выберите район</option>';
     districtSelect.disabled = false;
     const selected = regionSelect.value;
     if (selected && regions[selected]) {
@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Классы 8-11
   const classSelect = document.getElementById('class-select');
-  classSelect.innerHTML = '<option value="">Выберите класс</option>';
+  classSelect.innerHTML = '<option value="" disabled selected>Выберите класс</option>';
   for (let i = 8; i <= 11; i++) {
     const option = document.createElement('option');
     option.value = i;
@@ -83,10 +83,10 @@ document.addEventListener('DOMContentLoaded', function() {
     classSelect.appendChild(option);
   }
 
-  document.getElementById('district-select').innerHTML = '<option value="">Выберите район</option>';
+  document.getElementById('district-select').innerHTML = '<option value="" disabled selected>Выберите район</option>';
   document.getElementById('school-input').placeholder = "Введите номер школы";
 
-  // Проверка профиля
+  // Проверка профиля и состояния
   async function checkProfile() {
     const { data, error } = await supabaseClient
       .from('users')
@@ -95,9 +95,19 @@ document.addEventListener('DOMContentLoaded', function() {
       .single();
 
     if (error || !data || !data.class || !data.region || !data.district || !data.school) {
+      // Первый вход — редактирование профиля
       document.getElementById('home-screen').classList.add('hidden');
       document.getElementById('profile-screen').classList.remove('hidden');
+      enableProfileEdit();
     } else {
+      // Профиль заполнен — показываем только для чтения
+      document.getElementById('class-select').value = data.class;
+      document.getElementById('region-select').value = data.region;
+      document.getElementById('district-select').value = data.district;
+      document.getElementById('school-input').value = data.school;
+
+      disableProfileEdit();
+
       tourCompleted = data.tour_completed || false;
       if (tourCompleted) {
         document.getElementById('start-tour').disabled = true;
@@ -105,6 +115,33 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
   }
+
+  function enableProfileEdit() {
+    document.getElementById('class-select').disabled = false;
+    document.getElementById('region-select').disabled = false;
+    document.getElementById('district-select').disabled = false;
+    document.getElementById('school-input').disabled = false;
+    document.getElementById('research-consent').disabled = false;
+    document.getElementById('save-profile').style.display = 'block';
+  }
+
+  function disableProfileEdit() {
+    document.getElementById('class-select').disabled = true;
+    document.getElementById('region-select').disabled = true;
+    document.getElementById('district-select').disabled = true;
+    document.getElementById('school-input').disabled = true;
+    document.getElementById('research-consent').disabled = true;
+    document.getElementById('save-profile').style.display = 'none';
+  }
+
+  // Попытка изменения данных после заполнения
+  document.getElementById('profile-screen').addEventListener('click', (e) => {
+    if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') {
+      if (e.target.disabled) {
+        alert('Данные вводятся единоразово и не могут быть изменены, так как весь прогресс участника привязан к ним. По вопросам обращайтесь к организаторам.');
+      }
+    }
+  });
 
   // Сохранение профиля
   document.getElementById('save-profile').addEventListener('click', async () => {
@@ -134,6 +171,7 @@ document.addEventListener('DOMContentLoaded', function() {
       alert('Ошибка сохранения профиля: ' + error.message);
       console.error(error);
     } else {
+      alert('Профиль сохранён. Данные нельзя будет изменить.');
       document.getElementById('profile-screen').classList.add('hidden');
       document.getElementById('home-screen').classList.remove('hidden');
       checkProfile();
@@ -149,16 +187,19 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // Кнопка "Назад" в профиле
+  // Кнопка "Назад" из профиля
   document.getElementById('back-from-profile').addEventListener('click', () => {
-    document.getElementById('profile-screen').classList.add('hidden');
-    document.getElementById('home-screen').classList.remove('hidden');
+    if (confirm('Вы уверены? Если профиль не сохранён, вы не сможете участвовать в турах до конца олимпиады.')) {
+      document.getElementById('profile-screen').classList.add('hidden');
+      document.getElementById('home-screen').classList.remove('hidden');
+    }
   });
 
   // Кнопка "Мой профиль"
   document.getElementById('profile-btn').addEventListener('click', () => {
     document.getElementById('home-screen').classList.add('hidden');
     document.getElementById('profile-screen').classList.remove('hidden');
+    checkProfile();
   });
 
   // Модальное "О проекте"
@@ -170,7 +211,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('about-modal').classList.add('hidden');
   });
 
-  // Крестик в модальном окне
   document.querySelector('#about-modal .modal-content > div > button').addEventListener('click', () => {
     document.getElementById('about-modal').classList.add('hidden');
   });
@@ -183,7 +223,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Начать тур
   document.getElementById('start-tour').addEventListener('click', () => {
     if (tourCompleted) {
-      alert('Вы уже прошли тур. Результаты сохранены. Повтор тура невозможен.');
+      alert('Вы уже прошли тур. Результаты сохранены. Готовьтесь к следующим турам — ваши результаты доступны в профиле.');
       return;
     }
     document.getElementById('warning-modal').classList.remove('hidden');
@@ -193,7 +233,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('warning-modal').classList.add('hidden');
   });
 
-  document.getElementById('confirm-start').addEventListener('click', async () => {
+  document.getElementById('confirm-start').addEventListener('click', () => {
     document.getElementById('warning-modal').classList.add('hidden');
     startTour();
   });
@@ -206,7 +246,7 @@ document.addEventListener('DOMContentLoaded', function() {
       .limit(15);
 
     if (error || !data || data.length === 0) {
-      alert('Ошибка загрузки вопросов');
+      alert('Ошибка загрузки вопросов: ' + (error?.message || 'Нет вопросов'));
       return;
     }
 
@@ -244,101 +284,4 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('subject-tag').textContent = q.subject || 'Предмет';
     document.getElementById('question-text').innerHTML = q.question_text;
 
-    const container = document.getElementById('options-container');
-    container.innerHTML = '';
-
-    const nextBtn = document.getElementById('next-button');
-    nextBtn.disabled = true;
-
-    if (q.options_text && q.options_text.trim() !== '') {
-      const options = q.options_text.split('\n');
-      options.forEach(option => {
-        if (option.trim()) {
-          const btn = document.createElement('button');
-          btn.className = 'option-button';
-          btn.textContent = option.trim();
-          btn.onclick = () => {
-            document.querySelectorAll('.option-button').forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-            selectedAnswer = option.trim().charAt(0).toUpperCase();
-            nextBtn.disabled = false;
-          };
-          container.appendChild(btn);
-        }
-      });
-    } else {
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.placeholder = 'Введите ответ';
-      input.oninput = (e) => {
-        selectedAnswer = e.target.value.trim();
-        nextBtn.disabled = !selectedAnswer;
-      };
-      container.appendChild(input);
-      input.focus();
-    }
-  }
-
-  document.getElementById('next-button').addEventListener('click', async () => {
-    const q = questions[currentQuestionIndex];
-
-    let isCorrect = false;
-    if (q.options_text && q.options_text.trim() !== '') {
-      isCorrect = selectedAnswer === q.correct_answer?.trim().toUpperCase();
-    } else {
-      const userAns = selectedAnswer?.toLowerCase().trim();
-      const correctAns = (q.correct_answer || '').toLowerCase().trim().split(',');
-      isCorrect = correctAns.some(a => a.trim() === userAns);
-    }
-
-    if (isCorrect) correctCount++;
-
-    const { error } = await supabaseClient
-      .from('user_answers')
-      .upsert({
-        user_id: telegramUserId,
-        question_id: q.id,
-        answer: selectedAnswer,
-        is_correct: isCorrect
-      }, { onConflict: 'user_id,question_id' });
-
-    if (error) console.error('Ошибка сохранения ответа:', error);
-
-    currentQuestionIndex++;
-
-    if (currentQuestionIndex < questions.length) {
-      showQuestion();
-    } else {
-      finishTour();
-    }
-  });
-
-  async function finishTour() {
-    clearInterval(timerInterval);
-
-    await supabaseClient
-      .from('users')
-      .update({ tour_completed: true })
-      .eq('telegram_id', telegramUserId);
-
-    const percent = Math.round((correctCount / questions.length) * 100);
-
-    document.getElementById('quiz-screen').classList.add('hidden');
-    document.getElementById('result-screen').classList.remove('hidden');
-
-    document.getElementById('correct-count').textContent = `${correctCount} из ${questions.length}`;
-    document.getElementById('result-percent').textContent = `${percent}%`;
-  }
-
-  document.getElementById('back-home').addEventListener('click', () => {
-    document.getElementById('result-screen').classList.add('hidden');
-    document.getElementById('home-screen').classList.remove('hidden');
-  });
-
-  // Кнопка сертификата (заготовка)
-  document.getElementById('download-certificate').addEventListener('click', () => {
-    alert('Сертификат в разработке — скоро будет скачивание!');
-  });
-
-  checkProfile();
-});
+    const container = document.get
