@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
   console.log('Скрипт запущен');
 
-  // Инициализация Telegram WebApp
+  // Telegram WebApp
   if (window.Telegram && Telegram.WebApp) {
     Telegram.WebApp.ready();
     Telegram.WebApp.expand();
@@ -12,41 +12,31 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // Подключение к Supabase (правильное имя — supabase с маленькой буквы!)
+  // Supabase
   const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
   const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI';
 
   const supabaseClient = supabase.createClient(supabaseUrl, supabaseAnonKey);
 
-  console.log('Supabase клиент создан');
-
   let questions = [];
   let currentQuestionIndex = 0;
+  let correctCount = 0;
   let selectedAnswer = null;
+
+  const telegramId = Telegram.WebApp.initDataUnsafe.user?.id || 'test_user';
 
   async function loadQuestions() {
     const btn = document.getElementById('start-tour');
-    btn.textContent = 'Загрузка вопросов...';
+    btn.textContent = 'Загрузка...';
     btn.disabled = true;
-
-    console.log('Запрашиваем вопросы из базы...');
 
     const { data, error } = await supabaseClient
       .from('questions')
       .select('*')
       .limit(15);
 
-    console.log('Ответ от Supabase:', { data, error });
-
-    if (error) {
-      alert('Ошибка: ' + error.message);
-      btn.textContent = 'Начать тур';
-      btn.disabled = false;
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      alert('Вопросы не найдены в базе. Проверьте таблицу questions и RLS.');
+    if (error || !data || data.length === 0) {
+      alert('Ошибка загрузки вопросов. Проверьте интернет и базу.');
       btn.textContent = 'Начать тур';
       btn.disabled = false;
       return;
@@ -54,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     questions = data;
     currentQuestionIndex = 0;
-    selectedAnswer = null;
+    correctCount = 0;
 
     document.getElementById('main-screen').style.display = 'none';
     document.getElementById('quiz-screen').style.display = 'block';
@@ -75,6 +65,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const nextBtn = document.getElementById('next-button');
     nextBtn.disabled = true;
+    nextBtn.textContent = 'Далее';
 
     if (q.options_text) {
       const options = q.options_text.split('\n');
@@ -85,15 +76,9 @@ document.addEventListener('DOMContentLoaded', function() {
           button.textContent = option.trim();
 
           button.onclick = () => {
-            // Снимаем выделение со всех
-            document.querySelectorAll('.option-button').forEach(b => {
-              b.style.background = '';
-            });
-
-            // Выделяем выбранный
-            button.style.background = '#d0ebff';
-
-            selectedAnswer = option.trim();
+            document.querySelectorAll('.option-button').forEach(b => b.classList.remove('selected'));
+            button.classList.add('selected');
+            selectedAnswer = option.trim().charAt(0); // A, B, C, D
             nextBtn.disabled = false;
           };
 
@@ -105,32 +90,48 @@ document.addEventListener('DOMContentLoaded', function() {
       input.type = 'text';
       input.placeholder = 'Введите ответ';
       input.className = 'option-button';
-      input.style.textAlign = 'center';
-      input.style.padding = '16px';
-      input.style.fontSize = '18px';
-
       input.oninput = (e) => {
         selectedAnswer = e.target.value.trim();
         nextBtn.disabled = !selectedAnswer;
       };
-
       optionsContainer.appendChild(input);
     }
   }
 
-  // Кнопка "Начать тур"
   document.getElementById('start-tour').addEventListener('click', loadQuestions);
 
-  // Кнопка "Далее"
-  document.getElementById('next-button').addEventListener('click', () => {
+  document.getElementById('next-button').addEventListener('click', async () => {
+    const q = questions[currentQuestionIndex];
+    const isCorrect = selectedAnswer === q.correct_answer;
+
+    if (isCorrect) correctCount++;
+
+    // Сохраняем ответ в базу
+    const { error } = await supabaseClient
+      .from('user_answers')
+      .insert({
+        telegram_id: telegramId,
+        question_id: q.id,
+        answer: selectedAnswer,
+        is_correct: isCorrect
+      });
+
+    if (error) console.error('Ошибка сохранения ответа:', error);
+
     currentQuestionIndex++;
 
     if (currentQuestionIndex < questions.length) {
       selectedAnswer = null;
       showQuestion();
     } else {
-      alert('Тур завершён! Молодец!');
-      location.reload();
+      // Экран результата
+      const percent = Math.round((correctCount / questions.length) * 100);
+      document.getElementById('quiz-screen').innerHTML = `
+        <h2 style="font-size: 28px; margin-bottom: 20px;">Тур завершён!</h2>
+        <p style="font-size: 24px;">Правильных ответов: <strong>${correctCount}</strong> из ${questions.length}</p>
+        <p style="font-size: 32px; color: #007aff; margin: 30px 0;">${percent}%</p>
+        <button class="big-button" onclick="location.reload()">На главную</button>
+      `;
     }
   });
 });
