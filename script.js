@@ -1,12 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
   // Проверяем, загружен ли Supabase
-  if (typeof Supabase === 'undefined') {
-    alert('Ошибка: Библиотека Supabase не загружена. Проверьте подключение скрипта в HTML.');
-    return;
-  }
-
-  console.log('Supabase библиотека найдена');
-  
   // Инициализация Telegram
   if (window.Telegram && Telegram.WebApp) {
       Telegram.WebApp.ready();
@@ -138,3 +131,4 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
 });
+
