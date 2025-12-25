@@ -109,13 +109,22 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    // Строгая проверка — профиль заполнен только если все ключевые поля есть
     const isProfileComplete = data && data.class && data.region && data.district && data.school;
 
     if (!isProfileComplete) {
       document.getElementById('home-screen').classList.add('hidden');
       document.getElementById('profile-screen').classList.remove('hidden');
+      enableProfileEdit();
     } else {
+      // Профиль заполнен — только чтение
+      document.getElementById('class-select').value = data.class;
+      document.getElementById('region-select').value = data.region;
+      document.getElementById('district-select').value = data.district;
+      document.getElementById('school-input').value = data.school;
+      document.getElementById('research-consent').checked = data.research_consent || false;
+
+      disableProfileEdit();
+
       tourCompleted = data.tour_completed === true;
       if (tourCompleted) {
         const startBtn = document.getElementById('start-tour');
@@ -125,6 +134,24 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }
     }
+  }
+
+  function enableProfileEdit() {
+    document.getElementById('class-select').disabled = false;
+    document.getElementById('region-select').disabled = false;
+    document.getElementById('district-select').disabled = false;
+    document.getElementById('school-input').disabled = false;
+    document.getElementById('research-consent').disabled = false;
+    document.getElementById('save-profile').style.display = 'block';
+  }
+
+  function disableProfileEdit() {
+    document.getElementById('class-select').disabled = true;
+    document.getElementById('region-select').disabled = true;
+    document.getElementById('district-select').disabled = true;
+    document.getElementById('school-input').disabled = true;
+    document.getElementById('research-consent').disabled = true;
+    document.getElementById('save-profile').style.display = 'none';
   }
 
   document.getElementById('save-profile').addEventListener('click', async () => {
@@ -176,6 +203,7 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('profile-btn').addEventListener('click', () => {
     document.getElementById('home-screen').classList.add('hidden');
     document.getElementById('profile-screen').classList.remove('hidden');
+    checkProfile();
   });
 
   document.getElementById('about-btn').addEventListener('click', () => {
@@ -293,7 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
       const textarea = document.createElement('textarea');
       textarea.placeholder = 'Введите ответ';
-      textarea.rows = 4;
+      textarea.rows = 5;
       textarea.style.width = '100%';
       textarea.style.padding = '20px';
       textarea.style.borderRadius = '20px';
@@ -309,7 +337,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
       container.appendChild(textarea);
 
-      setTimeout(() => textarea.focus(), 100);
+      // Фокус и клавиатура в Telegram WebView
+      setTimeout(() => {
+        textarea.focus();
+        if (window.Telegram && Telegram.WebApp) {
+          Telegram.WebApp.HapticFeedback.selectionChanged();
+        }
+      }, 200);
     }
   }
 
