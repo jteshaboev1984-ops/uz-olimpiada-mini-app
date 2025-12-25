@@ -109,14 +109,20 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    if (!data || !data.class || !data.region || !data.district || !data.school) {
+    // Строгая проверка — профиль заполнен только если все ключевые поля есть
+    const isProfileComplete = data && data.class && data.region && data.district && data.school;
+
+    if (!isProfileComplete) {
       document.getElementById('home-screen').classList.add('hidden');
       document.getElementById('profile-screen').classList.remove('hidden');
     } else {
-      tourCompleted = data.tour_completed || false;
+      tourCompleted = data.tour_completed === true;
       if (tourCompleted) {
-        document.getElementById('start-tour').disabled = true;
-        document.getElementById('start-tour').textContent = 'Тур пройден';
+        const startBtn = document.getElementById('start-tour');
+        if (startBtn) {
+          startBtn.disabled = true;
+          startBtn.textContent = 'Тур пройден';
+        }
       }
     }
   }
@@ -254,7 +260,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById('question-number').textContent = currentQuestionIndex + 1;
     document.getElementById('subject-tag').textContent = q.subject || 'Предмет';
-    document.getElementById('question-text').innerHTML = q.question_text || 'Вопрос не загружен';
+    document.getElementById('question-text').innerHTML = q.question_text;
 
     const container = document.getElementById('options-container');
     container.innerHTML = '';
@@ -285,17 +291,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       });
     } else {
-      // Открытый вопрос — поле ввода
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.placeholder = 'Введите ответ';
-      input.className = 'open-input'; // для стиля
-      input.oninput = (e) => {
-        selectedAnswer = e.target.value.trim();
-        nextBtn.disabled = !selectedAnswer;
-      };
-      container.appendChild(input);
-      input.focus();
+      const textarea = document.createElement('textarea');
+      textarea.placeholder = 'Введите ответ';
+      textarea.rows = 4;
+      textarea.style.width = '100%';
+      textarea.style.padding = '20px';
+      textarea.style.borderRadius = '20px';
+      textarea.style.border = '2px solid #e0e0e0';
+      textarea.style.fontSize = '19px';
+      textarea.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+      textarea.style.resize = 'none';
+
+      textarea.addEventListener('input', () => {
+        selectedAnswer = textarea.value.trim();
+        nextBtn.disabled = selectedAnswer.length === 0;
+      });
+
+      container.appendChild(textarea);
+
+      setTimeout(() => textarea.focus(), 100);
     }
   }
 
@@ -345,6 +359,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (error) console.error('Ошибка обновления tour_completed:', error);
 
+    tourCompleted = true;
+
     const percent = Math.round((correctCount / questions.length) * 100);
 
     document.getElementById('quiz-screen').classList.add('hidden');
@@ -357,6 +373,7 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('back-home').addEventListener('click', () => {
     document.getElementById('result-screen').classList.add('hidden');
     document.getElementById('home-screen').classList.remove('hidden');
+    checkProfile();
   });
 
   document.getElementById('download-certificate').addEventListener('click', () => {
