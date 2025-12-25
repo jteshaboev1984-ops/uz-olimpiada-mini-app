@@ -6,7 +6,7 @@
   <title>Олимпиада Cambridge</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="supabase.min.js?v=1"></script>
-  <link rel="stylesheet" href="style.css?v=2">
+  <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 
@@ -17,17 +17,17 @@
       <p class="description">Межпредметная олимпиада Cambridge-уровня</p>
 
       <div class="progress-grid" id="progress-grid">
-        <!-- Карточки предметов будут добавлены в JS -->
+        <!-- Карточки генерируются в JS -->
       </div>
 
       <button id="start-tour" class="big-button">Начать тур</button>
       <button id="leaderboard-btn" class="big-button secondary">Лидерборд</button>
-      <button id="about-btn" class="big-button secondary">О проекте</button>
       <button id="profile-btn" class="big-button secondary">Мой профиль</button>
+      <button id="about-btn" class="big-button secondary">О проекте</button>
     </div>
   </div>
 
-  <!-- Экран профиля (обязательный) -->
+  <!-- Экран профиля -->
   <div class="screen hidden" id="profile-screen">
     <div class="container">
       <h1>Завершите профиль</h1>
@@ -35,40 +35,22 @@
 
       <div class="form-group">
         <label>Класс</label>
-        <select id="class-select">
-          <option value="">Выберите класс</option>
-          <option value="1">1 класс</option>
-          <option value="2">2 класс</option>
-          <option value="3">3 класс</option>
-          <option value="4">4 класс</option>
-          <option value="5">5 класс</option>
-          <option value="6">6 класс</option>
-          <option value="7">7 класс</option>
-          <option value="8">8 класс</option>
-          <option value="9">9 класс</option>
-          <option value="10">10 класс</option>
-          <option value="11">11 класс</option>
-        </select>
+        <select id="class-select"></select>
       </div>
 
       <div class="form-group">
         <label>Регион</label>
-        <select id="region-select">
-          <option value="">Выберите регион</option>
-          <!-- Заполняется в script.js -->
-        </select>
+        <select id="region-select"></select>
       </div>
 
       <div class="form-group">
         <label>Район / Город</label>
-        <select id="district-select" disabled>
-          <option value="">Сначала выберите регион</option>
-        </select>
+        <select id="district-select" disabled></select>
       </div>
 
       <div class="form-group">
-        <label>Школа</label>
-        <input type="text" id="school-input" placeholder="Название школы">
+        <label>Номер школы</label>
+        <input type="text" id="school-input" placeholder="Номер школы">
       </div>
 
       <div class="form-group checkbox">
@@ -79,6 +61,7 @@
       </div>
 
       <button id="save-profile" class="big-button" disabled>Сохранить и продолжить</button>
+      <button id="back-from-profile" class="big-button secondary">Назад</button>
     </div>
   </div>
 
@@ -92,7 +75,7 @@
         </div>
       </div>
 
-      <div id="subject-tag">Математика</div>
+      <div id="subject-tag"></div>
       <p id="question-text"></p>
 
       <div id="options-container"></div>
@@ -114,7 +97,7 @@
     </div>
   </div>
 
-  <!-- Модальное окно: Предупреждение перед туром -->
+  <!-- Модальное предупреждение -->
   <div class="modal hidden" id="warning-modal">
     <div class="modal-content">
       <h2>Внимание!</h2>
@@ -129,13 +112,13 @@
     </div>
   </div>
 
-  <!-- Модальное окно: О проекте -->
+  <!-- Модальное "О проекте" -->
   <div class="modal hidden" id="about-modal">
-  <div class="modal-content">
-    <div style="text-align: right; margin-bottom: 10px;">
-      <button style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
-    </div>
-    <h2>О проекте</h2>
+    <div class="modal-content">
+      <div style="text-align: right; margin-bottom: 10px;">
+        <button style="background:none;border:none;font-size:28px;cursor:pointer;">×</button>
+      </div>
+      <h2>О проекте</h2>
       <p>Межпредметная олимпиада Cambridge-уровня</p>
       <p>Это академическая олимпиада для школьников Узбекистана, задания которой выровнены по международным стандартам Cambridge IGCSE и AS Level и включают элементы SAT/IELTS-style reasoning.</p>
       <p><strong>Цели проекта:</strong></p>
@@ -155,12 +138,9 @@
       <p>Проект реализуется с использованием современных технологий Telegram и Supabase для максимальной доступности.</p>
       <p>Организатор: [Твоё имя / организация]<br>2025–2026 учебный год</p>
       <button class="big-button" id="close-about">Закрыть</button>
+    </div>
   </div>
-</div>
 
-  <script src="script.js?v=2"></script>
+  <script src="script.js?v=3"></script>
 </body>
 </html>
-
-
-
