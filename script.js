@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
   console.log('Скрипт запущен');
 
-  // Telegram WebApp
   if (window.Telegram && Telegram.WebApp) {
     Telegram.WebApp.ready();
     Telegram.WebApp.expand();
@@ -12,7 +11,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // Supabase
   const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
   const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI';
 
@@ -36,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
       .limit(15);
 
     if (error || !data || data.length === 0) {
-      alert('Ошибка загрузки вопросов. Проверьте интернет.');
+      alert('Ошибка загрузки вопросов.');
       btn.textContent = 'Начать тур';
       btn.disabled = false;
       return;
@@ -67,7 +65,10 @@ document.addEventListener('DOMContentLoaded', function() {
     nextBtn.disabled = true;
     nextBtn.textContent = 'Далее';
 
-    if (q.options_text) {
+    selectedAnswer = null;
+
+    if (q.options_text && q.options_text.trim() !== '') {
+      // Вопрос с вариантами A) B) C) D)
       const options = q.options_text.split('\n');
       options.forEach(option => {
         if (option.trim()) {
@@ -78,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function() {
           button.onclick = () => {
             document.querySelectorAll('.option-button').forEach(b => b.classList.remove('selected'));
             button.classList.add('selected');
-            selectedAnswer = option.trim().charAt(0); // A, B, C, D
+            selectedAnswer = option.trim().charAt(0).toUpperCase(); // A, B, C, D
             nextBtn.disabled = false;
           };
 
@@ -86,6 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       });
     } else {
+      // Вопрос с открытым ответом (текст или число)
       const input = document.createElement('input');
       input.type = 'text';
       input.placeholder = 'Введите ответ';
@@ -94,6 +96,8 @@ document.addEventListener('DOMContentLoaded', function() {
       input.style.padding = '16px';
       input.style.fontSize = '18px';
       input.style.marginTop = '20px';
+      input.style.borderRadius = '16px';
+      input.style.border = '2px solid #e0e0e0';
 
       input.oninput = (e) => {
         selectedAnswer = e.target.value.trim();
@@ -101,6 +105,7 @@ document.addEventListener('DOMContentLoaded', function() {
       };
 
       optionsContainer.appendChild(input);
+      input.focus();
     }
   }
 
@@ -109,12 +114,24 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('next-button').addEventListener('click', async () => {
     const q = questions[currentQuestionIndex];
 
-    // Проверка правильного ответа (correct_answer в базе — буква A/B/C/D)
-    const isCorrect = selectedAnswer && selectedAnswer.toUpperCase() === q.correct_answer?.trim().toUpperCase();
+    let isCorrect = false;
+
+    if (q.options_text && q.options_text.trim() !== '') {
+      // Для вопросов с вариантами — сравниваем букву
+      isCorrect = selectedAnswer === q.correct_answer?.trim().toUpperCase();
+    } else {
+      // Для открытых вопросов — сравниваем текст (без учета регистра и пробелов)
+      const userAnswer = selectedAnswer?.toLowerCase().trim();
+      const correct = q.correct_answer?.toLowerCase().trim();
+
+      // Допускаем разные варианты: "щелочной", "основной", "alkaline" и т.д.
+      // Можно улучшить — добавить несколько правильных ответов через запятую в базе
+      isCorrect = userAnswer === correct;
+    }
 
     if (isCorrect) correctCount++;
 
-    // Сохраняем ответ в базу (опционально)
+    // Сохраняем ответ
     const { error } = await supabaseClient
       .from('user_answers')
       .insert({
@@ -129,17 +146,15 @@ document.addEventListener('DOMContentLoaded', function() {
     currentQuestionIndex++;
 
     if (currentQuestionIndex < questions.length) {
-      selectedAnswer = null;
       showQuestion();
     } else {
-      // Красивый экран результата
       const percent = Math.round((correctCount / questions.length) * 100);
 
       document.getElementById('quiz-screen').innerHTML = `
         <div style="text-align: center; padding: 40px 20px;">
           <h2 style="font-size: 32px; margin-bottom: 30px;">Тур завершён!</h2>
           <p style="font-size: 24px; margin: 20px 0;">
-            Правильных ответов: <strong>${correctCount}</strong> из ${questions.length}
+            Правильных: <strong>${correctCount}</strong> из ${questions.length}
           </p>
           <p style="font-size: 48px; color: #007aff; font-weight: bold; margin: 40px 0;">
             ${percent}%
