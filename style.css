@@ -1,32 +1,11 @@
-html, body {
-  height: 100%;
-  overflow-x: hidden;
-}
-
-body {
-  display: flex;
-  flex-direction: column;
-}
-
-.container {
-  flex: 1;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.screen {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.modal-content {
-  max-height: 90vh;
-  overflow-y: auto;
-}
 /* Общие стили */
 * {
   box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -36,20 +15,23 @@ body {
   padding: 0;
   color: #000000;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .container {
   max-width: 480px;
   margin: 0 auto;
   padding: 20px;
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Скрытый экран */
 .screen.hidden {
   display: none;
 }
 
-/* Заголовки */
 h1 {
   font-size: 28px;
   text-align: center;
@@ -64,7 +46,6 @@ h1 {
   margin-bottom: 30px;
 }
 
-/* Главный экран — карточки предметов */
 .progress-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -98,17 +79,10 @@ h1 {
   background: #007aff;
   height: 100%;
   border-radius: 8px;
-  width: 0%; /* будет обновляться в JS */
+  width: 60%; /* будет в JS */
   transition: width 0.4s ease;
 }
 
-.subject-card p {
-  margin: 0;
-  font-size: 16px;
-  color: #333;
-}
-
-/* Кнопки */
 .big-button {
   background: #007aff;
   color: white;
@@ -132,7 +106,6 @@ h1 {
   color: #007aff;
 }
 
-/* Викторина */
 .quiz-header {
   text-align: center;
   margin: 20px 0;
@@ -167,7 +140,6 @@ h1 {
   text-align: left;
 }
 
-/* Варианты ответа */
 #options-container {
   margin: 30px 0;
 }
@@ -191,7 +163,6 @@ h1 {
   box-shadow: 0 4px 16px rgba(0, 122, 255, 0.2);
 }
 
-/* Поле ввода для открытых вопросов */
 #options-container input {
   background: white;
   border: 2px solid #e0e0e0;
@@ -210,7 +181,6 @@ h1 {
   box-shadow: 0 4px 16px rgba(0, 122, 255, 0.2);
 }
 
-/* Экран результата */
 .result-container {
   text-align: center;
   padding: 60px 20px;
@@ -235,7 +205,6 @@ h1 {
   margin: 40px 0;
 }
 
-/* Модальные окна */
 .modal {
   position: fixed;
   top: 0;
@@ -261,28 +230,10 @@ h1 {
   max-width: 400px;
   text-align: center;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
-.modal-content h2 {
-  font-size: 26px;
-  margin-bottom: 20px;
-}
-
-.modal-content p {
-  font-size: 18px;
-  line-height: 1.5;
-  margin: 15px 0;
-}
-
-.modal-buttons {
-  margin-top: 30px;
-}
-
-.modal-buttons .big-button {
-  margin: 10px 0;
-}
-
-/* Форма профиля */
 .form-group {
   margin: 20px 0;
 }
@@ -294,19 +245,13 @@ h1 {
   font-weight: 600;
 }
 
-.form-group select,
-.form-group input {
+.form-group select, .form-group input {
   width: 100%;
   padding: 16px;
   font-size: 18px;
   border-radius: 16px;
   border: 2px solid #e0e0e0;
   background: white;
-}
-
-.form-group select:disabled {
-  background: #f0f0f0;
-  color: #999;
 }
 
 .checkbox label {
@@ -317,6 +262,4 @@ h1 {
 
 .checkbox input {
   margin-right: 10px;
-  width: auto;
 }
-
