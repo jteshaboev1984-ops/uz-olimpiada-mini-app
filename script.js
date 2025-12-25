@@ -68,7 +68,6 @@ document.addEventListener('DOMContentLoaded', function() {
     selectedAnswer = null;
 
     if (q.options_text && q.options_text.trim() !== '') {
-      // Вопрос с вариантами A) B) C) D)
       const options = q.options_text.split('\n');
       options.forEach(option => {
         if (option.trim()) {
@@ -79,7 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
           button.onclick = () => {
             document.querySelectorAll('.option-button').forEach(b => b.classList.remove('selected'));
             button.classList.add('selected');
-            selectedAnswer = option.trim().charAt(0).toUpperCase(); // A, B, C, D
+            selectedAnswer = option.trim().charAt(0).toUpperCase();
             nextBtn.disabled = false;
           };
 
@@ -87,7 +86,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       });
     } else {
-      // Вопрос с открытым ответом (текст или число)
       const input = document.createElement('input');
       input.type = 'text';
       input.placeholder = 'Введите ответ';
@@ -117,21 +115,16 @@ document.addEventListener('DOMContentLoaded', function() {
     let isCorrect = false;
 
     if (q.options_text && q.options_text.trim() !== '') {
-      // Для вопросов с вариантами — сравниваем букву
       isCorrect = selectedAnswer === q.correct_answer?.trim().toUpperCase();
     } else {
-      // Для открытых вопросов — сравниваем текст (без учета регистра и пробелов)
       const userAnswer = selectedAnswer?.toLowerCase().trim();
-      const correct = q.correct_answer?.toLowerCase().trim();
+      const correctAnswers = q.correct_answer?.toLowerCase().trim().split(',') || [];
 
-      // Допускаем разные варианты: "щелочной", "основной", "alkaline" и т.д.
-      // Можно улучшить — добавить несколько правильных ответов через запятую в базе
-      isCorrect = userAnswer === correct;
+      isCorrect = correctAnswers.includes(userAnswer);
     }
 
     if (isCorrect) correctCount++;
 
-    // Сохраняем ответ
     const { error } = await supabaseClient
       .from('user_answers')
       .insert({
