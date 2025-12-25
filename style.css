@@ -1,3 +1,29 @@
+html, body {
+  height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+.container {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-content {
+  max-height: 90vh;
+  overflow-y: auto;
+}
 /* Общие стили */
 * {
   box-sizing: border-box;
@@ -293,3 +319,4 @@ h1 {
   margin-right: 10px;
   width: auto;
 }
+
