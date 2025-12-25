@@ -275,7 +275,16 @@ document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.option-button').forEach(b => b.classList.remove('selected'));
             btn.classList.add('selected');
             const optText = option.trim();
-            selectedAnswer = optText.match(/^[A-DА-Г]/i) ? optText.charAt(0).toUpperCase() : optText;
+
+            // ИСПРАВЛЕНО: Более строгий regex для A) B) C) D)
+            const isLetterOption = optText.match(/^[A-DА-Г][)\.\s]/i);
+
+            if (isLetterOption) {
+              selectedAnswer = optText.charAt(0).toUpperCase();
+            } else {
+              selectedAnswer = optText;
+            }
+
             nextBtn.disabled = false;
           };
           container.appendChild(btn);
