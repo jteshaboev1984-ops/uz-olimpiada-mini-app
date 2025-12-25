@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', function() {
       .limit(15);
 
     if (error || !data || data.length === 0) {
-      alert('Ошибка загрузки вопросов. Проверьте интернет и базу.');
+      alert('Ошибка загрузки вопросов. Проверьте интернет.');
       btn.textContent = 'Начать тур';
       btn.disabled = false;
       return;
@@ -90,10 +90,16 @@ document.addEventListener('DOMContentLoaded', function() {
       input.type = 'text';
       input.placeholder = 'Введите ответ';
       input.className = 'option-button';
+      input.style.textAlign = 'center';
+      input.style.padding = '16px';
+      input.style.fontSize = '18px';
+      input.style.marginTop = '20px';
+
       input.oninput = (e) => {
         selectedAnswer = e.target.value.trim();
         nextBtn.disabled = !selectedAnswer;
       };
+
       optionsContainer.appendChild(input);
     }
   }
@@ -102,11 +108,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
   document.getElementById('next-button').addEventListener('click', async () => {
     const q = questions[currentQuestionIndex];
-    const isCorrect = selectedAnswer === q.correct_answer;
+
+    // Проверка правильного ответа (correct_answer в базе — буква A/B/C/D)
+    const isCorrect = selectedAnswer && selectedAnswer.toUpperCase() === q.correct_answer?.trim().toUpperCase();
 
     if (isCorrect) correctCount++;
 
-    // Сохраняем ответ в базу
+    // Сохраняем ответ в базу (опционально)
     const { error } = await supabaseClient
       .from('user_answers')
       .insert({
@@ -116,7 +124,7 @@ document.addEventListener('DOMContentLoaded', function() {
         is_correct: isCorrect
       });
 
-    if (error) console.error('Ошибка сохранения ответа:', error);
+    if (error) console.error('Ошибка сохранения:', error);
 
     currentQuestionIndex++;
 
@@ -124,13 +132,22 @@ document.addEventListener('DOMContentLoaded', function() {
       selectedAnswer = null;
       showQuestion();
     } else {
-      // Экран результата
+      // Красивый экран результата
       const percent = Math.round((correctCount / questions.length) * 100);
+
       document.getElementById('quiz-screen').innerHTML = `
-        <h2 style="font-size: 28px; margin-bottom: 20px;">Тур завершён!</h2>
-        <p style="font-size: 24px;">Правильных ответов: <strong>${correctCount}</strong> из ${questions.length}</p>
-        <p style="font-size: 32px; color: #007aff; margin: 30px 0;">${percent}%</p>
-        <button class="big-button" onclick="location.reload()">На главную</button>
+        <div style="text-align: center; padding: 40px 20px;">
+          <h2 style="font-size: 32px; margin-bottom: 30px;">Тур завершён!</h2>
+          <p style="font-size: 24px; margin: 20px 0;">
+            Правильных ответов: <strong>${correctCount}</strong> из ${questions.length}
+          </p>
+          <p style="font-size: 48px; color: #007aff; font-weight: bold; margin: 40px 0;">
+            ${percent}%
+          </p>
+          <button class="big-button" onclick="location.reload()" style="margin-top: 40px;">
+            На главную
+          </button>
+        </div>
       `;
     }
   });
