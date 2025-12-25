@@ -254,7 +254,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById('question-number').textContent = currentQuestionIndex + 1;
     document.getElementById('subject-tag').textContent = q.subject || 'Предмет';
-    document.getElementById('question-text').innerHTML = q.question_text;
+    document.getElementById('question-text').innerHTML = q.question_text || 'Вопрос не загружен';
 
     const container = document.getElementById('options-container');
     container.innerHTML = '';
@@ -264,8 +264,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     selectedAnswer = null;
 
-    if (q.options_text && q.options_text.trim() !== '') {
-      const options = q.options_text.split('\n');
+    const optionsText = (q.options_text || '').trim();
+
+    if (optionsText !== '') {
+      const options = optionsText.split('\n');
       options.forEach(option => {
         if (option.trim()) {
           const btn = document.createElement('button');
@@ -275,25 +277,19 @@ document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.option-button').forEach(b => b.classList.remove('selected'));
             btn.classList.add('selected');
             const optText = option.trim();
-
-            // ИСПРАВЛЕНО: Более строгий regex для A) B) C) D)
             const isLetterOption = optText.match(/^[A-DА-Г][)\.\s]/i);
-
-            if (isLetterOption) {
-              selectedAnswer = optText.charAt(0).toUpperCase();
-            } else {
-              selectedAnswer = optText;
-            }
-
+            selectedAnswer = isLetterOption ? optText.charAt(0).toUpperCase() : optText;
             nextBtn.disabled = false;
           };
           container.appendChild(btn);
         }
       });
     } else {
+      // Открытый вопрос — поле ввода
       const input = document.createElement('input');
       input.type = 'text';
       input.placeholder = 'Введите ответ';
+      input.className = 'open-input'; // для стиля
       input.oninput = (e) => {
         selectedAnswer = e.target.value.trim();
         nextBtn.disabled = !selectedAnswer;
@@ -307,8 +303,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const q = questions[currentQuestionIndex];
 
     let isCorrect = false;
-    const correctDB = q.correct_answer ? q.correct_answer.trim() : '';
-    if (q.options_text && q.options_text.trim() !== '') {
+    const correctDB = (q.correct_answer || '').trim();
+
+    if ((q.options_text || '').trim() !== '') {
       isCorrect = selectedAnswer.toLowerCase() === correctDB.toLowerCase();
     } else {
       const userAns = selectedAnswer?.toLowerCase();
@@ -341,10 +338,12 @@ document.addEventListener('DOMContentLoaded', function() {
   async function finishTour() {
     clearInterval(timerInterval);
 
-    await supabaseClient
+    const { error } = await supabaseClient
       .from('users')
       .update({ tour_completed: true })
       .eq('telegram_id', telegramUserId);
+
+    if (error) console.error('Ошибка обновления tour_completed:', error);
 
     const percent = Math.round((correctCount / questions.length) * 100);
 
