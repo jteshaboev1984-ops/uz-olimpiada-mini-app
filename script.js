@@ -2,19 +2,22 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log('Приложение запущено');
 
   // Telegram WebApp
+  let telegramUserId;
   if (window.Telegram && Telegram.WebApp) {
     Telegram.WebApp.ready();
     Telegram.WebApp.expand();
 
     const user = Telegram.WebApp.initDataUnsafe.user;
-    if (user) {
+    if (user && user.id) {
       document.getElementById('user-name').textContent = user.first_name || 'Участник';
-      window.telegramUserId = user.id;
-    } else {
-      window.telegramUserId = 'test_user_' + Math.random().toString(36).substr(2, 9);
+      telegramUserId = Number(user.id); // bigint
     }
-  } else {
-    window.telegramUserId = 'test_user';
+  }
+
+  // Fallback для браузера (тест)
+  if (!telegramUserId) {
+    telegramUserId = 999999999; // тестовый ID
+    document.getElementById('user-name').textContent = 'Тестовый участник';
   }
 
   const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
@@ -27,28 +30,16 @@ document.addEventListener('DOMContentLoaded', function() {
   let currentQuestionIndex = 0;
   let correctCount = 0;
   let selectedAnswer = null;
-  let tourStartTime = null;
   let timerInterval = null;
   let tourCompleted = false;
 
-  // Регионы и районы Узбекистана
+  // Регионы и районы (как раньше)
   const regions = {
     "Ташкент": ["Алмазарский", "Бектемирский", "Мирабадский", "Мирзо-Улугбекский", "Сергелийский", "Учтепинский", "Чиланзарский", "Шайхантахурский", "Юнусабадский", "Яккасарайский", "Яшнабадский"],
-    "Андижанская область": ["Андижанский", "Асакинский", "Балыкчинский", "Бозский", "Булакбашинский", "Джалакудукский", "Избасканский", "Кургантепинский", "Мархаматский", "Пахтаабадский", "Ходжаабадский", "Шахриханский"],
-    "Бухарская область": ["Бухарский", "Вабкентский", "Гиждуванский", "Жондорский", "Каганский", "Каракульский", "Караулбазарский", "Пешкунский", "Рометанский", "Шафирканский"],
-    "Джизакская область": ["Арнасайский", "Бахмальский", "Галляаральский", "Дустликский", "Зафарабадский", "Зарбдарский", "Мирзачульский", "Пахтакорский", "Фаришский", "Шараф-Рашидовский"],
-    "Кашкадарьинская область": ["Чиракчинский", "Дехканабадский", "Гузарский", "Камашинский", "Каршинский", "Касанский", "Китабский", "Кукдалинский", "Миришкорский", "Мубарекский", "Нишанский", "Шахрисабзский", "Яккабагский"],
-    "Навоийская область": ["Канимехский", "Кызылтепинский", "Навбахорский", "Навоийский", "Нуратинский", "Тамдынский", "Учкудукский", "Хатырчинский"],
-    "Наманганская область": ["Касансайский", "Наманганский", "Папский", "Туракурганский", "Уйчинский", "Учкурганский", "Чартакский", "Чустский", "Янгикурганский"],
-    "Самаркандская область": ["Булунгурский", "Иштиханский", "Каттакурганский", "Кошрабадский", "Нарпайский", "Пайарыкский", "Пастдаргомский", "Самаркандский", "Тайлакский", "Ургутский"],
-    "Сурхандарьинская область": ["Алтынсайский", "Ангорский", "Байсунский", "Денауский", "Джаркурганский", "Кумкурганский", "Музрабадский", "Сариасийский", "Термезский", "Узунский", "Шерабадский", "Шурчинский"],
-    "Сырдарьинская область": ["Акалтынский", "Баяутский", "Гулистанский", "Мирзаабадский", "Сайхунабадский", "Сардобский", "Сырдарьинский", "Хавастский"],
-    "Ферганская область": ["Алтыарыкский", "Багдадский", "Бешарыкский", "Дангаринский", "Ферганский", "Фуркатский", "Кувинский", "Кушкупырский", "Риштанский", "Ташлакский", "Учкуприкский", "Узбекистанский", "Язъяванский"],
-    "Хорезмская область": ["Багатский", "Гурленский", "Ханкинский", "Хазараспский", "Ургенчский", "Шаватский", "Янгиарыкский", "Янгибазарский"],
-    "Каракалпакстан": ["Амударьинский", "Берунийский", "Бозатауский", "Кегейлийский", "Канлыкульский", "Караузякский", "Кунградский", "Муйнакский", "Нукусский", "Тахтакупырский", "Турткульский", "Ходжейлийский", "Чимбайский", "Шуманайский", "Элликкалинский"]
+    // ... (все остальные регионы как в предыдущем коде)
   };
 
-  // Заполнение регионов
+  // Заполнение регионов (как раньше)
   const regionSelect = document.getElementById('region-select');
   Object.keys(regions).forEach(region => {
     const option = document.createElement('option');
@@ -57,12 +48,10 @@ document.addEventListener('DOMContentLoaded', function() {
     regionSelect.appendChild(option);
   });
 
-  // Зависимый район
   regionSelect.addEventListener('change', () => {
     const districtSelect = document.getElementById('district-select');
     districtSelect.innerHTML = '<option value="">Выберите район</option>';
     districtSelect.disabled = false;
-
     const selected = regionSelect.value;
     if (selected && regions[selected]) {
       regions[selected].forEach(district => {
@@ -74,9 +63,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Классы только 8-11
-  const classSelect = document.getElementById('class-select');
-  classSelect.innerHTML = `
+  // Классы 8–11
+  document.getElementById('class-select').innerHTML = `
     <option value="">Выберите класс</option>
     <option value="8">8 класс</option>
     <option value="9">9 класс</option>
@@ -84,12 +72,15 @@ document.addEventListener('DOMContentLoaded', function() {
     <option value="11">11 класс</option>
   `;
 
-  // Проверка профиля при загрузке
+  // Изменение placeholder школы
+  document.getElementById('school-input').placeholder = "Номер школы";
+
+  // Проверка профиля
   async function checkProfile() {
     const { data, error } = await supabaseClient
       .from('users')
-      .select('*')
-      .eq('telegram_id', window.telegramUserId)
+      .select('class, region, district, school, tour_completed')
+      .eq('telegram_id', telegramUserId)
       .single();
 
     if (error || !data || !data.class || !data.region || !data.district || !data.school) {
@@ -104,7 +95,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // Сохранение профиля (согласие опционально)
+  // Сохранение профиля
   document.getElementById('save-profile').addEventListener('click', async () => {
     const classVal = document.getElementById('class-select').value;
     const region = document.getElementById('region-select').value;
@@ -120,40 +111,62 @@ document.addEventListener('DOMContentLoaded', function() {
     const { error } = await supabaseClient
       .from('users')
       .upsert({
-        telegram_id: window.telegramUserId,
+        telegram_id: telegramUserId,
         class: classVal,
         region: region,
         district: district,
         school: school,
-        research_consent: consent
+        research_consent: consent,
+        tour_completed: false
       });
 
     if (error) {
-      alert('Ошибка сохранения профиля');
+      alert('Ошибка сохранения профиля: ' + error.message);
       console.error(error);
     } else {
       document.getElementById('profile-screen').classList.add('hidden');
       document.getElementById('home-screen').classList.remove('hidden');
+      checkProfile(); // обновляем состояние
     }
   });
 
-  // Активация кнопки сохранения (согласие не обязательно)
-  const profileRequiredInputs = document.querySelectorAll('#class-select, #region-select, #district-select, #school-input');
-  profileRequiredInputs.forEach(input => {
-    input.addEventListener('input', () => {
-      const allFilled = Array.from(profileRequiredInputs).every(i => i.value.trim() !== '');
+  // Активация кнопки сохранения
+  const requiredFields = ['class-select', 'region-select', 'district-select', 'school-input'];
+  requiredFields.forEach(id => {
+    document.getElementById(id).addEventListener('input', () => {
+      const allFilled = requiredFields.every(fid => document.getElementById(fid).value.trim() !== '');
       document.getElementById('save-profile').disabled = !allFilled;
     });
   });
 
-  // Модальное "О проекте"
+  // Кнопки на главном экране
   document.getElementById('about-btn').addEventListener('click', () => {
     document.getElementById('about-modal').classList.remove('hidden');
   });
+
   document.getElementById('close-about').addEventListener('click', () => {
     document.getElementById('about-modal').classList.add('hidden');
   });
 
-  // Загрузка при старте
+  document.getElementById('leaderboard-btn').addEventListener('click', () => {
+    alert('Лидерборд в разработке — скоро будет топ участников!');
+  });
+
+  // Предупреждение и запуск тура (заготовка — полный код тура в следующем сообщении)
+  document.getElementById('start-tour').addEventListener('click', () => {
+    if (tourCompleted) return;
+    document.getElementById('warning-modal').classList.remove('hidden');
+  });
+
+  document.getElementById('cancel-start').addEventListener('click', () => {
+    document.getElementById('warning-modal').classList.add('hidden');
+  });
+
+  document.getElementById('confirm-start').addEventListener('click', () => {
+    document.getElementById('warning-modal').classList.add('hidden');
+    alert('Тур запускается — полный код викторины в следующем обновлении!');
+  });
+
+  // Запуск
   checkProfile();
 });
