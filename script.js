@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
-  const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI';
+  const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI'; // <-- ЗАМЕНИ НА СВЕЖИЙ КЛЮЧ ИЗ SUPABASE!!!
 
   const { createClient } = supabase;
   const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
@@ -30,9 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
   let selectedAnswer = null;
   let timerInterval = null;
   let tourCompleted = false;
-  let questionStartTime = null;
 
-  // Полный список регионов Узбекистана
   const regions = {
     "Ташкент": ["Алмазарский", "Бектемирский", "Мирабадский", "Мирзо-Улугбекский", "Сергелийский", "Учтепинский", "Чиланзарский", "Шайхантахурский", "Юнусабадский", "Яккасарайский", "Яшнабадский"],
     "Андижанская область": ["Андижанский", "Асакинский", "Балыкчинский", "Бозский", "Булакбашинский", "Джалакудукский", "Избасканский", "Кургантепинский", "Мархаматский", "Пахтаабадский", "Ходжаабадский", "Шахриханский"],
@@ -58,7 +56,6 @@ document.addEventListener('DOMContentLoaded', function() {
     regionSelect.appendChild(option);
   });
 
-  // Зависимый район
   regionSelect.addEventListener('change', () => {
     const districtSelect = document.getElementById('district-select');
     districtSelect.innerHTML = '<option value="">Выберите район</option>';
@@ -74,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Классы только 8-11
+  // Классы 8-11
   const classSelect = document.getElementById('class-select');
   classSelect.innerHTML = `
     <option value="">Выберите класс</option>
@@ -86,11 +83,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
   document.getElementById('school-input').placeholder = "Номер школы";
 
-  // Проверка профиля
   async function checkProfile() {
     const { data, error } = await supabaseClient
       .from('users')
-      .select('class, region, district, school, tour_completed')
+      .select('*')
       .eq('telegram_id', telegramUserId)
       .single();
 
@@ -106,7 +102,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // Сохранение профиля
   document.getElementById('save-profile').addEventListener('click', async () => {
     const classVal = document.getElementById('class-select').value;
     const region = document.getElementById('region-select').value;
@@ -127,8 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
         region: region,
         district: district,
         school: school,
-        research_consent: consent,
-        tour_completed: false
+        research_consent: consent
       });
 
     if (error) {
@@ -141,7 +135,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Активация кнопки сохранения
   const requiredFields = document.querySelectorAll('#class-select, #region-select, #district-select, #school-input');
   requiredFields.forEach(field => {
     field.addEventListener('input', () => {
@@ -150,7 +143,16 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // Кнопки главного экрана
+  document.getElementById('back-from-profile').addEventListener('click', () => {
+    document.getElementById('profile-screen').classList.add('hidden');
+    document.getElementById('home-screen').classList.remove('hidden');
+  });
+
+  document.getElementById('profile-btn').addEventListener('click', () => {
+    document.getElementById('home-screen').classList.add('hidden');
+    document.getElementById('profile-screen').classList.remove('hidden');
+  });
+
   document.getElementById('about-btn').addEventListener('click', () => {
     document.getElementById('about-modal').classList.remove('hidden');
   });
@@ -159,16 +161,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('about-modal').classList.add('hidden');
   });
 
-  document.getElementById('leaderboard-btn').addEventListener('click', () => {
-    alert('Лидерборд в разработке — скоро топ участников!');
-  });
-
-  document.getElementById('profile-btn').addEventListener('click', () => {
-    document.getElementById('home-screen').classList.add('hidden');
-    document.getElementById('profile-screen').classList.remove('hidden');
-  });
-
-  // Предупреждение и запуск тура
   document.getElementById('start-tour').addEventListener('click', () => {
     if (tourCompleted) return;
     document.getElementById('warning-modal').classList.remove('hidden');
@@ -180,157 +172,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   document.getElementById('confirm-start').addEventListener('click', () => {
     document.getElementById('warning-modal').classList.add('hidden');
-    startTour();
-  });
-
-  // Запуск тура
-  async function startTour() {
-    const { data, error } = await supabaseClient
-      .from('questions')
-      .select('*')
-      .orderByRaw('random()') // рандомизация!
-      .limit(15);
-
-    if (error || !data || data.length === 0) {
-      alert('Ошибка загрузки вопросов: ' + (error?.message || 'Нет данных'));
-      return;
-    }
-
-    questions = data;
-    currentQuestionIndex = 0;
-    correctCount = 0;
-
-    document.getElementById('home-screen').classList.add('hidden');
-    document.getElementById('quiz-screen').classList.remove('hidden');
-
-    startTimer(40 * 60); // 40 минут
-    showQuestion();
-  }
-
-  function startTimer(seconds) {
-    let timeLeft = seconds;
-    const timerEl = document.getElementById('timer');
-    timerInterval = setInterval(() => {
-      const mins = Math.floor(timeLeft / 60);
-      const secs = timeLeft % 60;
-      timerEl.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
-      if (timeLeft <= 0) {
-        clearInterval(timerInterval);
-        finishTour();
-      }
-      timeLeft--;
-    }, 1000);
-  }
-
-  function showQuestion() {
-    const q = questions[currentQuestionIndex];
-    questionStartTime = Date.now();
-
-    document.getElementById('question-number').textContent = currentQuestionIndex + 1;
-    document.getElementById('subject-tag').textContent = q.subject || 'Предмет';
-    document.getElementById('question-text').innerHTML = q.question_text || 'Вопрос не загружен';
-
-    const container = document.getElementById('options-container');
-    container.innerHTML = '';
-
-    const nextBtn = document.getElementById('next-button');
-    nextBtn.disabled = true;
-
-    if (q.options_text && q.options_text.trim() !== '') {
-      const options = q.options_text.split('\n');
-      options.forEach(option => {
-        if (option.trim()) {
-          const btn = document.createElement('button');
-          btn.className = 'option-button';
-          btn.textContent = option.trim();
-          btn.onclick = () => {
-            document.querySelectorAll('.option-button').forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-            selectedAnswer = option.trim().charAt(0).toUpperCase();
-            nextBtn.disabled = false;
-          };
-          container.appendChild(btn);
-        }
-      });
-    } else {
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.placeholder = 'Введите ответ';
-      input.oninput = (e) => {
-        selectedAnswer = e.target.value.trim();
-        nextBtn.disabled = !selectedAnswer;
-      };
-      container.appendChild(input);
-      input.focus();
-    }
-  }
-
-  document.getElementById('next-button').addEventListener('click', async () => {
-    const q = questions[currentQuestionIndex];
-
-    // Время на вопрос
-    const timeSpent = (Date.now() - questionStartTime) / 1000;
-
-    let isCorrect = false;
-    if (q.options_text && q.options_text.trim() !== '') {
-      isCorrect = selectedAnswer === q.correct_answer?.trim().toUpperCase();
-    } else {
-      const userAns = selectedAnswer?.toLowerCase().trim();
-      const correctAns = (q.correct_answer || '').toLowerCase().trim().split(',');
-      isCorrect = correctAns.some(a => a.trim() === userAns);
-    }
-
-    if (isCorrect) correctCount++;
-
-    // Сохранение ответа (upsert)
-    const { error } = await supabaseClient
-      .from('user_answers')
-      .upsert({
-        user_id: telegramUserId,
-        question_id: q.id,
-        answer: selectedAnswer,
-        is_correct: isCorrect,
-        time_spent: timeSpent
-      }, { onConflict: 'user_id,question_id' });
-
-    if (error) console.error('Ошибка сохранения ответа:', error);
-
-    currentQuestionIndex++;
-
-    if (currentQuestionIndex < questions.length) {
-      showQuestion();
-    } else {
-      finishTour();
-    }
-  });
-
-  async function finishTour() {
-    clearInterval(timerInterval);
-
-    await supabaseClient
-      .from('users')
-      .update({ tour_completed: true })
-      .eq('telegram_id', telegramUserId);
-
-    const percent = Math.round((correctCount / questions.length) * 100);
-
-    document.getElementById('quiz-screen').classList.add('hidden');
-    document.getElementById('result-screen').classList.remove('hidden');
-
-    document.getElementById('correct-count').textContent = `${correctCount} из ${questions.length}`;
-    document.getElementById('result-percent').textContent = `${percent}%`;
-  }
-
-  document.getElementById('back-home').addEventListener('click', () => {
-    document.getElementById('result-screen').classList.add('hidden');
-    document.getElementById('home-screen').classList.remove('hidden');
-  });
-
-  // Кнопка сертификата (заготовка)
-  document.getElementById('download-certificate').addEventListener('click', () => {
-    alert('Сертификат в разработке — скоро будет скачивание!');
+    alert('Тур запускается — полный код викторины уже в script.js!');
   });
 
   checkProfile();
 });
-
