@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
-  const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI'; // <-- ЗАМЕНИ НА СВЕЖИЙ КЛЮЧ ИЗ SUPABASE!!!
+  const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI';
 
   const { createClient } = supabase;
   const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
@@ -83,6 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   document.getElementById('school-input').placeholder = "Номер школы";
 
+  // Проверка профиля
   async function checkProfile() {
     const { data, error } = await supabaseClient
       .from('users')
@@ -102,7 +103,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  document.getElementById('save-profile').addEventListener('click', async () => {
+  // Сохранение профиля с подтверждением
+  document.getElementById('save-profile').addEventListener('click', () => {
     const classVal = document.getElementById('class-select').value;
     const region = document.getElementById('region-select').value;
     const district = document.getElementById('district-select').value;
@@ -114,6 +116,12 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
+    if (confirm('Данные нельзя будет изменить после сохранения. Вы уверены?')) {
+      saveProfileToDB(classVal, region, district, school, consent);
+    }
+  });
+
+  async function saveProfileToDB(classVal, region, district, school, consent) {
     const { error } = await supabaseClient
       .from('users')
       .upsert({
@@ -126,15 +134,16 @@ document.addEventListener('DOMContentLoaded', function() {
       });
 
     if (error) {
-      alert('Ошибка сохранения: ' + error.message);
+      alert('Ошибка сохранения профиля: ' + error.message);
       console.error(error);
     } else {
       document.getElementById('profile-screen').classList.add('hidden');
       document.getElementById('home-screen').classList.remove('hidden');
       checkProfile();
     }
-  });
+  }
 
+  // Активация кнопки сохранения
   const requiredFields = document.querySelectorAll('#class-select, #region-select, #district-select, #school-input');
   requiredFields.forEach(field => {
     field.addEventListener('input', () => {
@@ -143,16 +152,19 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
+  // Кнопка "Назад" в профиле
   document.getElementById('back-from-profile').addEventListener('click', () => {
     document.getElementById('profile-screen').classList.add('hidden');
     document.getElementById('home-screen').classList.remove('hidden');
   });
 
+  // Кнопка "Мой профиль" на главном
   document.getElementById('profile-btn').addEventListener('click', () => {
     document.getElementById('home-screen').classList.add('hidden');
     document.getElementById('profile-screen').classList.remove('hidden');
   });
 
+  // Кнопки "О проекте" и "Лидерборд"
   document.getElementById('about-btn').addEventListener('click', () => {
     document.getElementById('about-modal').classList.remove('hidden');
   });
@@ -161,8 +173,16 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('about-modal').classList.add('hidden');
   });
 
+  document.getElementById('leaderboard-btn').addEventListener('click', () => {
+    alert('Лидерборд в разработке — скоро будет топ участников!');
+  });
+
+  // "Начать тур"
   document.getElementById('start-tour').addEventListener('click', () => {
-    if (tourCompleted) return;
+    if (tourCompleted) {
+      alert('Вы уже прошли тур. Результаты сохранены. Повтор невозможен.');
+      return;
+    }
     document.getElementById('warning-modal').classList.remove('hidden');
   });
 
@@ -172,8 +192,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
   document.getElementById('confirm-start').addEventListener('click', () => {
     document.getElementById('warning-modal').classList.add('hidden');
-    alert('Тур запускается — полный код викторины уже в script.js!');
+    startTour();
   });
+
+  async function startTour() {
+    alert('Тур запускается — вопросы загружаются... (полный код викторины в следующей версии)');
+    // Здесь будет полный код викторины
+  }
 
   checkProfile();
 });
