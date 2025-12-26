@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Smart Olympiad</title>
+  <title>Олимпиада Cambridge</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="supabase.min.js?v=1"></script>
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 
   <!-- Главный экран -->
   <div class="screen" id="home-screen">
     <div class="container">
-      <h1>Smart Olympiad</h1>
-      <p class="description">Привет, <span id="user-name">участник</span>!<br>Добро пожаловать на бесплатную онлайн-олимпиаду.</p>
+      <h1>Привет, <span id="user-name">участник</span>!</h1>
+      <p class="description">Межпредметная олимпиада Cambridge-уровня</p>
 
       <div class="progress-grid" id="progress-grid">
         <!-- Карточки генерируются в JS -->
@@ -22,15 +22,18 @@
 
       <button id="start-tour" class="big-button">Начать тур</button>
       <button id="leaderboard-btn" class="big-button secondary">Лидерборд</button>
+      <button id="profile-btn" class="big-button secondary">Мой профиль</button>
       <button id="about-btn" class="big-button secondary">О проекте</button>
+      <button id="progress-btn" class="big-button secondary">Прогресс</button>
+      <button id="exit-btn" class="big-button secondary">Выход</button>
     </div>
   </div>
 
   <!-- Экран профиля -->
   <div class="screen hidden" id="profile-screen">
     <div class="container">
-      <h1>Форма участника</h1>
-      <p class="description">Заполните данные для участия в олимпиаде</p>
+      <h1>Завершите профиль</h1>
+      <p class="description">Это необходимо для участия и сертификата</p>
 
       <div class="form-group">
         <label>Класс</label>
@@ -55,11 +58,11 @@
       <div class="form-group checkbox">
         <label>
           <input type="checkbox" id="research-consent">
-          Согласен на участие в анонимном исследовании (обязательное условие для получения персональных рекомендаций)
+          Согласен на участие в анонимном исследовании (добровольно)
         </label>
       </div>
 
-      <button id="save-profile" class="big-button" disabled>Сохранить и продолжить →</button>
+      <button id="save-profile" class="big-button" disabled>Сохранить и продолжить</button>
       <button id="back-from-profile" class="big-button secondary">Назад</button>
     </div>
   </div>
@@ -68,9 +71,9 @@
   <div class="screen hidden" id="quiz-screen">
     <div class="container">
       <div class="quiz-header">
-        <div class="timer" id="timer">40:00</div>
-        <div class="question-counter">
+        <div class="progress-top">
           <span id="question-number">1</span> / <span id="total-questions">15</span>
+          <span id="timer" class="timer">40:00</span>
         </div>
       </div>
 
@@ -79,35 +82,19 @@
 
       <div id="options-container"></div>
 
-      <button id="next-button" class="big-button" disabled>Далее →</button>
+      <button id="next-button" class="big-button" disabled>Далее</button>
     </div>
   </div>
 
   <!-- Экран результата -->
   <div class="screen hidden" id="result-screen">
     <div class="container result-container">
-      <h1 class="result-title">Результат тура</h1>
-      <p class="result-percent-large" id="result-percent">0%</p>
+      <h1>Тур завершён!</h1>
       <p class="result-text">Правильных ответов:</p>
       <p class="result-score" id="correct-count">0 из 15</p>
+      <p class="result-percent" id="result-percent">0%</p>
 
-      <div class="subject-progress">
-        <h3>Рейтинг по предметам</h3>
-        <div class="progress-item">
-          <div>Mathematics (IGCSE)</div>
-          <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
-        </div>
-        <div class="progress-item">
-          <div>English (IELTS)</div>
-          <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
-        </div>
-        <div class="progress-item">
-          <div>Critical Thinking (SAT)</div>
-          <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
-        </div>
-      </div>
-
-      <button id="download-certificate" class="big-button">Показать сертификат</button>
+      <button id="download-certificate" class="big-button">Скачать сертификат</button>
       <button id="back-home" class="big-button secondary">На главную</button>
     </div>
   </div>
@@ -115,13 +102,13 @@
   <!-- Модальное предупреждение -->
   <div class="modal hidden" id="warning-modal">
     <div class="modal-content">
-      <h2>Предупреждение перед туром</h2>
+      <h2>Внимание!</h2>
       <p>У вас будет 40 минут на 15 вопросов.</p>
       <p>Повтор тура невозможен даже при сбое связи или закрытии приложения.</p>
       <p>Результаты сохраняются автоматически после каждого ответа.</p>
-      <p>Готовы начать?</p>
+      <p>Убедитесь, что интернет стабилен.</p>
       <div class="modal-buttons">
-        <button id="confirm-start" class="big-button">Начать тур →</button>
+        <button id="confirm-start" class="big-button">Начать тур</button>
         <button id="cancel-start" class="big-button secondary">Отмена</button>
       </div>
     </div>
@@ -132,47 +119,28 @@
     <div class="modal-content">
       <button class="close-modal" id="close-about">×</button>
       <h2>О проекте</h2>
-      <p><strong>ONLINE • Grades 8-11</strong></p>
-      <p>Бесплатная олимпиада нового формата</p>
-      <p>Уникальное соревнование, охватывающее академические стандарты Cambridge IGCSE/AS Level с элементами международных экзаменов SAT и IELTS. Проверь свои знания на глобальном уровне, не выходя из Telegram.</p>
-      
+      <p>Межпредметная олимпиада Cambridge-уровня</p>
+      <p>Это академическая олимпиада для школьников Узбекистана, задания которой выровнены по международным стандартам Cambridge IGCSE и AS Level и включают элементы SAT/IELTS-style reasoning.</p>
       <p><strong>Цели проекта:</strong></p>
       <ul>
-        <li>Выявление талантов</li>
-        <li>Поддержка одаренных школьников, стремящихся к международному образованию</li>
-        <li>Проверка правил участия</li>
+        <li>Развитие критического мышления и аналитических навыков</li>
+        <li>Подготовка к международным экзаменам и поступлению в топ-вузы</li>
+        <li>Выявление талантливых учеников из всех регионов страны</li>
+        <li>Добровольное участие в образовательных исследованиях</li>
       </ul>
-      
-      <p><strong>Подача апелляций:</strong><br>Заполните форму, если вы не согласны с результатом оценки. Апелляции принимаются в течение 24 часов после публикации результатов.</p>
-      <p><strong>Суть претензий:</strong><br>Подробно опишите ошибку или приведите причину несогласия. Ссылки на авторитетные источники приветствуются.</p>
+      <p><strong>Особенности:</strong></p>
+      <ul>
+        <li>6 предметов: Математика, Химия, Биология, Информатика, Экономика, SAT/IELTS</li>
+        <li>Один тур из 15 вопросов</li>
+        <li>Автоматическая проверка и мгновенный результат</li>
+        <li>Сертификат участника</li>
+      </ul>
+      <p>Проект реализуется с использованием современных технологий Telegram и Supabase для максимальной доступности.</p>
+      <p>Организатор: [Твоё имя / организация]<br>2025–2026 учебный год</p>
+      <button class="big-button" id="close-about">Закрыть</button>
     </div>
   </div>
 
-  <!-- Экран Лидерборд (заглушка) -->
-  <div class="screen hidden" id="leaderboard-screen">
-    <div class="container">
-      <h1>Лидерборд</h1>
-      <p class="description">Топ участников олимпиады</p>
-      
-      <div class="leaderboard-item">
-        <div class="leaderboard-rank">#1</div>
-        <div class="leaderboard-name">Maria K.</div>
-        <div class="leaderboard-score">1200</div>
-        <div class="leaderboard-percent">96%</div>
-      </div>
-      
-      <div class="leaderboard-item">
-        <div class="leaderboard-rank">#2</div>
-        <div class="leaderboard-name">Alex S.</div>
-        <div class="leaderboard-score">1145</div>
-        <div class="leaderboard-percent">95%</div>
-      </div>
-      
-      <button id="back-from-leaderboard" class="big-button secondary">Назад</button>
-    </div>
-  </div>
-
-  <script src="script.js?v=4"></script>
+  <script src="script.js?v=3"></script>
 </body>
 </html>
-
