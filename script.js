@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v23.0 (Bulletproof)');
+    console.log('App Started: v26.0 (Leaderboard Empty State Fix)');
   
     let telegramUserId; 
     let internalDbId = null; 
@@ -213,7 +213,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function handleStartClick() {
-        const btn = document.getElementById('start-tour-btn');
+        const btn = document.getElementById('main-action-btn');
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Загрузка...';
         
         const { data } = await supabaseClient
@@ -237,37 +237,29 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateMainButton(state, title = "Начать тур") {
-        const container = document.getElementById('main-btn-container');
+        const btn = document.getElementById('main-action-btn');
         const certBtn = document.getElementById('download-cert-main-btn');
+        if (!btn) return;
         
-        // Очистка контейнера
-        container.innerHTML = ''; 
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+        const activeBtn = document.getElementById('main-action-btn');
 
         if (state === 'inactive') {
-            const btn = document.createElement('button');
-            btn.className = 'btn-primary';
-            btn.disabled = true;
-            btn.style.background = "#8E8E93";
-            btn.innerHTML = '<i class="fa-solid fa-calendar-xmark"></i> Нет активных туров';
-            container.appendChild(btn);
+            activeBtn.innerHTML = '<i class="fa-solid fa-calendar-xmark"></i> Нет активных туров';
+            activeBtn.disabled = true;
+            activeBtn.style.background = "#8E8E93";
             certBtn.classList.add('hidden');
         } else if (state === 'completed') {
-            const btn = document.createElement('button');
-            // Зеленая неактивная кнопка
-            btn.className = 'btn-success-disabled';
-            btn.innerHTML = '<i class="fa-solid fa-check"></i> Текущий тур пройден';
-            container.appendChild(btn);
-            
-            // Показываем кнопку сертификатов
+            activeBtn.innerHTML = '<i class="fa-solid fa-check"></i> Текущий тур пройден';
+            activeBtn.className = 'btn-success-disabled';
             certBtn.classList.remove('hidden');
         } else {
-            // Кнопка Старт
-            const btn = document.createElement('button');
-            btn.className = 'btn-primary';
-            btn.innerHTML = `<i class="fa-solid fa-play"></i> ${title}`;
-            btn.addEventListener('click', handleStartClick);
-            container.appendChild(btn);
+            activeBtn.innerHTML = `<i class="fa-solid fa-play"></i> ${title}`;
+            activeBtn.className = 'btn-primary';
+            activeBtn.disabled = false;
             certBtn.classList.add('hidden');
+            activeBtn.addEventListener('click', handleStartClick);
         }
     }
 
@@ -391,15 +383,19 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('certs-modal').classList.remove('hidden');
     });
   
-    // --- LEADERBOARD (FIX 400 + FILTER) ---
+    // --- LEADERBOARD (FIXED EMPTY STATE) ---
     async function loadLeaderboard() {
         if (!currentTourId) return;
         
         const podium = document.getElementById('lb-podium');
         const list = document.getElementById('lb-list');
+        const emptyMsg = document.getElementById('lb-empty-msg');
+        
         if(podium) podium.innerHTML = '<p style="text-align:center;width:100%;color:rgba(0,0,0,0.5);margin-top:20px;">Загрузка...</p>';
         if(list) list.innerHTML = '';
+        if(emptyMsg) emptyMsg.classList.add('hidden');
 
+        // 1. Get Top Scores
         const { data: progressData, error } = await supabaseClient
             .from('tour_progress')
             .select('user_id, score')
@@ -407,19 +403,21 @@ document.addEventListener('DOMContentLoaded', function() {
             .order('score', { ascending: false })
             .limit(20);
 
+        // HANDLE EMPTY DB
         if (error || !progressData || progressData.length === 0) {
-            if(podium) podium.innerHTML = '<p style="text-align:center;width:100%;color:rgba(0,0,0,0.5);margin-top:20px;">Пока нет результатов</p>';
+            if(podium) podium.innerHTML = ''; // Скрыть текст загрузки
+            if(emptyMsg) emptyMsg.classList.remove('hidden'); // Показать красивый пустой стейт
             return;
         }
 
-        // ВАЖНО: Фильтруем мусор (null/undefined)
         const userIds = progressData
             .map(p => p.user_id)
             .filter(id => id !== null && id !== undefined);
         
         if (userIds.length === 0) {
-             if(podium) podium.innerHTML = '<p style="text-align:center;width:100%;color:rgba(0,0,0,0.5);margin-top:20px;">Пока нет результатов</p>';
-             return;
+            if(podium) podium.innerHTML = '';
+            if(emptyMsg) emptyMsg.classList.remove('hidden');
+            return;
         }
 
         const { data: usersData } = await supabaseClient
@@ -430,7 +428,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!usersData) return;
 
         const leaderboard = progressData.map((entry, index) => {
-            if (!entry.user_id) return null; // Skip invalid
+            if (!entry.user_id) return null;
             const user = usersData.find(u => u.id === entry.user_id);
             return {
                 rank: index + 1,
@@ -441,6 +439,7 @@ document.addEventListener('DOMContentLoaded', function() {
             };
         }).filter(item => item !== null);
 
+        // RENDER
         if (podium) {
             podium.innerHTML = '';
             const top3 = [leaderboard[1], leaderboard[0], leaderboard[2]]; 
