@@ -2,7 +2,9 @@
 
 :root {
     --primary: #007AFF;
+    --primary-dark: #0056b3;
     --bg-color: #F2F3F5;
+    --card-bg: #FFFFFF;
     --text-main: #000000;
     --text-sec: #8E8E93;
     --border: #E5E5EA;
@@ -33,6 +35,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .btn-primary:active { transform: scale(0.98); }
 .btn-primary:disabled { background: #B4D5FE; cursor: default; }
 
+/* Зеленая кнопка (активная) */
 .btn-success-clickable {
     background: var(--success) !important; color: white !important; 
     width: 100%; padding: 16px; border-radius: 14px; font-size: 17px; font-weight: 600; 
@@ -47,7 +50,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .btn-danger-box { background: #FF3B301A; color: var(--danger); border: 1px solid transparent; width: 100%; padding: 16px; border-radius: 14px; margin-top: 5px; font-size: 17px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .btn-danger-box:active { background: #FF3B3033; }
 
-/* --- НОВАЯ КНОПКА ЗАКРЫТЬ (iOS Style) --- */
+/* НОВАЯ КРАСИВАЯ КНОПКА ЗАКРЫТЬ */
 .btn-text-simple {
     background: transparent;
     color: #8E8E93; /* Приятный серый */
@@ -205,8 +208,6 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .error-review-card { background: white; border-radius: 16px; padding: 16px; margin-top: 10px; }
 .review-item { padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid #F0F0F0; }
 .review-header { display: flex; gap: 8px; align-items: center; font-size: 12px; font-weight: 600; color: var(--text-sec); text-transform: uppercase; }
-
-/* MODALS */
 .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 10000; }
 .modal-card { background: white; border-radius: 24px; padding: 24px; width: 90%; max-width: 400px; text-align: center; animation: slideUp 0.3s ease; }
 @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
