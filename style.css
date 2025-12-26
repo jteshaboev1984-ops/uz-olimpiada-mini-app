@@ -10,8 +10,6 @@
     --border: #E5E5EA;
     --success: #34C759;
     --danger: #FF3B30;
-    --warning-bg: #FFF9E0;
-    --warning-text: #FFB800;
     --radius: 16px;
     --shadow: 0 4px 12px rgba(0,0,0,0.06);
 }
@@ -23,11 +21,11 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .hidden { display: none !important; }
 .container { padding: 16px; max-width: 500px; margin: 0 auto; }
 
-/* FIX GAP & PADDING */
+/* ОТСТУПЫ */
 .pb-home { padding-bottom: 220px !important; }
 .pb-large { padding-bottom: 180px; }
 
-/* BUTTONS */
+/* КНОПКИ */
 .btn-primary { 
     background: var(--primary); color: white; border: none; width: 100%; padding: 16px; 
     border-radius: 14px; font-size: 17px; font-weight: 600; cursor: pointer; 
@@ -37,13 +35,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .btn-primary:active { transform: scale(0.98); }
 .btn-primary:disabled { background: #B4D5FE; cursor: default; }
 
-.btn-secondary { background: #FFFFFF; color: var(--primary); border: 1px solid #E5E5EA; width: 100%; padding: 16px; border-radius: 14px; font-size: 17px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: var(--shadow); }
-.btn-secondary:active { background: #f9f9f9; }
-
-.btn-danger-box { background: #FF3B301A; color: var(--danger); border: 1px solid transparent; width: 100%; padding: 16px; border-radius: 14px; margin-top: 5px; font-size: 17px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-.btn-danger-box:active { background: #FF3B3033; }
-
-/* ЗЕЛЕНАЯ КНОПКА (ТУР ПРОЙДЕН) */
+/* Зеленая кнопка (активная) */
 .btn-success-clickable {
     background: var(--success) !important; color: white !important; 
     width: 100%; padding: 16px; border-radius: 14px; font-size: 17px; font-weight: 600; 
@@ -52,7 +44,13 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 }
 .btn-success-clickable:active { transform: scale(0.98); opacity: 0.9; }
 
-/* LOCKED PROFILE STATUS BUTTON (Новый стиль) */
+.btn-secondary { background: #FFFFFF; color: var(--primary); border: 1px solid #E5E5EA; width: 100%; padding: 16px; border-radius: 14px; font-size: 17px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: var(--shadow); }
+.btn-secondary:active { background: #f9f9f9; }
+
+.btn-danger-box { background: #FF3B301A; color: var(--danger); border: 1px solid transparent; width: 100%; padding: 16px; border-radius: 14px; margin-top: 5px; font-size: 17px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-danger-box:active { background: #FF3B3033; }
+
+/* КНОПКА ЗАБЛОКИРОВАННОГО ПРОФИЛЯ */
 .locked-status-btn {
     background: #FFF2F2; color: var(--danger); 
     padding: 14px; border-radius: 14px; font-size: 15px; font-weight: 600;
@@ -61,7 +59,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 }
 .locked-status-btn i { font-size: 16px; }
 
-/* BOTTOM FIXED */
+/* ФИКСАЦИЯ ВНИЗУ */
 .bottom-fixed {
     position: fixed; bottom: 0; left: 0; width: 100%;
     background: #FFFFFF; padding: 16px 20px 30px; 
@@ -69,30 +67,37 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 }
 .bottom-fixed.column { display: flex; flex-direction: column; gap: 8px; }
 
-/* FORM STYLES (ИСПРАВЛЕНО) */
+/* ФОРМЫ (ИСПРАВЛЕНО) */
 .form-group { margin-bottom: 16px; }
 .form-group label { display: block; font-size: 14px; color: var(--text-sec); margin-bottom: 8px; font-weight: 500; }
 
-/* ГЛАВНОЕ ИСПРАВЛЕНИЕ: position: relative */
-.input-wrapper { position: relative; width: 100%; }
+/* !!! ВАЖНОЕ ИСПРАВЛЕНИЕ: position: relative !!! */
+.input-wrapper { 
+    position: relative; /* ЭТОЙ СТРОКИ НЕ БЫЛО, ИЗ-ЗА ЭТОГО ИКОНКИ УЛЕТЕЛИ */
+    width: 100%; 
+}
 
 .input-wrapper select, .input-wrapper input { 
-    width: 100%; padding: 16px 40px 16px 16px; /* Место справа для иконки */
-    border: 1px solid var(--border); border-radius: 14px; 
-    background: white; appearance: none; -webkit-appearance: none;
+    width: 100%; padding: 16px 40px 16px 16px; 
+    border: 1px solid var(--border); 
+    border-radius: var(--radius); /* Скругление как у карточек */
+    background: white; 
+    appearance: none; -webkit-appearance: none;
     font-size: 16px; color: var(--text-main); outline: none;
+    box-shadow: var(--shadow); /* Добавил тень, чтобы выглядело как карточка "Участник" */
 }
 .input-wrapper select:focus, .input-wrapper input:focus { border-color: var(--primary); }
+
 .input-wrapper i { 
     position: absolute; right: 16px; top: 50%; transform: translateY(-50%); 
-    color: var(--text-sec); pointer-events: none; font-size: 18px;
-}
-/* Стили для заблокированных полей */
-.input-wrapper select:disabled, .input-wrapper input:disabled { 
-    background: #F2F3F5; color: #666; border-color: transparent; opacity: 1; 
+    color: var(--text-sec); pointer-events: none; font-size: 18px; z-index: 5;
 }
 
-/* CARDS */
+.input-wrapper select:disabled, .input-wrapper input:disabled { 
+    background: #F9F9F9; color: #666; border-color: transparent; opacity: 1; box-shadow: none;
+}
+
+/* КАРТОЧКИ */
 .card, .subject-card, .resource-card, .action-card, .profile-info-card { 
     background-color: #FFFFFF !important; 
     border-radius: var(--radius); 
@@ -104,10 +109,10 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .avatar-circle { width: 48px; height: 48px; position: relative; flex-shrink: 0; }
 .avatar-circle img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
 .verified-badge { position: absolute; bottom: 0; right: 0; width: 18px; height: 18px; background: var(--primary); border: 2px solid white; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; }
-.checkbox-card { display: flex; gap: 12px; align-items: flex-start; border: 1px solid var(--border); padding: 16px; }
+.checkbox-card { display: flex; gap: 12px; align-items: flex-start; border: 1px solid var(--border); padding: 16px; border-radius: var(--radius); box-shadow: var(--shadow); background: white; }
 .checkbox-card input { width: 20px; height: 20px; margin-top: 2px; }
 
-/* TOP BAR & HOME */
+/* ОСТАЛЬНЫЕ СТИЛИ (БЕЗ ИЗМЕНЕНИЙ) */
 .top-bar { display: flex; justify-content: space-between; padding: 16px 20px; background: var(--bg-color); }
 .logo-area { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 18px; }
 .profile-icon-btn { width: 36px; height: 36px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow); }
@@ -118,7 +123,6 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .icon-circle { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; }
 .gold { background: #FFF9E0; color: #FFB800; }
 .purple { background: #F2F0FF; color: #7B61FF; }
-
 .subjects-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .subject-card { padding: 16px; cursor: pointer; transition: transform 0.1s; display: flex; flex-direction: column; justify-content: center; min-height: 100px; }
 .subject-card:active { transform: scale(0.98); }
@@ -137,8 +141,6 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .res-info h4 { font-size: 16px; margin-bottom: 2px; }
 .res-info p { font-size: 13px; color: var(--text-sec); }
 .resource-card .arrow { color: #C7C7CC; }
-
-/* QUIZ UI */
 .quiz-top-bar { padding: 16px 20px; display: flex; justify-content: space-between; background: white; }
 .timer-badge { background: #F2F2F7; padding: 6px 12px; border-radius: 20px; font-weight: 600; display: flex; gap: 6px; align-items: center; }
 .quiz-progress { height: 4px; background: #E5E5EA; width: 100%; }
@@ -153,8 +155,6 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .option-card.selected { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
 .option-card.selected .option-circle { background: var(--primary); color: white; }
 .answer-input { width: 100%; padding: 16px; font-size: 18px; border: 2px solid var(--border); border-radius: 14px; outline: none; }
-
-/* LEADERBOARD & RESULT & MODAL (Standard) */
 .lb-header-bg { background: #EBF4FF; padding-bottom: 20px; border-radius: 0 0 24px 24px; margin-bottom: -15px; position: relative; z-index: 2; }
 .lb-nav { display: flex; align-items: center; padding: 16px 20px; justify-content: center; position: relative; }
 .back-btn-white { position: absolute; left: 20px; color: #333; font-size: 20px; cursor: pointer; }
