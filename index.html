@@ -17,7 +17,6 @@
             <h1>Профиль</h1>
             <p>Данные участника</p>
         </div>
-
         <div class="container pb-large">
             <div class="card profile-info-card">
                 <div class="avatar-circle">
@@ -29,7 +28,6 @@
                     <h3 id="profile-user-name">...</h3>
                 </div>
             </div>
-
             <div class="form-group"><label>Класс</label><div class="input-wrapper"><select id="class-select"></select><i class="fa-solid fa-chevron-down arrow-icon"></i></div></div>
             <div class="form-group"><label>Регион</label><div class="input-wrapper"><select id="region-select"></select><i class="fa-solid fa-location-dot icon-right"></i></div></div>
             <div class="form-group"><label>Район</label><div class="input-wrapper"><select id="district-select" disabled></select><i class="fa-solid fa-map icon-right"></i></div></div>
@@ -39,7 +37,6 @@
                 <div class="checkbox-text"><strong>Согласие на обработку</strong><span>Для рейтинга.</span></div>
             </div>
         </div>
-
         <div class="bottom-fixed">
             <button id="save-profile" class="btn-primary">Сохранить</button>
             <div id="profile-locked-msg" class="locked-message hidden"><i class="fa-solid fa-lock"></i> <span>Профиль заполнен</span></div>
@@ -53,7 +50,7 @@
             <div class="profile-icon-btn" id="open-profile-btn"><i class="fa-regular fa-user"></i></div>
         </div>
 
-        <div class="container pb-extra-large">
+        <div class="container pb-home">
             <h1 class="greeting">Привет, <span id="home-user-name">Участник</span>! 👋</h1>
             <p class="subtitle">Добро пожаловать на олимпиаду.</p>
 
@@ -125,9 +122,13 @@
             </div>
         </div> 
 
-        <div class="bottom-fixed column mt-safe">
-            <button id="main-action-btn" class="btn-primary">Загрузка...</button>
-            <button id="download-cert-main-btn" class="btn-secondary hidden"><i class="fa-solid fa-file-pdf"></i> Скачать сертификат</button>
+        <div class="bottom-fixed column">
+            <div id="main-btn-container" style="width: 100%;">
+                <button id="start-tour-btn" class="btn-primary">Загрузка...</button>
+            </div>
+            <button id="download-cert-main-btn" class="btn-secondary hidden">
+                <i class="fa-solid fa-file-pdf"></i> Скачать сертификат
+            </button>
             <button id="exit-app-btn" class="btn-danger-box">Выход</button>
         </div>
     </div>
@@ -170,15 +171,15 @@
 
             <div class="stats-row-strict">
                 <div class="col-left"><span class="lbl">ТУР</span><span class="val" id="res-tour-title">Тур №1</span></div>
-                <div class="col-center"><span class="lbl">ВСЕГО</span><span class="val" id="res-total">15</span></div>
-                <div class="col-right"><span class="lbl">ВЕРНО</span><span class="val green-text" id="res-correct">0</span></div>
+                <div class="col-center"><span class="lbl">ВСЕГО ВОПРОСОВ</span><span class="val" id="res-total">15</span></div>
+                <div class="col-right"><span class="lbl">ВЕРНЫЕ ОТВЕТЫ</span><span class="val green-text" id="res-correct">0</span></div>
             </div>
 
             <div class="section-header"><h3>Работа над ошибками</h3></div>
             <div class="card error-review-card">
                 <div class="review-item">
                     <div class="review-header"><i class="fa-solid fa-circle-check" style="color:var(--success)"></i> <span>Данные сохранены</span></div>
-                    <p style="font-size:13px; margin-top:5px; color:#666;">Детальный разбор будет доступен в канале.</p>
+                    <p style="font-size:13px; margin-top:5px; color:#666;">Детальный разбор будет доступен после подведения итогов тура.</p>
                 </div>
             </div>
         </div>
@@ -195,20 +196,23 @@
                 <div class="back-btn-white" id="lb-back"><i class="fa-solid fa-arrow-left"></i></div>
                 <h3>Лидерборд</h3>
             </div>
+            
+            <div class="lb-tabs-container">
+                <div class="lb-tabs">
+                    <div class="lb-tab active" id="tab-current">Текущий тур</div>
+                    <div class="lb-tab" id="tab-total">Общий зачет</div>
+                </div>
+            </div>
+
             <div class="container" style="padding-top: 10px;">
                 <div id="lb-podium" class="top-three">
-                   </div>
+                   <p style="color:rgba(0,0,0,0.5); text-align:center; width:100%; margin-top:20px;">Загрузка...</p>
+                </div>
             </div>
         </div>
-        
         <div class="container lb-list-container">
-            <div class="list-header" id="lb-list-header"><span>УЧАСТНИК</span><span>БАЛЛЫ</span></div>
+            <div class="list-header"><span>УЧАСТНИК</span><span>БАЛЛЫ</span></div>
             <div id="lb-list" class="leader-list"></div>
-            
-            <div id="lb-empty-msg" class="hidden" style="text-align: center; padding: 40px 0; color: #8E8E93;">
-                <i class="fa-solid fa-trophy" style="font-size: 40px; color: #E5E5EA; margin-bottom: 10px;"></i>
-                <p>Пока нет результатов.<br>Станьте первым!</p>
-            </div>
         </div>
     </div>
 
