@@ -1,17 +1,15 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v10.0 (UI improvements)');
+    console.log('App Started: v11.0 (Final Fixes)');
   
     let telegramUserId; 
     let internalDbId = null; 
-    let allUserAnswers = []; // Храним ответы для статистики
     
     const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
     const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI';
   
-    // Telegram Init
     if (window.Telegram && window.Telegram.WebApp) {
       Telegram.WebApp.ready();
-      Telegram.WebApp.expand();
+      Telegram.WebApp.expand(); // Важно для скролла
       const user = Telegram.WebApp.initDataUnsafe.user;
       if (user && user.id) {
         document.getElementById('profile-user-name').textContent = user.first_name + ' ' + (user.last_name || '');
@@ -20,7 +18,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
   
-    // Test Mode
     if (!telegramUserId) {
       let storedId = localStorage.getItem('test_user_id');
       if (!storedId) {
@@ -41,7 +38,6 @@ document.addEventListener('DOMContentLoaded', function() {
     let timerInterval = null;
     let tourCompleted = false;
   
-    // --- Regions ---
     const regions = {
       "Ташкент": ["Алмазарский", "Бектемирский", "Мирабадский", "Мирзо-Улугбекский", "Сергелийский", "Учтепинский", "Чиланзарский", "Шайхантахурский", "Юнусабадский", "Яккасарайский", "Яшнабадский"],
       "Андижанская область": ["Андижанский", "Асакинский", "Балыкчинский", "Бозский", "Булакбашинский", "Джалакудукский", "Избасканский", "Кургантепинский", "Мархаматский", "Пахтаабадский", "Ходжаабадский", "Шахриханский"],
@@ -58,7 +54,6 @@ document.addEventListener('DOMContentLoaded', function() {
       "Каракалпакстан": ["Амударьинский", "Берунийский", "Бозатауский", "Кегейлийский", "Канлыкульский", "Караузякский", "Кунградский", "Муйнакский", "Нукусский", "Тахтакупырский", "Турткульский", "Ходжейлийский", "Чимбайский", "Шуманайский", "Элликкалинский"]
     };
   
-    // Init Selects
     const regionSelect = document.getElementById('region-select');
     regionSelect.innerHTML = '<option value="" disabled selected>Выберите регион</option>';
     Object.keys(regions).sort().forEach(region => {
@@ -92,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
       classSelect.appendChild(option);
     }
   
-    // --- PROFILE LOGIC ---
+    // --- PROFILE ---
     function lockProfileForm() {
         document.getElementById('class-select').disabled = true;
         document.getElementById('region-select').disabled = true;
@@ -103,8 +98,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('save-profile').classList.add('hidden');
         document.getElementById('profile-back-btn').classList.remove('hidden');
         document.getElementById('profile-desc').textContent = "Ваши данные сохранены";
-        
-        // Показываем сообщение о блокировке
         document.getElementById('profile-locked-msg').classList.remove('hidden');
     }
 
@@ -129,8 +122,6 @@ document.addEventListener('DOMContentLoaded', function() {
   
       if (data) {
           internalDbId = data.id;
-          // Загрузим ответы для статистики, если юзер есть
-          await fetchUserAnswers();
       }
   
       const isProfileComplete = data && data.class && data.region && data.district && data.school;
@@ -158,52 +149,23 @@ document.addEventListener('DOMContentLoaded', function() {
         showScreen('home-screen');
         tourCompleted = data.tour_completed === true;
         updateStartButtonState();
-        calculateHomeStats(); // Обновим прогресс на главной
       }
-    }
-
-    async function fetchUserAnswers() {
-        if (!internalDbId) return;
-        // Забираем ответы, чтобы посчитать статистику по предметам
-        // В реальном приложении лучше делать join, но здесь мы сделаем просто
-        const { data } = await supabaseClient
-            .from('user_answers')
-            .select('is_correct, question_id')
-            .eq('user_id', internalDbId);
-        
-        if (data) allUserAnswers = data;
-    }
-
-    // Простая логика для показа статистики (заглушка с рандомом, так как у нас в базе нет привязки ответов к предметам напрямую без JOIN)
-    // В реальном проекте тут нужно делать запрос: user_answers JOIN questions
-    function calculateHomeStats() {
-        // Пока просто визуально
-    }
-
-    // ГЛОБАЛЬНАЯ ФУНКЦИЯ ДЛЯ ОТКРЫТИЯ МОДАЛКИ ПРЕДМЕТА
-    window.openSubjectStats = function(subject) {
-        const modal = document.getElementById('subject-modal');
-        document.getElementById('sm-title').textContent = subject;
-        
-        // Пример подсчета (в реальности нужен JOIN)
-        // Для демонстрации покажем, что данных пока нет или случайные, 
-        // так как в коде выше мы не выгружали полную таблицу вопросов.
-        const total = 0; 
-        const correct = 0;
-        
-        document.getElementById('sm-correct').textContent = correct;
-        document.getElementById('sm-total').textContent = total;
-        document.getElementById('sm-bar').style.width = '0%';
-        
-        modal.classList.remove('hidden');
     }
 
     function updateStartButtonState() {
         const btn = document.getElementById('start-tour');
         if (tourCompleted) {
             btn.innerHTML = '<i class="fa-solid fa-check"></i> Тур пройден';
-            btn.disabled = true;
-            btn.style.background = "#34C759";
+            btn.disabled = false; // Кнопка кликабельна
+            btn.classList.add('btn-success');
+            
+            // Удаляем старый листенер и добавляем новый
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+            
+            newBtn.addEventListener('click', () => {
+                document.getElementById('tour-completed-modal').classList.remove('hidden');
+            });
         }
     }
   
@@ -259,16 +221,31 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     });
   
-    // --- NAV ---
+    // --- UTILS ---
     function showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
         document.getElementById(screenId).classList.remove('hidden');
         window.scrollTo(0, 0);
     }
 
+    // --- EXTERNAL LINKS ---
+    window.openExternalLink = function(url) {
+        if(window.Telegram && Telegram.WebApp) {
+            Telegram.WebApp.openLink(url);
+        } else {
+            window.open(url, '_blank');
+        }
+    }
+
+    window.openSubjectStats = function(subject) {
+        document.getElementById('sm-title').textContent = subject;
+        document.getElementById('subject-modal').classList.remove('hidden');
+    }
+
+    // --- NAVIGATION ---
     document.getElementById('open-profile-btn').addEventListener('click', () => {
         showScreen('profile-screen');
-        lockProfileForm(); // Блокируем при просмотре
+        lockProfileForm();
     });
 
     document.getElementById('profile-back-btn').addEventListener('click', () => {
@@ -400,15 +377,20 @@ document.addEventListener('DOMContentLoaded', function() {
             const letter = letters[index] || '';
             const btn = document.createElement('div');
             btn.className = 'option-card';
+            
             btn.innerHTML = `<div class="option-circle">${letter}</div><div class="option-text">${option.trim()}</div>`;
+            
             btn.onclick = () => {
               document.querySelectorAll('.option-card').forEach(b => b.classList.remove('selected'));
               btn.classList.add('selected');
+              
               const optText = option.trim();
               const isLetterOption = optText.match(/^[A-DА-Г][)\.\s]/i);
               selectedAnswer = isLetterOption ? optText.charAt(0).toUpperCase() : optText;
+              
               if (!selectedAnswer && letter) selectedAnswer = letter;
               if (!selectedAnswer) selectedAnswer = optText;
+
               nextBtn.disabled = false;
             };
             container.appendChild(btn);
