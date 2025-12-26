@@ -1,6 +1,6 @@
 // --- КОНФИГУРАЦИЯ ---
-const SUPABASE_URL = 'ВАША_ССЫЛКА_НА_SUPABASE'; // Вставьте свою
-const SUPABASE_KEY = 'ВАШ_КЛЮЧ_ANON';        // Вставьте свой
+const SUPABASE_URL = 'https://fgwnqxumukkgtzentlxr.supabase.co'; // Вставьте свою
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI';        // Вставьте свой
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const tg = window.Telegram.WebApp;
@@ -197,3 +197,4 @@ async function loadLeaderboard() {
         rankDisplay.innerHTML = `Вы еще не участвовали`;
     }
 }
+
