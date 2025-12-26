@@ -7,7 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="supabase.min.js?v=1"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=24">
+    <link rel="stylesheet" href="style.css?v=26">
 </head>
 <body>
 
@@ -29,15 +29,17 @@
                     <h3 id="profile-user-name">...</h3>
                 </div>
             </div>
+
             <div class="form-group"><label>Класс</label><div class="input-wrapper"><select id="class-select"></select><i class="fa-solid fa-chevron-down arrow-icon"></i></div></div>
             <div class="form-group"><label>Регион</label><div class="input-wrapper"><select id="region-select"></select><i class="fa-solid fa-location-dot icon-right"></i></div></div>
             <div class="form-group"><label>Район</label><div class="input-wrapper"><select id="district-select" disabled></select><i class="fa-solid fa-map icon-right"></i></div></div>
             <div class="form-group"><label>Школа</label><div class="input-wrapper"><input type="text" id="school-input" placeholder="№ школы"><i class="fa-solid fa-graduation-cap icon-right"></i></div></div>
             <div class="card checkbox-card">
                 <input type="checkbox" id="research-consent">
-                <div class="checkbox-text"><strong>Согласие на обработку</strong><span>Для формирования рейтинга.</span></div>
+                <div class="checkbox-text"><strong>Согласие на обработку</strong><span>Для рейтинга.</span></div>
             </div>
         </div>
+
         <div class="bottom-fixed">
             <button id="save-profile" class="btn-primary">Сохранить</button>
             <div id="profile-locked-msg" class="locked-message hidden"><i class="fa-solid fa-lock"></i> <span>Профиль заполнен</span></div>
@@ -117,19 +119,15 @@
                 </div>
                 <div class="resource-card" onclick="openExternalLink('https://t.me/your_group')">
                     <div class="res-icon group"><i class="fa-solid fa-users"></i></div>
-                    <div class="res-info"><h4>Чат участников</h4><p>Обсуждение и помощь</p></div>
+                    <div class="res-info"><h4>Чат участников</h4><p>Обсуждение</p></div>
                     <i class="fa-solid fa-chevron-right arrow"></i>
                 </div>
             </div>
         </div> 
 
-        <div class="bottom-fixed column">
-            <div id="main-btn-container" style="width: 100%;">
-                <button id="start-tour-btn" class="btn-primary">Загрузка...</button>
-            </div>
-            <button id="download-cert-main-btn" class="btn-secondary hidden">
-                <i class="fa-solid fa-file-pdf"></i> Скачать сертификат
-            </button>
+        <div class="bottom-fixed column mt-safe">
+            <button id="main-action-btn" class="btn-primary">Загрузка...</button>
+            <button id="download-cert-main-btn" class="btn-secondary hidden"><i class="fa-solid fa-file-pdf"></i> Скачать сертификат</button>
             <button id="exit-app-btn" class="btn-danger-box">Выход</button>
         </div>
     </div>
@@ -171,33 +169,22 @@
             </div>
 
             <div class="stats-row-strict">
-                <div class="col-left">
-                    <span class="lbl">ТУР</span>
-                    <span class="val" id="res-tour-title">Тур №1</span>
-                </div>
-                <div class="col-center">
-                    <span class="lbl">ВСЕГО ВОПРОСОВ</span>
-                    <span class="val" id="res-total">15</span>
-                </div>
-                <div class="col-right">
-                    <span class="lbl">ВЕРНЫЕ ОТВЕТЫ</span>
-                    <span class="val green-text" id="res-correct">0</span>
-                </div>
+                <div class="col-left"><span class="lbl">ТУР</span><span class="val" id="res-tour-title">Тур №1</span></div>
+                <div class="col-center"><span class="lbl">ВСЕГО</span><span class="val" id="res-total">15</span></div>
+                <div class="col-right"><span class="lbl">ВЕРНО</span><span class="val green-text" id="res-correct">0</span></div>
             </div>
 
             <div class="section-header"><h3>Работа над ошибками</h3></div>
             <div class="card error-review-card">
                 <div class="review-item">
                     <div class="review-header"><i class="fa-solid fa-circle-check" style="color:var(--success)"></i> <span>Данные сохранены</span></div>
-                    <p style="font-size:13px; margin-top:5px; color:#666;">Детальный разбор будет доступен после подведения итогов тура.</p>
+                    <p style="font-size:13px; margin-top:5px; color:#666;">Детальный разбор будет доступен в канале.</p>
                 </div>
             </div>
         </div>
 
         <div class="bottom-fixed column">
-            <button class="btn-secondary" id="download-certificate-res-btn">
-                <i class="fa-solid fa-download"></i> Скачать сертификат
-            </button>
+            <button class="btn-secondary" id="download-certificate-res-btn"><i class="fa-solid fa-download"></i> Скачать сертификат</button>
             <button class="btn-primary" id="back-home">На главную</button>
         </div>
     </div>
@@ -210,13 +197,18 @@
             </div>
             <div class="container" style="padding-top: 10px;">
                 <div id="lb-podium" class="top-three">
-                   <p style="color:rgba(0,0,0,0.5); text-align:center; width:100%; margin-top:20px;">Загрузка...</p>
-                </div>
+                   </div>
             </div>
         </div>
+        
         <div class="container lb-list-container">
-            <div class="list-header"><span>УЧАСТНИК</span><span>БАЛЛЫ</span></div>
+            <div class="list-header" id="lb-list-header"><span>УЧАСТНИК</span><span>БАЛЛЫ</span></div>
             <div id="lb-list" class="leader-list"></div>
+            
+            <div id="lb-empty-msg" class="hidden" style="text-align: center; padding: 40px 0; color: #8E8E93;">
+                <i class="fa-solid fa-trophy" style="font-size: 40px; color: #E5E5EA; margin-bottom: 10px;"></i>
+                <p>Пока нет результатов.<br>Станьте первым!</p>
+            </div>
         </div>
     </div>
 
@@ -246,9 +238,7 @@
     <div class="modal hidden" id="certs-modal">
         <div class="modal-card">
             <div class="modal-header"><h3>Мои сертификаты</h3><div class="close-btn" onclick="document.getElementById('certs-modal').classList.add('hidden')"><i class="fa-solid fa-times"></i></div></div>
-            <div style="padding: 20px 0; text-align: left;" id="certs-list-container">
-                <p>Загрузка...</p>
-            </div>
+            <div style="padding: 20px 0; text-align: left;" id="certs-list-container"><p>Загрузка...</p></div>
         </div>
     </div>
 
@@ -259,7 +249,7 @@
             <p>Вы успешно завершили этот этап.</p>
             <div class="alert-box" style="background: #F2F9FF; color: #007AFF;">
                 <i class="fa-solid fa-graduation-cap"></i>
-                <p>Рекомендуем готовиться к следующему туру по видеоурокам.</p>
+                <p>Рекомендуем готовиться к следующему туру.</p>
             </div>
             <button class="btn-primary" onclick="document.getElementById('tour-completed-modal').classList.add('hidden')">Понятно</button>
         </div>
@@ -275,6 +265,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=24"></script>
+    <script src="script.js?v=26"></script>
 </body>
 </html>
