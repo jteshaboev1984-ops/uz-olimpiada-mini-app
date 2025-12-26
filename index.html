@@ -7,7 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="supabase.min.js?v=1"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=23">
+    <link rel="stylesheet" href="style.css?v=24">
 </head>
 <body>
 
@@ -17,6 +17,7 @@
             <h1>Профиль</h1>
             <p>Данные участника</p>
         </div>
+
         <div class="container pb-large">
             <div class="card profile-info-card">
                 <div class="avatar-circle">
@@ -34,7 +35,7 @@
             <div class="form-group"><label>Школа</label><div class="input-wrapper"><input type="text" id="school-input" placeholder="№ школы"><i class="fa-solid fa-graduation-cap icon-right"></i></div></div>
             <div class="card checkbox-card">
                 <input type="checkbox" id="research-consent">
-                <div class="checkbox-text"><strong>Согласие на обработку</strong><span>Для рейтинга.</span></div>
+                <div class="checkbox-text"><strong>Согласие на обработку</strong><span>Для формирования рейтинга.</span></div>
             </div>
         </div>
         <div class="bottom-fixed">
@@ -114,6 +115,11 @@
                     <div class="res-info"><h4>Канал</h4><p>Новости</p></div>
                     <i class="fa-solid fa-chevron-right arrow"></i>
                 </div>
+                <div class="resource-card" onclick="openExternalLink('https://t.me/your_group')">
+                    <div class="res-icon group"><i class="fa-solid fa-users"></i></div>
+                    <div class="res-info"><h4>Чат участников</h4><p>Обсуждение и помощь</p></div>
+                    <i class="fa-solid fa-chevron-right arrow"></i>
+                </div>
             </div>
         </div> 
 
@@ -121,11 +127,9 @@
             <div id="main-btn-container" style="width: 100%;">
                 <button id="start-tour-btn" class="btn-primary">Загрузка...</button>
             </div>
-            
             <button id="download-cert-main-btn" class="btn-secondary hidden">
                 <i class="fa-solid fa-file-pdf"></i> Скачать сертификат
             </button>
-            
             <button id="exit-app-btn" class="btn-danger-box">Выход</button>
         </div>
     </div>
@@ -248,6 +252,19 @@
         </div>
     </div>
 
+    <div class="modal hidden" id="tour-completed-modal">
+        <div class="modal-card">
+            <div class="modal-icon-big"><i class="fa-solid fa-check-double"></i><div class="alert-badge" style="background:#34C759"><i class="fa-solid fa-check"></i></div></div>
+            <h2>Тур уже пройден!</h2>
+            <p>Вы успешно завершили этот этап.</p>
+            <div class="alert-box" style="background: #F2F9FF; color: #007AFF;">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <p>Рекомендуем готовиться к следующему туру по видеоурокам.</p>
+            </div>
+            <button class="btn-primary" onclick="document.getElementById('tour-completed-modal').classList.add('hidden')">Понятно</button>
+        </div>
+    </div>
+
     <div class="modal hidden" id="about-modal">
         <div class="modal-card full-height">
             <div class="modal-header"><h3>О проекте</h3><div class="close-btn" id="close-about"><i class="fa-solid fa-times"></i></div></div>
@@ -258,6 +275,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=23"></script>
+    <script src="script.js?v=24"></script>
 </body>
 </html>
