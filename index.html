@@ -1,1 +1,300 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smart Olympiad</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="supabase.min.js?v=1"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css?v=9">
+</head>
+<body>
 
+    <div class="screen hidden" id="profile-screen">
+        <div class="header-profile">
+            <div class="user-avatar-small">
+                <i class="fa-solid fa-user"></i>
+                <div class="online-badge"></div>
+            </div>
+            <h1>Профиль участника</h1>
+            <p id="profile-desc">Заполните данные для участия</p>
+            <div class="progress-bar-line"><div class="fill" style="width: 20%"></div></div>
+        </div>
+
+        <div class="container" style="padding-bottom: 100px;">
+            <div class="card profile-info-card">
+                <div class="avatar-circle">
+                    <img src="https://cdn-icons-png.flaticon.com/512/4140/4140048.png" alt="User">
+                    <div class="verified-badge"><i class="fa-solid fa-check"></i></div>
+                </div>
+                <div class="profile-text">
+                    <span class="sub-label">Вы вошли как</span>
+                    <h3 id="profile-user-name">Участник</h3>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Класс обучения</label>
+                <div class="input-wrapper">
+                    <select id="class-select"></select>
+                    <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Регион</label>
+                <div class="input-wrapper">
+                    <select id="region-select"></select>
+                    <i class="fa-solid fa-location-dot icon-right"></i>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Район / Город</label>
+                <div class="input-wrapper">
+                    <select id="district-select" disabled></select>
+                    <i class="fa-solid fa-map icon-right"></i>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Школа</label>
+                <div class="input-wrapper">
+                    <input type="text" id="school-input" placeholder="№ 1535 или Название">
+                    <i class="fa-solid fa-graduation-cap icon-right"></i>
+                </div>
+            </div>
+
+            <div class="card checkbox-card">
+                <input type="checkbox" id="research-consent">
+                <div class="checkbox-text">
+                    <strong>Согласен на участие в исследовании</strong>
+                    <span>Обязательное условие для получения персональных рекомендаций.</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-fixed">
+            <button id="save-profile" class="btn-primary">
+                Сохранить и продолжить <i class="fa-solid fa-arrow-right"></i>
+            </button>
+            
+            <button id="profile-back-btn" class="btn-secondary hidden">
+                <i class="fa-solid fa-arrow-left"></i> Вернуться на главную
+            </button>
+        </div>
+    </div>
+
+    <div class="screen hidden" id="home-screen">
+        <div class="top-bar">
+            <div class="logo-area">
+                <div class="logo-icon"><i class="fa-solid fa-graduation-cap"></i></div>
+                <span>Smart Olympiad</span>
+            </div>
+            <div class="profile-icon-btn" id="open-profile-btn">
+                <i class="fa-regular fa-user"></i>
+            </div>
+        </div>
+
+        <div class="container">
+            <h1 class="greeting">Привет, <span id="home-user-name">Участник</span>! 👋</h1>
+            <p class="subtitle">Добро пожаловать на бесплатную онлайн-олимпиаду (Cambridge IGCSE / AS Level).</p>
+
+            <div class="action-grid">
+                <div class="action-card" id="leaderboard-btn">
+                    <div class="icon-circle gold"><i class="fa-solid fa-trophy"></i></div>
+                    <span>Лидерборд</span>
+                </div>
+                <div class="action-card" id="about-btn">
+                    <div class="icon-circle purple"><i class="fa-solid fa-info"></i></div>
+                    <span>О проекте</span>
+                </div>
+            </div>
+
+            <div class="section-header">
+                <h2>Мои предметы</h2>
+                <span class="link-text">ПРОГРЕСС</span>
+            </div>
+
+            <div class="subjects-grid">
+                <div class="subject-card">
+                    <div class="subject-top">
+                        <div class="sub-icon blue"><i class="fa-solid fa-calculator"></i></div>
+                        <span class="percent">0%</span>
+                    </div>
+                    <h3>Математика</h3>
+                    <div class="progress-line"><div style="width: 0%"></div></div>
+                </div>
+                <div class="subject-card">
+                    <div class="subject-top">
+                        <div class="sub-icon violet"><i class="fa-solid fa-globe"></i></div>
+                        <span class="percent">0%</span>
+                    </div>
+                    <h3>Английский</h3>
+                    <div class="progress-line"><div style="width: 0%"></div></div>
+                </div>
+                 <div class="subject-card">
+                    <div class="subject-top">
+                        <div class="sub-icon orange"><i class="fa-solid fa-bolt"></i></div>
+                        <span class="percent">0%</span>
+                    </div>
+                    <h3>Физика</h3>
+                    <div class="progress-line"><div style="width: 0%"></div></div>
+                </div>
+                 <div class="subject-card">
+                    <div class="subject-top">
+                        <div class="sub-icon teal"><i class="fa-solid fa-flask"></i></div>
+                        <span class="percent">0%</span>
+                    </div>
+                    <h3>Химия</h3>
+                    <div class="progress-line"><div style="width: 0%"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-fixed column">
+            <button id="start-tour" class="btn-primary">
+                <i class="fa-solid fa-play"></i> Начать тур
+            </button>
+            <button id="exit-app-btn" class="btn-text-danger">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i> Выход
+            </button>
+        </div>
+    </div>
+
+    <div class="screen hidden" id="quiz-screen">
+        <div class="quiz-top-bar">
+            <div class="timer-badge">
+                <i class="fa-regular fa-clock"></i> <span id="timer">40:00</span>
+            </div>
+            <div class="q-counter"><span id="question-number">1</span> / 15</div>
+        </div>
+        <div class="quiz-progress"><div class="fill" id="quiz-progress-fill" style="width: 7%;"></div></div>
+
+        <div class="container quiz-container">
+            <div class="subject-badge" id="subject-tag">МАТЕМАТИКА</div>
+            <h2 id="question-text" class="question-title">Загрузка вопроса...</h2>
+            <p class="hint-text">Выберите правильный вариант ответа из списка ниже.</p>
+            <div id="options-container" class="options-list"></div>
+        </div>
+
+        <div class="bottom-fixed">
+            <button id="next-button" class="btn-primary" disabled>
+                Далее <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="screen hidden" id="result-screen">
+        <div class="header-simple">
+            <div class="close-icon" id="back-home-x"><i class="fa-solid fa-times"></i></div>
+            <h3>Результат тура</h3>
+        </div>
+
+        <div class="container result-content">
+            <div class="result-chart-wrapper">
+                <div class="circular-chart" id="result-circle">
+                    <div class="inner-circle">
+                        <span class="percent-text" id="result-percent">0%</span>
+                    </div>
+                </div>
+                <h2>Тур завершён!</h2>
+                <p>Правильных ответов: <span id="correct-count">0</span> из 15</p>
+            </div>
+
+            <div class="stats-row">
+                <div class="stat-box">
+                    <div class="icon blue"><i class="fa-solid fa-check"></i></div>
+                    <div class="val" id="stat-correct">0/15</div>
+                    <div class="lbl">Верно</div>
+                </div>
+                <div class="stat-box">
+                    <div class="icon blue"><i class="fa-solid fa-stopwatch"></i></div>
+                    <div class="val" id="stat-time">40м</div>
+                    <div class="lbl">Время</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-fixed column">
+            <button class="btn-secondary" id="download-certificate-btn">
+                <i class="fa-solid fa-download"></i> Скачать сертификат
+            </button>
+            <button class="btn-primary" id="back-home">
+                На главную
+            </button>
+        </div>
+    </div>
+
+    <div class="screen hidden" id="leaderboard-screen">
+        <div class="header-simple">
+            <div class="back-btn" id="lb-back"><i class="fa-solid fa-arrow-left"></i></div>
+            <h3>Лидерборд</h3>
+        </div>
+        <div class="container">
+            <div class="top-three">
+                <div class="winner second">
+                    <div class="avatar-ring silver"><img src="https://cdn-icons-png.flaticon.com/512/4140/4140047.png"></div>
+                    <div class="rank-badge">#2</div>
+                    <div class="name">Аноним</div>
+                    <div class="score">1150</div>
+                </div>
+                <div class="winner first">
+                    <div class="icon-crown"><i class="fa-solid fa-crown"></i></div>
+                    <div class="avatar-ring gold"><img src="https://cdn-icons-png.flaticon.com/512/3006/3006876.png"></div>
+                    <div class="rank-badge">#1</div>
+                    <div class="name">Alex S.</div>
+                    <div class="score">1200</div>
+                </div>
+                <div class="winner third">
+                    <div class="avatar-ring bronze"><img src="https://cdn-icons-png.flaticon.com/512/4140/4140039.png"></div>
+                    <div class="rank-badge">#3</div>
+                    <div class="name">Maria K.</div>
+                    <div class="score">1145</div>
+                </div>
+            </div>
+            <div class="leader-list">
+                <div class="leader-row">
+                    <span class="pos">4</span>
+                    <div class="usr-av"><img src="https://cdn-icons-png.flaticon.com/512/147/147144.png"></div>
+                    <div class="usr-info"><span class="u-name">Дмитрий В.</span><span class="u-meta">94%</span></div>
+                    <span class="u-score">1120</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="warning-modal">
+        <div class="modal-card">
+            <div class="modal-icon-big"><i class="fa-solid fa-stopwatch"></i><div class="alert-badge">!</div></div>
+            <h2>Предупреждение перед туром</h2>
+            <p>У вас будет <strong>40 минут</strong> на <strong>15 вопросов</strong>.</p>
+            <div class="alert-box">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <p>Повтор тура невозможен даже при сбое связи.</p>
+            </div>
+            <button id="confirm-start" class="btn-primary">Начать тур <i class="fa-solid fa-arrow-right"></i></button>
+            <button id="cancel-start" class="btn-text">Отмена</button>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="about-modal">
+        <div class="modal-card full-height">
+            <div class="modal-header">
+                <h3>О проекте</h3>
+                <div class="close-btn" id="close-about"><i class="fa-solid fa-times"></i></div>
+            </div>
+            <div class="modal-body-scroll">
+                <div class="blue-banner">
+                    <span class="tag">ONLINE</span>
+                    <h1>Бесплатная олимпиада</h1>
+                </div>
+                <p class="desc">Уникальное соревнование по стандартам Cambridge.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js?v=9"></script>
+</body>
+</html>
