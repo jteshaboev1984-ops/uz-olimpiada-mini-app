@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v20.0 (Fix 400 + Logic)');
+    console.log('App Started: v21.0 (Final Restoration)');
   
     let telegramUserId; 
     let internalDbId = null; 
@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', function() {
               
               if (progress) {
                   tourCompleted = true;
-                  updateMainButton('completed');
+                  updateMainButton('completed'); 
                   document.getElementById('subjects-title').textContent = "Ваши результаты";
               } else {
                   tourCompleted = false;
@@ -237,6 +237,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('warning-modal').classList.remove('hidden');
     }
 
+    // НОВАЯ ЛОГИКА КНОПКИ
     function updateMainButton(state, title = "Начать тур") {
         const btn = document.getElementById('main-action-btn');
         const certBtn = document.getElementById('certs-btn');
@@ -253,14 +254,15 @@ document.addEventListener('DOMContentLoaded', function() {
             certBtn.classList.add('hidden');
         } else if (state === 'completed') {
             // Зеленая кнопка "Тур пройден"
-            activeBtn.innerHTML = '<i class="fa-solid fa-check"></i> Тур пройден';
-            activeBtn.className = 'btn-success';
-            activeBtn.disabled = false;
-            // Показываем кнопку сертификатов
+            activeBtn.innerHTML = '<i class="fa-solid fa-check"></i> Текущий тур пройден';
+            activeBtn.className = 'btn-success'; // Зеленый стиль
+            activeBtn.disabled = false; // Кликабельна, но просто сообщает
+            
+            // Показываем доп. кнопку сертификатов
             certBtn.classList.remove('hidden');
             
-            // Нажатие на "Тур пройден" (необязательно, можно убрать)
-            activeBtn.addEventListener('click', () => alert("Вы уже прошли этот тур. Ждите следующий!"));
+            // При нажатии можно показать алерт
+            activeBtn.addEventListener('click', () => alert("Вы уже прошли этот тур. Результаты сохранены."));
         } else {
             // Состояние "Старт"
             activeBtn.innerHTML = `<i class="fa-solid fa-play"></i> ${title}`;
@@ -378,12 +380,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // ЛОГИКА КНОПКИ СЕРТИФИКАТОВ
     safeAddListener('certs-btn', 'click', () => {
-        // Показываем список (здесь логика поиска пройденных туров)
         const container = document.getElementById('certs-list-container');
         container.innerHTML = `
             <div style="background:#F2F9FF; padding:10px; border-radius:10px; margin-bottom:10px;">
                 <strong>Сертификат: Тур №1</strong><br>
-                <a href="#" style="color:#007AFF;">Скачать PDF</a>
+                <a href="#" style="color:#007AFF;">Скачать PDF (В разработке)</a>
             </div>
         `;
         document.getElementById('certs-modal').classList.remove('hidden');
@@ -392,7 +393,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('certs-modal').classList.remove('hidden');
     });
   
-    // --- LEADERBOARD (FIXED EMPTY LIST) ---
+    // --- LEADERBOARD (FIXED) ---
     async function loadLeaderboard() {
         if (!currentTourId) return;
         
@@ -408,16 +409,18 @@ document.addEventListener('DOMContentLoaded', function() {
             .order('score', { ascending: false })
             .limit(20);
 
-        // ИСПРАВЛЕНИЕ ОШИБКИ 400: Если нет данных, просто выходим
         if (error || !progressData || progressData.length === 0) {
-            if(podium) podium.innerHTML = '<p style="text-align:center;width:100%;color:#555;margin-top:20px;">Пока нет результатов</p>';
+            if(podium) podium.innerHTML = '<p style="text-align:center;width:100%;color:rgba(255,255,255,0.7);margin-top:20px;">Пока нет результатов</p>';
             return;
         }
 
         const userIds = progressData.map(p => p.user_id);
         
-        // ВАЖНО: Проверка на пустоту массива перед запросом
-        if (userIds.length === 0) return;
+        // FIX FOR 400 ERROR: Check if empty
+        if (userIds.length === 0) {
+             if(podium) podium.innerHTML = '<p style="text-align:center;width:100%;color:rgba(255,255,255,0.7);margin-top:20px;">Пока нет результатов</p>';
+             return;
+        }
 
         const { data: usersData } = await supabaseClient
             .from('users')
