@@ -1,9 +1,9 @@
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('Приложение запущено v5.0 (Fix ID)');
+  console.log('Приложение запущено v6.0 (FINAL FIX)');
 
   // Глобальные переменные
-  let telegramUserId; // ID от Телеграма (например, 810846189)
-  let internalDbId = null; // Внутренний ID базы (например, 24)
+  let telegramUserId; // ID от Телеграма (810846189)
+  let internalDbId = null; // ID из базы (24) - ЭТО САМОЕ ВАЖНОЕ
   
   // Данные Supabase
   const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
@@ -104,6 +104,7 @@ document.addEventListener('DOMContentLoaded', function() {
   async function checkProfile() {
     console.log("Проверяем профиль для TelegramID:", telegramUserId);
     
+    // Получаем пользователя по Telegram ID
     const { data, error } = await supabaseClient
       .from('users')
       .select('*')
@@ -115,27 +116,24 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    // Если нашли пользователя, сохраняем его ВНУТРЕННИЙ ID
+    // ВАЖНО: Сохраняем внутренний ID базы (например, 24)
     if (data) {
         internalDbId = data.id; 
         console.log("Пользователь найден. Внутренний ID:", internalDbId);
+    } else {
+        console.warn("Пользователь не найден в базе.");
     }
 
     const isProfileComplete = data && data.class && data.region && data.district && data.school;
 
     if (!data || !isProfileComplete) {
-      console.log("Профиль не заполнен.");
       document.getElementById('home-screen').classList.add('hidden');
       document.getElementById('profile-screen').classList.remove('hidden');
       enableProfileEdit();
     } else {
-      console.log("Профиль заполнен.");
-      
-      // Заполняем форму данными (на случай редактирования)
       document.getElementById('class-select').value = data.class;
       document.getElementById('region-select').value = data.region;
       
-      // Триггерим создание районов
       const districtSelect = document.getElementById('district-select');
       districtSelect.innerHTML = '<option value="" disabled selected>Выберите район</option>';
       if (regions[data.region]) {
@@ -201,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
     btn.disabled = true;
     btn.textContent = 'Сохранение...';
 
-    // ВАЖНО: Добавили .select(), чтобы получить обратно созданный ID
+    // Сохраняем и сразу получаем обратно созданную запись (.select())
     const { data, error } = await supabaseClient
       .from('users')
       .upsert({
@@ -218,12 +216,11 @@ document.addEventListener('DOMContentLoaded', function() {
       alert('Ошибка сохранения: ' + error.message);
       btn.disabled = false;
       btn.textContent = 'Сохранить и продолжить';
-      console.error(error);
     } else {
-      // Если успешно сохранили, берем ID из ответа
+      // Обновляем внутренний ID
       if (data && data.length > 0) {
           internalDbId = data[0].id;
-          console.log("Профиль создан/обновлен. Новый ID:", internalDbId);
+          console.log("Профиль обновлен. ID:", internalDbId);
       }
       document.getElementById('profile-screen').classList.add('hidden');
       document.getElementById('home-screen').classList.remove('hidden');
@@ -231,7 +228,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Валидация полей
   const requiredFields = document.querySelectorAll('#class-select, #region-select, #district-select, #school-input');
   requiredFields.forEach(field => {
     field.addEventListener('input', () => {
@@ -245,34 +241,37 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('profile-screen').classList.add('hidden');
     document.getElementById('home-screen').classList.remove('hidden');
   });
-
   document.getElementById('profile-btn').addEventListener('click', () => {
     document.getElementById('home-screen').classList.add('hidden');
     document.getElementById('profile-screen').classList.remove('hidden');
   });
 
   document.getElementById('progress-btn').addEventListener('click', async () => {
-    // ВАЖНО: Прогресс ищем по telegram_id, так надежнее при чтении
+    // ВАЖНО: Если нет внутреннего ID, пробуем найти
+    if (!internalDbId) await fetchInternalId();
+
+    if (!internalDbId) {
+        alert("Сначала заполните профиль!");
+        return;
+    }
+
     const { data, error } = await supabaseClient
       .from('user_answers')
       .select('is_correct')
-      .eq('user_id', internalDbId); // Используем внутренний ID
+      .eq('user_id', internalDbId); // Используем ID 24
 
     if (error) {
-        console.error(error);
         alert('Ошибка загрузки прогресса');
         return;
     }
     const total = data.length;
     const correct = data.filter(a => a.is_correct).length;
-    const percent = total > 0 ? Math.round((correct / total) * 100) : 0;
-    alert(`Ваш прогресс:\nПравильных ответов: ${correct}\n(Всего попыток: ${total})`);
+    alert(`Правильных ответов: ${correct}`);
   });
 
   document.getElementById('exit-btn').addEventListener('click', () => {
     if (window.Telegram && Telegram.WebApp) Telegram.WebApp.close();
   });
-
   document.getElementById('about-btn').addEventListener('click', () => {
     document.getElementById('about-modal').classList.remove('hidden');
   });
@@ -301,31 +300,50 @@ document.addEventListener('DOMContentLoaded', function() {
 
   document.getElementById('confirm-start').addEventListener('click', async () => {
     document.getElementById('warning-modal').classList.add('hidden');
-    startTourCheck();
+    await startTourCheck();
   });
+
+  // Вспомогательная функция поиска ID
+  async function fetchInternalId() {
+      const { data } = await supabaseClient
+            .from('users')
+            .select('id')
+            .eq('telegram_id', telegramUserId)
+            .maybeSingle();
+      if (data) internalDbId = data.id;
+  }
 
   async function startTourCheck() {
     const btn = document.getElementById('start-tour');
     btn.textContent = 'Загрузка...';
     btn.disabled = true;
 
-    // Финальная проверка наличия ID перед стартом
+    // 1. Проверяем наличие внутреннего ID
     if (!internalDbId) {
-        // Попытка экстренно получить ID
-        const { data } = await supabaseClient
+        await fetchInternalId();
+    }
+    
+    // 2. Если всё ещё нет ID, значит юзера нет в базе -> создаем его
+    if (!internalDbId) {
+         console.warn("Создаем пользователя перед стартом...");
+         const { data, error } = await supabaseClient
             .from('users')
-            .select('id')
-            .eq('telegram_id', telegramUserId)
-            .maybeSingle();
-        
-        if (data) {
-            internalDbId = data.id;
-        } else {
-            alert('Ошибка: Ваш профиль не найден. Пожалуйста, откройте "Мой профиль" и сохраните данные.');
-            btn.textContent = 'Начать тур';
-            btn.disabled = false;
-            return;
-        }
+            .upsert({
+                telegram_id: telegramUserId,
+                class: document.getElementById('class-select').value || '9',
+                region: document.getElementById('region-select').value || 'Не указан',
+                district: 'Не указан',
+                school: '0'
+            }, { onConflict: 'telegram_id' })
+            .select();
+         
+         if (data && data.length > 0) {
+             internalDbId = data[0].id;
+         } else {
+             alert('Ошибка старта: не удалось создать пользователя.');
+             btn.disabled = false;
+             return;
+         }
     }
     
     startTour();
@@ -338,8 +356,7 @@ document.addEventListener('DOMContentLoaded', function() {
       .limit(50);
 
     if (error || !data || data.length === 0) {
-      alert('Ошибка загрузки вопросов. Проверьте интернет.');
-      console.error(error);
+      alert('Ошибка загрузки вопросов.');
       document.getElementById('start-tour').textContent = 'Начать тур';
       document.getElementById('start-tour').disabled = false;
       return;
@@ -375,7 +392,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function showQuestion() {
     const q = questions[currentQuestionIndex];
-
     document.getElementById('question-number').textContent = currentQuestionIndex + 1;
     document.getElementById('subject-tag').textContent = q.subject || 'Предмет';
     document.getElementById('question-text').innerHTML = q.question_text;
@@ -391,7 +407,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const optionsText = (q.options_text || '').trim();
 
     if (optionsText !== '') {
-      // Кнопки
       const options = optionsText.split('\n');
       options.forEach(option => {
         if (option.trim()) {
@@ -410,7 +425,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       });
     } else {
-      // Поле ввода
       const textarea = document.createElement('textarea');
       textarea.className = 'answer-input';
       textarea.placeholder = 'Введите ответ...';
@@ -425,14 +439,21 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   document.getElementById('next-button').addEventListener('click', async () => {
-    if (!internalDbId) {
-        alert("Ошибка: Потеряна связь с профилем. Перезагрузите приложение.");
-        return;
-    }
-
     const nextBtn = document.getElementById('next-button');
     nextBtn.disabled = true;
     nextBtn.textContent = 'Сохранение...';
+
+    // ПОСЛЕДНЯЯ ЛИНИЯ ОБОРОНЫ: Если ID потерялся, находим его снова
+    if (!internalDbId) {
+        await fetchInternalId();
+    }
+    
+    // Если всё равно нет ID, это критическая ошибка базы
+    if (!internalDbId) {
+        alert("Ошибка: Не удается найти ваш ID. Пожалуйста, перезагрузите приложение.");
+        nextBtn.disabled = false;
+        return;
+    }
 
     const q = questions[currentQuestionIndex];
     let isCorrect = false;
@@ -448,11 +469,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (isCorrect) correctCount++;
 
-    // ГЛАВНОЕ ИСПРАВЛЕНИЕ: используем internalDbId, а не telegramUserId
+    // ОТПРАВЛЯЕМ internalDbId (24), А НЕ telegramUserId (810846189)
     const { error } = await supabaseClient
       .from('user_answers')
       .upsert({
-        user_id: internalDbId, // <--- ВОТ ЗДЕСЬ БЫЛА ОШИБКА
+        user_id: internalDbId,  // <--- ВОТ РЕШЕНИЕ
         question_id: q.id,
         answer: selectedAnswer,
         is_correct: isCorrect
@@ -460,9 +481,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (error) {
       console.error('Ошибка сохранения:', error);
-      alert('Ошибка сохранения ответа! Проверьте интернет. ' + error.message);
+      alert('Не удалось сохранить ответ. Проверьте интернет.');
       nextBtn.disabled = false;
-      nextBtn.textContent = 'Повторить';
       return;
     }
 
@@ -476,12 +496,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
   async function finishTour() {
     clearInterval(timerInterval);
-    const { error } = await supabaseClient
-      .from('users')
-      .update({ tour_completed: true })
-      .eq('id', internalDbId); // Используем internalDbId
-
-    if (error) console.error(error);
+    if (internalDbId) {
+        await supabaseClient
+          .from('users')
+          .update({ tour_completed: true })
+          .eq('id', internalDbId);
+    }
 
     tourCompleted = true;
     const percent = Math.round((correctCount / questions.length) * 100);
@@ -498,6 +518,5 @@ document.addEventListener('DOMContentLoaded', function() {
     checkProfile();
   });
 
-  // Старт
   checkProfile();
 });
