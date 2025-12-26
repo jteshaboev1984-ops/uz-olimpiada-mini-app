@@ -1,11 +1,18 @@
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('Приложение запущено v4.0');
+  console.log('Приложение запущено v5.0 (Fix ID)');
 
-  let telegramUserId;
+  // Глобальные переменные
+  let telegramUserId; // ID от Телеграма (например, 810846189)
+  let internalDbId = null; // Внутренний ID базы (например, 24)
+  
+  // Данные Supabase
+  const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
+  const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI';
+
+  // Инициализация Telegram
   if (window.Telegram && window.Telegram.WebApp) {
     Telegram.WebApp.ready();
     Telegram.WebApp.expand();
-
     const user = Telegram.WebApp.initDataUnsafe.user;
     if (user && user.id) {
       document.getElementById('user-name').textContent = user.first_name || 'Участник';
@@ -13,7 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // Генерация ID для тестов в браузере
+  // Тестовый режим (если открыто в браузере)
   if (!telegramUserId) {
     let storedId = localStorage.getItem('test_user_id');
     if (!storedId) {
@@ -22,20 +29,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     telegramUserId = Number(storedId);
     document.getElementById('user-name').textContent = 'Тестовый участник';
-    console.warn('Тестовый режим. ID:', telegramUserId);
+    console.warn('Тестовый режим. Telegram ID:', telegramUserId);
   }
 
-  const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co'; //
-  const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI'; //
-
+  // Проверка Supabase
   if (typeof supabase === 'undefined') {
-    alert('Ошибка: Библиотека Supabase не загружена');
+    alert('Критическая ошибка: Supabase не подключен!');
     return;
   }
-
   const { createClient } = supabase;
   const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
 
+  // Переменные викторины
   let questions = [];
   let currentQuestionIndex = 0;
   let correctCount = 0;
@@ -43,7 +48,7 @@ document.addEventListener('DOMContentLoaded', function() {
   let timerInterval = null;
   let tourCompleted = false;
 
-  // Данные регионов
+  // --- ДАННЫЕ РЕГИОНОВ ---
   const regions = {
     "Ташкент": ["Алмазарский", "Бектемирский", "Мирабадский", "Мирзо-Улугбекский", "Сергелийский", "Учтепинский", "Чиланзарский", "Шайхантахурский", "Юнусабадский", "Яккасарайский", "Яшнабадский"],
     "Андижанская область": ["Андижанский", "Асакинский", "Балыкчинский", "Бозский", "Булакбашинский", "Джалакудукский", "Избасканский", "Кургантепинский", "Мархаматский", "Пахтаабадский", "Ходжаабадский", "Шахриханский"],
@@ -60,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function() {
     "Каракалпакстан": ["Амударьинский", "Берунийский", "Бозатауский", "Кегейлийский", "Канлыкульский", "Караузякский", "Кунградский", "Муйнакский", "Нукусский", "Тахтакупырский", "Турткульский", "Ходжейлийский", "Чимбайский", "Шуманайский", "Элликкалинский"]
   };
 
-  // Инициализация списков
+  // --- ИНИЦИАЛИЗАЦИЯ ФОРМ ---
   const regionSelect = document.getElementById('region-select');
   regionSelect.innerHTML = '<option value="" disabled selected>Выберите регион</option>';
   Object.keys(regions).sort().forEach(region => {
@@ -97,6 +102,8 @@ document.addEventListener('DOMContentLoaded', function() {
   // --- ЛОГИКА ПРОФИЛЯ ---
 
   async function checkProfile() {
+    console.log("Проверяем профиль для TelegramID:", telegramUserId);
+    
     const { data, error } = await supabaseClient
       .from('users')
       .select('*')
@@ -104,26 +111,31 @@ document.addEventListener('DOMContentLoaded', function() {
       .maybeSingle();
 
     if (error) {
-      console.error("Ошибка проверки профиля:", error);
-      // Если ошибка связи, не блокируем, но предупреждаем
+      console.error("Ошибка API:", error);
+      return;
     }
 
-    // Если пользователя нет в базе ИЛИ профиль неполный
+    // Если нашли пользователя, сохраняем его ВНУТРЕННИЙ ID
+    if (data) {
+        internalDbId = data.id; 
+        console.log("Пользователь найден. Внутренний ID:", internalDbId);
+    }
+
     const isProfileComplete = data && data.class && data.region && data.district && data.school;
 
     if (!data || !isProfileComplete) {
-      // Пользователя нет или профиль пуст - показываем экран профиля
-      console.log("Профиль не найден или неполный. Открываем форму.");
+      console.log("Профиль не заполнен.");
       document.getElementById('home-screen').classList.add('hidden');
       document.getElementById('profile-screen').classList.remove('hidden');
       enableProfileEdit();
     } else {
-      // Пользователь есть и профиль заполнен - показываем Главную
-      console.log("Профиль загружен:", data);
+      console.log("Профиль заполнен.");
+      
+      // Заполняем форму данными (на случай редактирования)
       document.getElementById('class-select').value = data.class;
       document.getElementById('region-select').value = data.region;
       
-      // Подгружаем районы для выбранного региона
+      // Триггерим создание районов
       const districtSelect = document.getElementById('district-select');
       districtSelect.innerHTML = '<option value="" disabled selected>Выберите район</option>';
       if (regions[data.region]) {
@@ -135,8 +147,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
       }
       districtSelect.value = data.district;
-      districtSelect.disabled = true;
-
+      
       document.getElementById('school-input').value = data.school;
       document.getElementById('research-consent').checked = data.research_consent || false;
 
@@ -186,10 +197,12 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    document.getElementById('save-profile').disabled = true;
-    document.getElementById('save-profile').textContent = 'Сохранение...';
+    const btn = document.getElementById('save-profile');
+    btn.disabled = true;
+    btn.textContent = 'Сохранение...';
 
-    const { error } = await supabaseClient
+    // ВАЖНО: Добавили .select(), чтобы получить обратно созданный ID
+    const { data, error } = await supabaseClient
       .from('users')
       .upsert({
         telegram_id: telegramUserId,
@@ -198,21 +211,27 @@ document.addEventListener('DOMContentLoaded', function() {
         district: district,
         school: school,
         research_consent: consent
-      }, { onConflict: 'telegram_id' });
+      }, { onConflict: 'telegram_id' })
+      .select(); 
 
     if (error) {
       alert('Ошибка сохранения: ' + error.message);
-      document.getElementById('save-profile').disabled = false;
-      document.getElementById('save-profile').textContent = 'Сохранить и продолжить';
+      btn.disabled = false;
+      btn.textContent = 'Сохранить и продолжить';
       console.error(error);
     } else {
+      // Если успешно сохранили, берем ID из ответа
+      if (data && data.length > 0) {
+          internalDbId = data[0].id;
+          console.log("Профиль создан/обновлен. Новый ID:", internalDbId);
+      }
       document.getElementById('profile-screen').classList.add('hidden');
       document.getElementById('home-screen').classList.remove('hidden');
-      // Повторная проверка, чтобы убедиться что все ок
-      checkProfile(); 
+      checkProfile();
     }
   });
 
+  // Валидация полей
   const requiredFields = document.querySelectorAll('#class-select, #region-select, #district-select, #school-input');
   requiredFields.forEach(field => {
     field.addEventListener('input', () => {
@@ -221,8 +240,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // --- КНОПКИ МЕНЮ ---
-
+  // --- МЕНЮ ---
   document.getElementById('back-from-profile').addEventListener('click', () => {
     document.getElementById('profile-screen').classList.add('hidden');
     document.getElementById('home-screen').classList.remove('hidden');
@@ -231,31 +249,28 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('profile-btn').addEventListener('click', () => {
     document.getElementById('home-screen').classList.add('hidden');
     document.getElementById('profile-screen').classList.remove('hidden');
-    // При ручном открытии профиля разрешаем редактирование, если нужно
-    // Но лучше просто показать данные. Если хотите разрешить ред., раскомментируйте:
-    // enableProfileEdit(); 
   });
 
   document.getElementById('progress-btn').addEventListener('click', async () => {
+    // ВАЖНО: Прогресс ищем по telegram_id, так надежнее при чтении
     const { data, error } = await supabaseClient
       .from('user_answers')
       .select('is_correct')
-      .eq('user_id', telegramUserId);
+      .eq('user_id', internalDbId); // Используем внутренний ID
 
     if (error) {
-      alert('Ошибка загрузки прогресса');
-      return;
+        console.error(error);
+        alert('Ошибка загрузки прогресса');
+        return;
     }
     const total = data.length;
     const correct = data.filter(a => a.is_correct).length;
     const percent = total > 0 ? Math.round((correct / total) * 100) : 0;
-    alert(`Ваш прогресс:\nПравильных ответов: ${correct} из ${total}\nПроцент: ${percent}%`);
+    alert(`Ваш прогресс:\nПравильных ответов: ${correct}\n(Всего попыток: ${total})`);
   });
 
   document.getElementById('exit-btn').addEventListener('click', () => {
-    if (window.Telegram && Telegram.WebApp) {
-      Telegram.WebApp.close();
-    }
+    if (window.Telegram && Telegram.WebApp) Telegram.WebApp.close();
   });
 
   document.getElementById('about-btn').addEventListener('click', () => {
@@ -267,12 +282,8 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('close-about-x').addEventListener('click', () => {
     document.getElementById('about-modal').classList.add('hidden');
   });
-  document.getElementById('leaderboard-btn').addEventListener('click', () => {
-    alert('Лидерборд в разработке!');
-  });
-  document.getElementById('download-certificate').addEventListener('click', () => {
-    alert('Сертификат в разработке!');
-  });
+  document.getElementById('leaderboard-btn').addEventListener('click', () => alert('Лидерборд скоро будет!'));
+  document.getElementById('download-certificate').addEventListener('click', () => alert('Сертификат скоро будет!'));
 
   // --- ЛОГИКА ТУРА ---
 
@@ -290,49 +301,33 @@ document.addEventListener('DOMContentLoaded', function() {
 
   document.getElementById('confirm-start').addEventListener('click', async () => {
     document.getElementById('warning-modal').classList.add('hidden');
-    await ensureUserExistsAndStart();
+    startTourCheck();
   });
 
-  // ГЛАВНОЕ ИСПРАВЛЕНИЕ: Гарантируем, что пользователь есть в базе перед стартом
-  async function ensureUserExistsAndStart() {
-    const startBtn = document.getElementById('start-tour');
-    startBtn.disabled = true;
-    startBtn.textContent = 'Загрузка...';
+  async function startTourCheck() {
+    const btn = document.getElementById('start-tour');
+    btn.textContent = 'Загрузка...';
+    btn.disabled = true;
 
-    // 1. Проверяем, существует ли юзер реально
-    const { data, error } = await supabaseClient
-      .from('users')
-      .select('id')
-      .eq('telegram_id', telegramUserId)
-      .maybeSingle();
-
-    if (!data) {
-      // Юзера нет! Пытаемся создать "пустышку" или используем данные из формы, если они сохранились в памяти
-      console.warn("Пользователь не найден в базе перед стартом. Пытаюсь создать...");
-      
-      const { error: insertError } = await supabaseClient
-        .from('users')
-        .upsert({
-            telegram_id: telegramUserId,
-            // Если профиль пустой, ставим прочерки, чтобы не упала ошибка NOT NULL
-            class: document.getElementById('class-select').value || 9, 
-            region: document.getElementById('region-select').value || 'Не указан',
-            district: document.getElementById('district-select').value || 'Не указан',
-            school: document.getElementById('school-input').value || '0',
-            research_consent: false
-        }, { onConflict: 'telegram_id' });
-
-      if (insertError) {
-        alert("Критическая ошибка: Не удалось создать пользователя. Пройдите регистрацию в профиле заново.");
-        console.error(insertError);
-        document.getElementById('profile-btn').click(); // Отправляем в профиль
-        startBtn.disabled = false;
-        startBtn.textContent = 'Начать тур';
-        return;
-      }
+    // Финальная проверка наличия ID перед стартом
+    if (!internalDbId) {
+        // Попытка экстренно получить ID
+        const { data } = await supabaseClient
+            .from('users')
+            .select('id')
+            .eq('telegram_id', telegramUserId)
+            .maybeSingle();
+        
+        if (data) {
+            internalDbId = data.id;
+        } else {
+            alert('Ошибка: Ваш профиль не найден. Пожалуйста, откройте "Мой профиль" и сохраните данные.');
+            btn.textContent = 'Начать тур';
+            btn.disabled = false;
+            return;
+        }
     }
-
-    // Если всё ок, запускаем тур
+    
     startTour();
   }
 
@@ -345,8 +340,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (error || !data || data.length === 0) {
       alert('Ошибка загрузки вопросов. Проверьте интернет.');
       console.error(error);
-      document.getElementById('start-tour').disabled = false;
       document.getElementById('start-tour').textContent = 'Начать тур';
+      document.getElementById('start-tour').disabled = false;
       return;
     }
 
@@ -390,14 +385,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const nextBtn = document.getElementById('next-button');
     nextBtn.disabled = true;
+    nextBtn.textContent = 'Далее';
     selectedAnswer = null;
 
-    // ВАЖНО: Если options_text пустой или null -> показываем поле ввода
-    // Если там есть хоть что-то (даже пробел или текст вопроса) -> показываем кнопки
     const optionsText = (q.options_text || '').trim();
 
     if (optionsText !== '') {
-      // РЕЖИМ КНОПОК
+      // Кнопки
       const options = optionsText.split('\n');
       options.forEach(option => {
         if (option.trim()) {
@@ -407,89 +401,72 @@ document.addEventListener('DOMContentLoaded', function() {
           btn.onclick = () => {
             document.querySelectorAll('.option-button').forEach(b => b.classList.remove('selected'));
             btn.classList.add('selected');
-            
             const optText = option.trim();
-            // Если ответ начинается с буквы (A. Ответ), берем только букву. Иначе весь текст.
             const isLetterOption = optText.match(/^[A-DА-Г][)\.\s]/i);
             selectedAnswer = isLetterOption ? optText.charAt(0).toUpperCase() : optText;
-            
             nextBtn.disabled = false;
           };
           container.appendChild(btn);
         }
       });
     } else {
-      // РЕЖИМ ВВОДА ТЕКСТА (ЕСЛИ options_text ПУСТОЙ)
+      // Поле ввода
       const textarea = document.createElement('textarea');
-      textarea.placeholder = 'Введите число или ответ...';
-      textarea.rows = 3;
-      textarea.className = 'answer-input'; // Класс для стилизации
-
+      textarea.className = 'answer-input';
+      textarea.placeholder = 'Введите ответ...';
+      textarea.rows = 2;
       textarea.addEventListener('input', () => {
         selectedAnswer = textarea.value.trim();
         nextBtn.disabled = selectedAnswer.length === 0;
       });
-
       container.appendChild(textarea);
-      
-      // Фокус с небольшой задержкой для мобильных
-      setTimeout(() => { 
-          textarea.focus(); 
-      }, 300);
+      setTimeout(() => textarea.focus(), 300);
     }
   }
 
   document.getElementById('next-button').addEventListener('click', async () => {
+    if (!internalDbId) {
+        alert("Ошибка: Потеряна связь с профилем. Перезагрузите приложение.");
+        return;
+    }
+
     const nextBtn = document.getElementById('next-button');
     nextBtn.disabled = true;
     nextBtn.textContent = 'Сохранение...';
 
     const q = questions[currentQuestionIndex];
-
     let isCorrect = false;
     const correctDB = (q.correct_answer || '').trim();
 
-    // Логика проверки
     if ((q.options_text || '').trim() !== '') {
-      // Для кнопок - точное совпадение (или по букве)
       isCorrect = selectedAnswer.toLowerCase() === correctDB.toLowerCase();
     } else {
-      // Для текста - ищем вхождение или точное совпадение
-      const userAns = selectedAnswer.toLowerCase().replace(',', '.'); // заменяем запятую на точку для чисел
+      const userAns = selectedAnswer.toLowerCase().replace(',', '.');
       const correctOptions = correctDB.toLowerCase().split(',').map(s => s.trim().replace(',', '.'));
       isCorrect = correctOptions.some(a => a === userAns);
     }
 
     if (isCorrect) correctCount++;
 
-    // Сохранение в базу
+    // ГЛАВНОЕ ИСПРАВЛЕНИЕ: используем internalDbId, а не telegramUserId
     const { error } = await supabaseClient
       .from('user_answers')
       .upsert({
-        user_id: telegramUserId,
+        user_id: internalDbId, // <--- ВОТ ЗДЕСЬ БЫЛА ОШИБКА
         question_id: q.id,
         answer: selectedAnswer,
         is_correct: isCorrect
       }, { onConflict: 'user_id,question_id' });
 
     if (error) {
-      console.error('Ошибка сохранения ответа:', error);
-      // Если ошибка критическая (например, нет юзера), пробуем спасти ситуацию или выводим алерт
-      if (error.code === '23503') {
-         alert('Ошибка: Ваш профиль не найден. Пожалуйста, перезапустите приложение и заполните профиль.');
-         location.reload();
-         return;
-      }
-      alert('Сбой сохранения. Попробуйте еще раз.');
+      console.error('Ошибка сохранения:', error);
+      alert('Ошибка сохранения ответа! Проверьте интернет. ' + error.message);
       nextBtn.disabled = false;
-      nextBtn.textContent = 'Далее';
+      nextBtn.textContent = 'Повторить';
       return;
     }
 
-    // Переход к следующему
     currentQuestionIndex++;
-    nextBtn.textContent = 'Далее';
-
     if (currentQuestionIndex < questions.length) {
       showQuestion();
     } else {
@@ -499,20 +476,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
   async function finishTour() {
     clearInterval(timerInterval);
-
     const { error } = await supabaseClient
       .from('users')
       .update({ tour_completed: true })
-      .eq('telegram_id', telegramUserId);
+      .eq('id', internalDbId); // Используем internalDbId
 
-    if (error) console.error('Ошибка обновления tour_completed:', error);
+    if (error) console.error(error);
 
     tourCompleted = true;
     const percent = Math.round((correctCount / questions.length) * 100);
 
     document.getElementById('quiz-screen').classList.add('hidden');
     document.getElementById('result-screen').classList.remove('hidden');
-
     document.getElementById('correct-count').textContent = `${correctCount} из ${questions.length}`;
     document.getElementById('result-percent').textContent = `${percent}%`;
   }
@@ -523,6 +498,6 @@ document.addEventListener('DOMContentLoaded', function() {
     checkProfile();
   });
 
-  // Запуск проверки при старте
+  // Старт
   checkProfile();
 });
