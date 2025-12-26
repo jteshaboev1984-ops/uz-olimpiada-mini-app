@@ -79,7 +79,6 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 }
 .locked-status-btn i { font-size: 16px; }
 
-/* ФИКСАЦИЯ ВНИЗУ */
 .bottom-fixed {
     position: fixed; bottom: 0; left: 0; width: 100%;
     background: #FFFFFF; padding: 16px 20px 30px; 
@@ -87,28 +86,21 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 }
 .bottom-fixed.column { display: flex; flex-direction: column; gap: 8px; }
 
-/* ФОРМЫ (ИСПРАВЛЕНО) */
+/* ФОРМЫ */
 .form-group { margin-bottom: 16px; }
 .form-group label { display: block; font-size: 14px; color: var(--text-sec); margin-bottom: 8px; font-weight: 500; }
-
 .input-wrapper { position: relative; width: 100%; }
-
 .input-wrapper select, .input-wrapper input { 
     width: 100%; padding: 16px 40px 16px 16px; 
-    border: 1px solid var(--border); 
-    border-radius: var(--radius);
-    background: white; 
-    appearance: none; -webkit-appearance: none;
-    font-size: 16px; color: var(--text-main); outline: none;
-    box-shadow: var(--shadow); 
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: white; appearance: none; -webkit-appearance: none;
+    font-size: 16px; color: var(--text-main); outline: none; box-shadow: var(--shadow); 
 }
 .input-wrapper select:focus, .input-wrapper input:focus { border-color: var(--primary); }
-
 .input-wrapper i { 
     position: absolute; right: 16px; top: 50%; transform: translateY(-50%); 
     color: var(--text-sec); pointer-events: none; font-size: 18px; z-index: 5;
 }
-
 .input-wrapper select:disabled, .input-wrapper input:disabled { 
     background: #F9F9F9; color: #666; border-color: transparent; opacity: 1; box-shadow: none;
 }
@@ -128,7 +120,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .checkbox-card { display: flex; gap: 12px; align-items: flex-start; border: 1px solid var(--border); padding: 16px; border-radius: var(--radius); box-shadow: var(--shadow); background: white; }
 .checkbox-card input { width: 20px; height: 20px; margin-top: 2px; }
 
-/* ОСТАЛЬНЫЕ СТИЛИ */
+/* HEADER & HOME */
 .top-bar { display: flex; justify-content: space-between; padding: 16px 20px; background: var(--bg-color); }
 .logo-area { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 18px; }
 .profile-icon-btn { width: 36px; height: 36px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow); }
