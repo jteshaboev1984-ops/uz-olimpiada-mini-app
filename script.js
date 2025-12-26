@@ -1,4 +1,4 @@
-  document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function() {
   console.log('Приложение запущено');
 
   let telegramUserId;
@@ -24,7 +24,7 @@
     console.warn('Тестовый режим. ID:', telegramUserId);
   }
 
-  const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
+  const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co  ';
   const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI';
 
   if (typeof supabase === 'undefined') {
@@ -442,9 +442,3 @@
 
   checkProfile();
 });
-
-
-              </script>
-                        </body>
-                        </html>
-                    
