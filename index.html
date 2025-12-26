@@ -7,7 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="supabase.min.js?v=1"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=7">
+    <link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
 
@@ -78,8 +78,11 @@
         </div>
 
         <div class="bottom-fixed">
-            <button id="save-profile" class="btn-primary" disabled>
+            <button id="save-profile" class="btn-primary">
                 Сохранить и продолжить <i class="fa-solid fa-arrow-right"></i>
+            </button>
+            <button id="back-from-profile" class="btn-secondary hidden" style="margin-top: 10px;">
+                Назад
             </button>
         </div>
     </div>
@@ -151,13 +154,13 @@
             </div>
         </div>
 
-        <div class="bottom-fixed">
+        <div class="bottom-fixed column">
             <button id="start-tour" class="btn-primary">
                 <i class="fa-solid fa-play"></i> Начать тур
             </button>
-            <div class="status-check">
-                <i class="fa-solid fa-circle-check"></i> Профиль заполнен
-            </div>
+            <button id="exit-app-btn" class="btn-text-danger">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i> Выход
+            </button>
         </div>
     </div>
 
@@ -172,13 +175,9 @@
 
         <div class="container quiz-container">
             <div class="subject-badge" id="subject-tag">МАТЕМАТИКА</div>
-            
             <h2 id="question-text" class="question-title">Загрузка вопроса...</h2>
-            
             <p class="hint-text">Выберите правильный вариант ответа из списка ниже.</p>
-
-            <div id="options-container" class="options-list">
-                </div>
+            <div id="options-container" class="options-list"></div>
         </div>
 
         <div class="bottom-fixed">
@@ -196,7 +195,7 @@
 
         <div class="container result-content">
             <div class="result-chart-wrapper">
-                <div class="circular-chart" id="result-circle" style="background: conic-gradient(#007AFF 0%, #E5E5EA 0%);">
+                <div class="circular-chart" id="result-circle">
                     <div class="inner-circle">
                         <span class="percent-text" id="result-percent">0%</span>
                     </div>
@@ -216,21 +215,6 @@
                     <div class="val" id="stat-time">40м</div>
                     <div class="lbl">Время</div>
                 </div>
-                <div class="stat-box">
-                    <div class="icon blue"><i class="fa-solid fa-chart-simple"></i></div>
-                    <div class="val">#--</div>
-                    <div class="lbl">Рейтинг</div>
-                </div>
-            </div>
-            
-            <h3 class="section-title">Работа над ошибками</h3>
-            <div class="error-review-card">
-                 <div class="review-item">
-                    <div class="review-header">
-                        <i class="fa-solid fa-circle-info red"></i>
-                        <span>Результаты сохранены в базе данных.</span>
-                    </div>
-                 </div>
             </div>
         </div>
 
@@ -271,66 +255,26 @@
                     <div class="score">1145</div>
                 </div>
             </div>
-
-            <div class="list-header">
-                <span>УЧАСТНИК</span>
-                <span>БАЛЛЫ</span>
-            </div>
-
             <div class="leader-list">
                 <div class="leader-row">
                     <span class="pos">4</span>
                     <div class="usr-av"><img src="https://cdn-icons-png.flaticon.com/512/147/147144.png"></div>
-                    <div class="usr-info">
-                        <span class="u-name">Дмитрий В.</span>
-                        <span class="u-meta"><i class="fa-solid fa-circle-check"></i> 94% точность</span>
-                    </div>
+                    <div class="usr-info"><span class="u-name">Дмитрий В.</span><span class="u-meta">94%</span></div>
                     <span class="u-score">1120</span>
                 </div>
-                <div class="leader-row">
-                    <span class="pos">5</span>
-                    <div class="usr-av gray">A</div>
-                    <div class="usr-info">
-                        <span class="u-name">Аноним</span>
-                        <span class="u-meta"><i class="fa-solid fa-circle-check"></i> 93% точность</span>
-                    </div>
-                    <span class="u-score">1105</span>
-                </div>
-            </div>
-        </div>
-        
-        <div class="sticky-rank">
-            <div class="rank-box">#45</div>
-            <div class="my-info">
-                <span class="m-name">Вы (Аноним)</span>
-                <span class="m-stat">Ваша статистика</span>
-            </div>
-            <div class="my-score">
-                <span class="val">950</span>
-                <span class="lbl">БАЛЛЫ</span>
-            </div>
-            <div class="my-percent">
-                <span class="val">82%</span>
-                <span class="lbl">ТОЧНОСТЬ</span>
             </div>
         </div>
     </div>
 
     <div class="modal hidden" id="warning-modal">
         <div class="modal-card">
-            <div class="modal-handle"></div>
             <div class="modal-icon-big"><i class="fa-solid fa-stopwatch"></i><div class="alert-badge">!</div></div>
             <h2>Предупреждение перед туром</h2>
             <p>У вас будет <strong>40 минут</strong> на <strong>15 вопросов</strong>.</p>
-            
             <div class="alert-box">
                 <i class="fa-solid fa-triangle-exclamation"></i>
-                <p>Повтор тура невозможен даже при сбое связи или закрытии приложения.</p>
+                <p>Повтор тура невозможен даже при сбое связи.</p>
             </div>
-            
-            <p class="small-text">Результаты сохраняются автоматически.</p>
-            <h3>Готовы начать?</h3>
-
             <button id="confirm-start" class="btn-primary">Начать тур <i class="fa-solid fa-arrow-right"></i></button>
             <button id="cancel-start" class="btn-text">Отмена</button>
         </div>
@@ -339,34 +283,19 @@
     <div class="modal hidden" id="about-modal">
         <div class="modal-card full-height">
             <div class="modal-header">
-                <div class="handle"></div>
                 <h3>О проекте</h3>
                 <div class="close-btn" id="close-about"><i class="fa-solid fa-times"></i></div>
             </div>
             <div class="modal-body-scroll">
                 <div class="blue-banner">
-                    <span class="tag">ONLINE</span> <span class="tag glass">Grades 8-11</span>
-                    <h1>Бесплатная олимпиада нового формата</h1>
+                    <span class="tag">ONLINE</span>
+                    <h1>Бесплатная олимпиада</h1>
                 </div>
-                <p class="desc">
-                    Уникальное соревнование, объединяющее академические стандарты <span class="blue-text">Cambridge IGCSE / AS Level</span> с элементами международных экзаменов SAT и IELTS.
-                </p>
-                
-                <h3 class="section-h3"><i class="fa-solid fa-bullseye"></i> Цели проекта</h3>
-                <div class="info-card">
-                    <div class="icon-box"><i class="fa-solid fa-trophy"></i></div>
-                    <div>
-                        <h4>Поддержка талантов</h4>
-                        <p>Выявление и поощрение одаренных школьников.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="bottom-fixed">
-                <button class="btn-primary">Читать правила участия</button>
+                <p class="desc">Уникальное соревнование по стандартам Cambridge.</p>
             </div>
         </div>
     </div>
 
-    <script src="script.js?v=7"></script>
+    <script src="script.js?v=8"></script>
 </body>
 </html>
