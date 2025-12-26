@@ -1,15 +1,13 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v12.0 (Multi-Tour & Dynamic Timer)');
+    console.log('App Started: v13.0 (Fixed Regions & Styles)');
   
     let telegramUserId; 
     let internalDbId = null; 
-    let currentTourId = null; // ID текущего активного тура
+    let currentTourId = null; 
     
-    // Supabase Config
     const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
     const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI';
   
-    // Telegram Init
     if (window.Telegram && window.Telegram.WebApp) {
       Telegram.WebApp.ready();
       Telegram.WebApp.expand();
@@ -21,7 +19,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
   
-    // Test Mode
     if (!telegramUserId) {
       let storedId = localStorage.getItem('test_user_id');
       if (!storedId) {
@@ -35,7 +32,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const { createClient } = supabase;
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
   
-    // Variables
     let questions = [];
     let currentQuestionIndex = 0;
     let correctCount = 0;
@@ -43,17 +39,23 @@ document.addEventListener('DOMContentLoaded', function() {
     let timerInterval = null;
     let tourCompleted = false;
   
-    // Regions Data (сократил для краткости, код не менялся)
+    // --- ПОЛНЫЙ СПИСОК РЕГИОНОВ ---
     const regions = {
       "Ташкент": ["Алмазарский", "Бектемирский", "Мирабадский", "Мирзо-Улугбекский", "Сергелийский", "Учтепинский", "Чиланзарский", "Шайхантахурский", "Юнусабадский", "Яккасарайский", "Яшнабадский"],
       "Андижанская область": ["Андижанский", "Асакинский", "Балыкчинский", "Бозский", "Булакбашинский", "Джалакудукский", "Избасканский", "Кургантепинский", "Мархаматский", "Пахтаабадский", "Ходжаабадский", "Шахриханский"],
-      // ... остальные регионы (они у вас есть в старом коде, можно оставить) ...
+      "Бухарская область": ["Бухарский", "Вабкентский", "Гиждуванский", "Жондорский", "Каганский", "Каракульский", "Караулбазарский", "Пешкунский", "Рометанский", "Шафирканский"],
+      "Джизакская область": ["Арнасайский", "Бахмальский", "Галляаральский", "Дустликский", "Зафарабадский", "Зарбдарский", "Мирзачульский", "Пахтакорский", "Фаришский", "Шараф-Рашидовский"],
+      "Кашкадарьинская область": ["Чиракчинский", "Дехканабадский", "Гузарский", "Камашинский", "Каршинский", "Касанский", "Китабский", "Кукдалинский", "Миришкорский", "Мубарекский", "Нишанский", "Шахрисабзский", "Яккабагский"],
+      "Навоийская область": ["Канимехский", "Кызылтепинский", "Навбахорский", "Навоийский", "Нуратинский", "Тамдынский", "Учкудукский", "Хатырчинский"],
+      "Наманганская область": ["Касансайский", "Наманганский", "Папский", "Туракурганский", "Уйчинский", "Учкурганский", "Чартакский", "Чустский", "Янгикурганский"],
+      "Самаркандская область": ["Булунгурский", "Иштиханский", "Каттакурганский", "Кошрабадский", "Нарпайский", "Пайарыкский", "Пастдаргомский", "Самаркандский", "Тайлакский", "Ургутский"],
+      "Сурхандарьинская область": ["Алтынсайский", "Ангорский", "Байсунский", "Денауский", "Джаркурганский", "Кумкурганский", "Музрабадский", "Сариасийский", "Термезский", "Узунский", "Шерабадский", "Шурчинский"],
+      "Сырдарьинская область": ["Акалтынский", "Баяутский", "Гулистанский", "Мирзаабадский", "Сайхунабадский", "Сардобский", "Сырдарьинский", "Хавастский"],
+      "Ферганская область": ["Алтыарыкский", "Багдадский", "Бешарыкский", "Дангаринский", "Ферганский", "Фуркатский", "Кувинский", "Кушкупырский", "Риштанский", "Ташлакский", "Учкуприкский", "Узбекистанский", "Язъяванский"],
+      "Хорезмская область": ["Багатский", "Гурленский", "Ханкинский", "Хазараспский", "Ургенчский", "Шаватский", "Янгиарыкский", "Янгибазарский"],
+      "Каракалпакстан": ["Амударьинский", "Берунийский", "Бозатауский", "Кегейлийский", "Канлыкульский", "Караузякский", "Кунградский", "Муйнакский", "Нукусский", "Тахтакупырский", "Турткульский", "Ходжейлийский", "Чимбайский", "Шуманайский", "Элликкалинский"]
     };
-    // (Для работы скопируйте полный список регионов из версии v11, если он нужен здесь, иначе оставьте пустым для теста)
-    // Я добавляю заглушку, чтобы код работал
-    if(Object.keys(regions).length < 5) regions["Тестовый регион"] = ["Район 1", "Район 2"];
-
-    // Init Selects
+  
     const regionSelect = document.getElementById('region-select');
     regionSelect.innerHTML = '<option value="" disabled selected>Выберите регион</option>';
     Object.keys(regions).sort().forEach(region => {
@@ -87,42 +89,34 @@ document.addEventListener('DOMContentLoaded', function() {
       classSelect.appendChild(option);
     }
   
-    // --- PROFILE & TOUR CHECK LOGIC ---
+    // --- LOGIC ---
 
     async function checkProfileAndTour() {
-      // 1. Получаем юзера
       const { data: userData } = await supabaseClient
         .from('users')
         .select('*')
         .eq('telegram_id', telegramUserId)
         .maybeSingle();
   
-      if (userData) {
-          internalDbId = userData.id;
-      }
+      if (userData) internalDbId = userData.id;
   
-      // 2. Ищем АКТИВНЫЙ тур по дате
       const now = new Date().toISOString();
-      const { data: tourData, error: tourError } = await supabaseClient
+      const { data: tourData } = await supabaseClient
         .from('tours')
         .select('*')
-        .lte('start_date', now) // начался раньше чем сейчас
-        .gte('end_date', now)   // закончится позже чем сейчас
+        .lte('start_date', now)
+        .gte('end_date', now)
         .eq('is_active', true)
         .maybeSingle();
 
       if (!tourData) {
-          console.warn("Нет активных туров");
-          // Можно скрыть кнопку или написать "Туров пока нет"
           const btn = document.getElementById('start-tour');
           btn.innerHTML = '<i class="fa-solid fa-calendar-xmark"></i> Нет активных туров';
           btn.disabled = true;
           btn.style.background = "#8E8E93";
       } else {
           currentTourId = tourData.id;
-          console.log("Активный тур:", tourData.title);
           
-          // 3. Если тур есть и юзер есть, проверяем, прошел ли он его
           if (internalDbId) {
               const { data: progress } = await supabaseClient
                   .from('tour_progress')
@@ -141,7 +135,6 @@ document.addEventListener('DOMContentLoaded', function() {
           }
       }
 
-      // Логика отображения экрана профиля
       const isProfileComplete = userData && userData.class && userData.region && userData.district && userData.school;
   
       if (!userData || !isProfileComplete) {
@@ -171,16 +164,46 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('research-consent').checked = data.research_consent || false;
     }
 
+    // НОВАЯ ЛОГИКА КНОПКИ СТАРТА
+    async function handleStartClick() {
+        // Чтобы показать время, нужно сначала подгрузить данные о вопросах
+        const btn = document.getElementById('start-tour');
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Загрузка...';
+        
+        const { data } = await supabaseClient
+            .from('questions')
+            .select('time_limit_seconds')
+            .eq('tour_id', currentTourId)
+            .limit(50);
+            
+        let totalSeconds = 0;
+        let count = 0;
+        if(data) {
+            data.forEach(q => totalSeconds += (q.time_limit_seconds || 60));
+            count = Math.min(data.length, 15); // Мы берем 15 вопросов
+        }
+        
+        // Пересчет в минуты
+        const mins = Math.ceil(totalSeconds / 60);
+        
+        // Обновляем текст в модалке
+        document.getElementById('warn-time-val').textContent = `${mins} минут`;
+        document.getElementById('warn-q-val').textContent = `${count} вопросов`;
+        
+        // Возвращаем кнопку и открываем модалку
+        updateStartButtonState(false);
+        document.getElementById('warning-modal').classList.remove('hidden');
+    }
+
     function updateStartButtonState(isCompleted, tourTitle = "Начать тур") {
         const btn = document.getElementById('start-tour');
-        // Очищаем старые листенеры через клон
         const newBtn = btn.cloneNode(true);
         btn.parentNode.replaceChild(newBtn, btn);
 
         if (isCompleted) {
             newBtn.innerHTML = '<i class="fa-solid fa-check"></i> Тур пройден';
             newBtn.classList.remove('btn-primary');
-            newBtn.classList.add('btn-success'); // Зеленая кнопка
+            newBtn.classList.add('btn-success');
             newBtn.addEventListener('click', () => {
                 document.getElementById('tour-completed-modal').classList.remove('hidden');
             });
@@ -189,18 +212,14 @@ document.addEventListener('DOMContentLoaded', function() {
             newBtn.classList.remove('btn-success');
             newBtn.classList.add('btn-primary');
             newBtn.disabled = false;
-            newBtn.addEventListener('click', () => {
-                document.getElementById('warning-modal').classList.remove('hidden');
-            });
+            newBtn.addEventListener('click', handleStartClick); // <-- Вызываем новую функцию
         }
     }
 
-    // --- Profile Form UI ---
     function lockProfileForm() {
         document.getElementById('save-profile').classList.add('hidden');
         document.getElementById('profile-back-btn').classList.remove('hidden');
         document.getElementById('profile-locked-msg').classList.remove('hidden');
-        // Inputs
         const inputs = document.querySelectorAll('#profile-screen input, #profile-screen select');
         inputs.forEach(el => el.disabled = true);
     }
@@ -209,10 +228,8 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('save-profile').classList.remove('hidden');
         document.getElementById('profile-back-btn').classList.add('hidden');
         document.getElementById('profile-locked-msg').classList.add('hidden');
-        // Inputs
         const inputs = document.querySelectorAll('#profile-screen input, #profile-screen select');
         inputs.forEach(el => el.disabled = false);
-        // District остается заблокированным пока не выбран регион, но это в логике change event
     }
   
     document.getElementById('save-profile').addEventListener('click', async () => {
@@ -251,7 +268,6 @@ document.addEventListener('DOMContentLoaded', function() {
           
           lockProfileForm();
           showScreen('home-screen');
-          // После сохранения проверим туры
           checkProfileAndTour();
 
       } catch (e) {
@@ -261,7 +277,6 @@ document.addEventListener('DOMContentLoaded', function() {
       } 
     });
   
-    // Валидация полей (включает кнопку)
     const requiredFields = document.querySelectorAll('#class-select, #region-select, #district-select, #school-input');
     requiredFields.forEach(field => {
       field.addEventListener('input', () => {
@@ -303,7 +318,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     document.getElementById('download-certificate-btn').addEventListener('click', () => alert("Сертификаты будут доступны после завершения олимпиады!"));
   
-    // --- TOUR LOGIC (START) ---
+    // --- TOUR LOGIC ---
     document.getElementById('cancel-start').addEventListener('click', () => {
       document.getElementById('warning-modal').classList.add('hidden');
     });
@@ -314,34 +329,23 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   
     async function startTour() {
-      if (!currentTourId) {
-          alert("Нет активного тура");
-          return;
-      }
+      if (!currentTourId) return;
 
-      // Загружаем вопросы ТОЛЬКО ЭТОГО ТУРА
       const { data, error } = await supabaseClient
         .from('questions')
         .select('*')
         .eq('tour_id', currentTourId)
-        .limit(50); // Или другой лимит
+        .limit(50);
   
       if (error || !data || data.length === 0) {
         alert('Ошибка: Вопросы для этого тура не найдены.');
         return;
       }
   
-      // Перемешиваем и берем 15 (или меньше, если вопросов мало)
       questions = data.sort(() => Math.random() - 0.5).slice(0, 15);
       
-      // РАСЧЕТ ВРЕМЕНИ (сумма секунд всех вопросов)
       let totalSeconds = 0;
-      questions.forEach(q => {
-          // Если в базе time_limit_seconds пустое, берем 60 сек
-          totalSeconds += (q.time_limit_seconds || 60);
-      });
-
-      console.log(`Тур начат. Вопросов: ${questions.length}. Время: ${totalSeconds} сек.`);
+      questions.forEach(q => totalSeconds += (q.time_limit_seconds || 60));
 
       currentQuestionIndex = 0;
       correctCount = 0;
@@ -359,7 +363,7 @@ document.addEventListener('DOMContentLoaded', function() {
       timerInterval = setInterval(() => {
         const mins = Math.floor(timeLeft / 60);
         const secs = timeLeft % 60;
-        timerEl.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+        timerEl.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
         if (timeLeft <= 0) {
           clearInterval(timerInterval);
           finishTour();
@@ -371,9 +375,15 @@ document.addEventListener('DOMContentLoaded', function() {
     function showQuestion() {
       const q = questions[currentQuestionIndex];
       document.getElementById('question-number').textContent = currentQuestionIndex + 1;
+      document.getElementById('total-q-count').textContent = questions.length;
       document.getElementById('subject-tag').textContent = q.subject || 'ВОПРОС';
       document.getElementById('question-text').innerHTML = q.question_text;
       
+      // Подсказка по времени
+      const timeForQ = q.time_limit_seconds || 60;
+      const minsHint = Math.round(timeForQ / 60 * 10) / 10;
+      document.getElementById('q-time-hint').innerHTML = `<i class="fa-solid fa-hourglass-half"></i> ~${minsHint} мин`;
+
       const progressPercent = ((currentQuestionIndex + 1) / questions.length) * 100;
       document.getElementById('quiz-progress-fill').style.width = `${progressPercent}%`;
   
@@ -428,7 +438,6 @@ document.addEventListener('DOMContentLoaded', function() {
       nextBtn.disabled = true;
       nextBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Сохранение...';
   
-      // Гарантируем ID
       if (!internalDbId) {
           const { data } = await supabaseClient.from('users').select('id').eq('telegram_id', telegramUserId).maybeSingle();
           if(data) internalDbId = data.id;
@@ -476,7 +485,6 @@ document.addEventListener('DOMContentLoaded', function() {
     async function finishTour() {
       clearInterval(timerInterval);
       
-      // Записываем, что тур пройден в новую таблицу progress
       if (internalDbId && currentTourId) {
           await supabaseClient
             .from('tour_progress')
@@ -498,19 +506,15 @@ document.addEventListener('DOMContentLoaded', function() {
       const circle = document.getElementById('result-circle');
       circle.style.background = `conic-gradient(var(--primary) 0% ${percent}%, #E5E5EA ${percent}% 100%)`;
       
-      // Обновляем кнопку на главной, чтобы она стала зеленой
       updateStartButtonState(true);
     }
   
     document.getElementById('back-home').addEventListener('click', () => {
       showScreen('home-screen');
-      // Не вызываем checkProfileAndTour() снова, чтобы не мигало, 
-      // состояние кнопки уже обновлено в finishTour
     });
     document.getElementById('back-home-x').addEventListener('click', () => {
         showScreen('home-screen');
     });
   
-    // Start Logic
     checkProfileAndTour();
   });
