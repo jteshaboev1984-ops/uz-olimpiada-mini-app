@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v13.0 (Fixed Regions & Styles)');
+    console.log('App Started: v14.0 (Real Leaderboard & All Subjects)');
   
     let telegramUserId; 
     let internalDbId = null; 
@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let timerInterval = null;
     let tourCompleted = false;
   
-    // --- ПОЛНЫЙ СПИСОК РЕГИОНОВ ---
+    // РЕГИОНЫ
     const regions = {
       "Ташкент": ["Алмазарский", "Бектемирский", "Мирабадский", "Мирзо-Улугбекский", "Сергелийский", "Учтепинский", "Чиланзарский", "Шайхантахурский", "Юнусабадский", "Яккасарайский", "Яшнабадский"],
       "Андижанская область": ["Андижанский", "Асакинский", "Балыкчинский", "Бозский", "Булакбашинский", "Джалакудукский", "Избасканский", "Кургантепинский", "Мархаматский", "Пахтаабадский", "Ходжаабадский", "Шахриханский"],
@@ -114,6 +114,7 @@ document.addEventListener('DOMContentLoaded', function() {
           btn.innerHTML = '<i class="fa-solid fa-calendar-xmark"></i> Нет активных туров';
           btn.disabled = true;
           btn.style.background = "#8E8E93";
+          btn.classList.remove('btn-success');
       } else {
           currentTourId = tourData.id;
           
@@ -164,9 +165,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('research-consent').checked = data.research_consent || false;
     }
 
-    // НОВАЯ ЛОГИКА КНОПКИ СТАРТА
     async function handleStartClick() {
-        // Чтобы показать время, нужно сначала подгрузить данные о вопросах
         const btn = document.getElementById('start-tour');
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Загрузка...';
         
@@ -180,17 +179,13 @@ document.addEventListener('DOMContentLoaded', function() {
         let count = 0;
         if(data) {
             data.forEach(q => totalSeconds += (q.time_limit_seconds || 60));
-            count = Math.min(data.length, 15); // Мы берем 15 вопросов
+            count = Math.min(data.length, 15);
         }
         
-        // Пересчет в минуты
         const mins = Math.ceil(totalSeconds / 60);
-        
-        // Обновляем текст в модалке
         document.getElementById('warn-time-val').textContent = `${mins} минут`;
         document.getElementById('warn-q-val').textContent = `${count} вопросов`;
         
-        // Возвращаем кнопку и открываем модалку
         updateStartButtonState(false);
         document.getElementById('warning-modal').classList.remove('hidden');
     }
@@ -212,7 +207,7 @@ document.addEventListener('DOMContentLoaded', function() {
             newBtn.classList.remove('btn-success');
             newBtn.classList.add('btn-primary');
             newBtn.disabled = false;
-            newBtn.addEventListener('click', handleStartClick); // <-- Вызываем новую функцию
+            newBtn.addEventListener('click', handleStartClick);
         }
     }
 
@@ -285,7 +280,7 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     });
   
-    // --- NAV ---
+    // --- UTILS ---
     function showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
         document.getElementById(screenId).classList.remove('hidden');
@@ -302,12 +297,97 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('subject-modal').classList.remove('hidden');
     }
 
+    // --- LEADERBOARD LOGIC (REAL DATA) ---
+    async function loadLeaderboard() {
+        if (!currentTourId) return;
+        
+        const podium = document.getElementById('lb-podium');
+        const list = document.getElementById('lb-list');
+        podium.innerHTML = '<p style="text-align:center;width:100%;color:#8E8E93;">Загрузка...</p>';
+        list.innerHTML = '';
+
+        // 1. Получаем топ-20 результатов тура
+        const { data: progressData, error } = await supabaseClient
+            .from('tour_progress')
+            .select('user_id, score')
+            .eq('tour_id', currentTourId)
+            .order('score', { ascending: false })
+            .limit(20);
+
+        if (error || !progressData || progressData.length === 0) {
+            podium.innerHTML = '<p style="text-align:center;width:100%;color:#8E8E93;">Пока нет результатов</p>';
+            return;
+        }
+
+        // 2. Получаем данные пользователей (имена)
+        const userIds = progressData.map(p => p.user_id);
+        const { data: usersData } = await supabaseClient
+            .from('users')
+            .select('id, first_name, last_name, class')
+            .in('id', userIds);
+
+        if (!usersData) return;
+
+        // 3. Объединяем данные
+        const leaderboard = progressData.map((entry, index) => {
+            const user = usersData.find(u => u.id === entry.user_id);
+            return {
+                rank: index + 1,
+                name: user ? `${user.first_name} ${user.last_name || ''}`.trim() : 'Аноним',
+                classVal: user ? user.class : '',
+                score: entry.score,
+                avatarChar: user && user.first_name ? user.first_name[0].toUpperCase() : 'A'
+            };
+        });
+
+        // 4. Рендерим ПОДИУМ (Топ 3)
+        podium.innerHTML = '';
+        const top3 = [leaderboard[1], leaderboard[0], leaderboard[2]]; // Порядок: 2, 1, 3
+        const ranks = ['second', 'first', 'third'];
+        const medals = ['silver', 'gold', 'bronze'];
+
+        top3.forEach((player, i) => {
+            if (player) {
+                let html = `
+                    <div class="winner ${ranks[i]}">
+                        ${ranks[i] === 'first' ? '<div class="icon-crown"><i class="fa-solid fa-crown"></i></div>' : ''}
+                        <div class="avatar-ring ${medals[i]}">
+                            <div class="usr-av" style="width:100%;height:100%;font-size:24px;background:#eee;color:#999;">${player.avatarChar}</div>
+                        </div>
+                        <div class="rank-badge">#${player.rank}</div>
+                        <div class="name">${player.name}</div>
+                        <div class="score">${player.score}</div>
+                    </div>
+                `;
+                podium.insertAdjacentHTML('beforeend', html);
+            }
+        });
+
+        // 5. Рендерим СПИСОК (Остальные)
+        leaderboard.slice(3).forEach(player => {
+             let html = `
+                <div class="leader-row">
+                    <span class="pos">${player.rank}</span>
+                    <div class="usr-av gray">${player.avatarChar}</div>
+                    <div class="usr-info"><span class="u-name">${player.name}</span><span class="u-meta">${player.classVal} класс</span></div>
+                    <span class="u-score">${player.score}</span>
+                </div>
+            `;
+            list.insertAdjacentHTML('beforeend', html);
+        });
+    }
+
+    // --- EVENT LISTENERS ---
     document.getElementById('open-profile-btn').addEventListener('click', () => {
         showScreen('profile-screen');
         lockProfileForm();
     });
     document.getElementById('profile-back-btn').addEventListener('click', () => showScreen('home-screen'));
-    document.getElementById('leaderboard-btn').addEventListener('click', () => showScreen('leaderboard-screen'));
+    
+    document.getElementById('leaderboard-btn').addEventListener('click', () => {
+        showScreen('leaderboard-screen');
+        loadLeaderboard(); // Загружаем при открытии
+    });
     document.getElementById('lb-back').addEventListener('click', () => showScreen('home-screen'));
     document.getElementById('about-btn').addEventListener('click', () => document.getElementById('about-modal').classList.remove('hidden'));
     document.getElementById('close-about').addEventListener('click', () => document.getElementById('about-modal').classList.add('hidden'));
@@ -379,7 +459,6 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('subject-tag').textContent = q.subject || 'ВОПРОС';
       document.getElementById('question-text').innerHTML = q.question_text;
       
-      // Подсказка по времени
       const timeForQ = q.time_limit_seconds || 60;
       const minsHint = Math.round(timeForQ / 60 * 10) / 10;
       document.getElementById('q-time-hint').innerHTML = `<i class="fa-solid fa-hourglass-half"></i> ~${minsHint} мин`;
