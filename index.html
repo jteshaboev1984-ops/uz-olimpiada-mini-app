@@ -4,21 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Олимпиада Cambridge</title>
-  <script src="https://telegram.org/js/telegram-web-app.js  "></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="supabase.min.js?v=1"></script>
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 
-  <!-- Главный экран -->
-  <div class="screen" id="home-screen">
+  <div class="screen hidden" id="home-screen">
     <div class="container">
       <h1>Привет, <span id="user-name">участник</span>!</h1>
       <p class="description">Межпредметная олимпиада Cambridge-уровня</p>
 
       <div class="progress-grid" id="progress-grid">
-        <!-- Карточки генерируются в JS -->
-      </div>
+        </div>
 
       <button id="start-tour" class="big-button">Начать тур</button>
       <button id="leaderboard-btn" class="big-button secondary">Лидерборд</button>
@@ -29,7 +27,6 @@
     </div>
   </div>
 
-  <!-- Экран профиля -->
   <div class="screen hidden" id="profile-screen">
     <div class="container">
       <h1>Завершите профиль</h1>
@@ -67,7 +64,6 @@
     </div>
   </div>
 
-  <!-- Экран викторины -->
   <div class="screen hidden" id="quiz-screen">
     <div class="container">
       <div class="quiz-header">
@@ -86,7 +82,6 @@
     </div>
   </div>
 
-  <!-- Экран результата -->
   <div class="screen hidden" id="result-screen">
     <div class="container result-container">
       <h1>Тур завершён!</h1>
@@ -99,14 +94,11 @@
     </div>
   </div>
 
-  <!-- Модальное предупреждение -->
   <div class="modal hidden" id="warning-modal">
     <div class="modal-content">
       <h2>Внимание!</h2>
       <p>У вас будет 40 минут на 15 вопросов.</p>
-      <p>Повтор тура невозможен даже при сбое связи или закрытии приложения.</p>
       <p>Результаты сохраняются автоматически после каждого ответа.</p>
-      <p>Убедитесь, что интернет стабилен.</p>
       <div class="modal-buttons">
         <button id="confirm-start" class="big-button">Начать тур</button>
         <button id="cancel-start" class="big-button secondary">Отмена</button>
@@ -114,35 +106,21 @@
     </div>
   </div>
 
-  <!-- Модальное "О проекте" -->
   <div class="modal hidden" id="about-modal">
     <div class="modal-content">
       <div style="text-align: right; margin-bottom: 10px;">
-        <button style="background:none;border:none;font-size:28px;cursor:pointer;">×</button>
+        <button style="background:none;border:none;font-size:28px;cursor:pointer;" id="close-about-x">×</button>
       </div>
       <h2>О проекте</h2>
       <p>Межпредметная олимпиада Cambridge-уровня</p>
-      <p>Это академическая олимпиада для школьников Узбекистана, задания которой выровнены по международным стандартам Cambridge IGCSE и AS Level и включают элементы SAT/IELTS-style reasoning.</p>
-      <p><strong>Цели проекта:</strong></p>
-      <ul>
-        <li>Развитие критического мышления и аналитических навыков</li>
-        <li>Подготовка к международным экзаменам и поступлению в топ-вузы</li>
-        <li>Выявление талантливых учеников из всех регионов страны</li>
-        <li>Добровольное участие в образовательных исследованиях</li>
-      </ul>
-      <p><strong>Особенности:</strong></p>
       <ul>
         <li>6 предметов: Математика, Химия, Биология, Информатика, Экономика, SAT/IELTS</li>
         <li>Один тур из 15 вопросов</li>
-        <li>Автоматическая проверка и мгновенный результат</li>
-        <li>Сертификат участника</li>
       </ul>
-      <p>Проект реализуется с использованием современных технологий Telegram и Supabase для максимальной доступности.</p>
-      <p>Организатор: [Твоё имя / организация]<br>2025–2026 учебный год</p>
       <button class="big-button" id="close-about">Закрыть</button>
     </div>
   </div>
 
-  <script src="script.js?v=3"></script>
+  <script src="script.js?v=4"></script>
 </body>
 </html>
