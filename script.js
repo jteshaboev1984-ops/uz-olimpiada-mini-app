@@ -169,4 +169,38 @@ async function loadLeaderboard() {
         // Формируем красивый вывод данных
         const displayName = user.name || 'Аноним';
         const displaySchool = (user.school && user.class) ? `Школа ${user.school}, ${user.class} кл.` : 'Школа не указана';
-        const displayGeo = (user.region && user.district) ? `${
+        const displayGeo = (user.region && user.district) ? `${user.region}, ${user.district}` : '';
+
+        // Проверяем, это ли я
+        const isMe = (user.telegram_id === currentUser?.telegram_id);
+        if (isMe) myRank = rank;
+
+        // Иконки для топ-3
+        let rankIcon = rank;
+        if (rank === 1) rankIcon = '🥇';
+        if (rank === 2) rankIcon = '🥈';
+        if (rank === 3) rankIcon = '🥉';
+
+        html += `
+            <div class="leader-card" style="${isMe ? 'background-color: #f0f8ff;' : ''}">
+                <div class="rank-num">${rankIcon}</div>
+                <div class="leader-info">
+                    <div class="leader-name">${displayName} ${isMe ? '(Вы)' : ''}</div>
+                    <div class="leader-school">${displaySchool}</div>
+                    <div class="leader-region">${displayGeo}</div>
+                </div>
+                <div class="leader-score">${score}</div>
+            </div>
+        `;
+    });
+
+    listContainer.innerHTML = html;
+    
+    // Обновляем текст с местом
+    if (myRank !== '-') {
+        rankDisplay.innerHTML = `Твое место: ${myRank} из ${totalParticipants}`;
+    } else {
+        rankDisplay.innerHTML = `Вы еще не проходили тур`;
+    }
+}
+// КОНЕЦ КОДА
