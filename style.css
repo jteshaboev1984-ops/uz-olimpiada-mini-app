@@ -22,8 +22,8 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .container { padding: 16px; max-width: 500px; margin: 0 auto; }
 
 /* FIX GAP & PADDING */
-.pb-home { padding-bottom: 120px; } /* Уменьшил отступ, чтобы не было дыры */
-.pb-large { padding-bottom: 120px; }
+.pb-home { padding-bottom: 180px; } /* Большой отступ снизу, чтобы контент не скрывался за кнопками */
+.pb-large { padding-bottom: 180px; }
 .pb-extra-large { padding-bottom: 220px; }
 
 /* BUTTONS */
@@ -49,9 +49,27 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .btn-danger-box { background: #FF3B301A; color: var(--danger); border: 1px solid transparent; width: 100%; padding: 16px; border-radius: 14px; margin-top: 5px; font-size: 17px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .btn-danger-box:active { background: #FF3B3033; }
 
-/* RESTORED WHITE CARDS */
+/* BOTTOM FIXED - ИСПРАВЛЕНО */
+.bottom-fixed {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #FFFFFF; /* Белая подложка под кнопками */
+    padding: 16px 20px 30px; /* Отступы для красоты и Safe Area iPhone */
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.08); /* Тень, чтобы отделить от контента */
+    z-index: 1000;
+}
+
+.bottom-fixed.column {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* REST OF STYLES */
 .card, .subject-card, .resource-card, .action-card, .profile-info-card { 
-    background-color: #FFFFFF !important; /* ЯВНЫЙ БЕЛЫЙ ЦВЕТ */
+    background-color: #FFFFFF !important; 
     border-radius: var(--radius); 
     box-shadow: var(--shadow); 
 }
@@ -59,8 +77,6 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 
 .header-profile { background: white; padding: 20px 16px 0; text-align: center; border-radius: 0 0 24px 24px; margin-bottom: 20px; box-shadow: var(--shadow); }
 .user-avatar-small { width: 60px; height: 60px; background: #E1F0FF; color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 12px; position: relative; }
-.progress-bar-line { height: 4px; background: #F2F2F2; width: 100%; margin-top: 20px; }
-.progress-bar-line .fill { height: 100%; background: var(--primary); }
 .profile-info-card { display: flex; align-items: center; gap: 12px; border: 1px solid var(--border); padding: 16px; }
 .avatar-circle { width: 48px; height: 48px; position: relative; flex-shrink: 0; }
 .avatar-circle img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
