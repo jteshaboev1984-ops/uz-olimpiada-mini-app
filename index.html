@@ -7,7 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="supabase.min.js?v=1"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=9">
+    <link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
 
@@ -22,7 +22,7 @@
             <div class="progress-bar-line"><div class="fill" style="width: 20%"></div></div>
         </div>
 
-        <div class="container" style="padding-bottom: 100px;">
+        <div class="container" style="padding-bottom: 120px;">
             <div class="card profile-info-card">
                 <div class="avatar-circle">
                     <img src="https://cdn-icons-png.flaticon.com/512/4140/4140048.png" alt="User">
@@ -80,7 +80,12 @@
                 Сохранить и продолжить <i class="fa-solid fa-arrow-right"></i>
             </button>
             
-            <button id="profile-back-btn" class="btn-secondary hidden">
+            <div id="profile-locked-msg" class="locked-message hidden">
+                <i class="fa-solid fa-lock"></i>
+                <span>Данные нельзя изменить согласно регламенту олимпиады.</span>
+            </div>
+
+            <button id="profile-back-btn" class="btn-secondary hidden" style="margin-top: 10px;">
                 <i class="fa-solid fa-arrow-left"></i> Вернуться на главную
             </button>
         </div>
@@ -114,41 +119,44 @@
 
             <div class="section-header">
                 <h2>Мои предметы</h2>
-                <span class="link-text">ПРОГРЕСС</span>
+                <span class="link-text">ПОДРОБНЕЕ</span>
             </div>
 
             <div class="subjects-grid">
-                <div class="subject-card">
+                <div class="subject-card" onclick="openSubjectStats('Математика')">
                     <div class="subject-top">
                         <div class="sub-icon blue"><i class="fa-solid fa-calculator"></i></div>
-                        <span class="percent">0%</span>
+                        <span class="percent" id="math-percent">0%</span>
                     </div>
                     <h3>Математика</h3>
-                    <div class="progress-line"><div style="width: 0%"></div></div>
+                    <div class="progress-line"><div id="math-bar" style="width: 0%"></div></div>
                 </div>
-                <div class="subject-card">
+                
+                <div class="subject-card" onclick="openSubjectStats('Английский')">
                     <div class="subject-top">
                         <div class="sub-icon violet"><i class="fa-solid fa-globe"></i></div>
-                        <span class="percent">0%</span>
+                        <span class="percent" id="eng-percent">0%</span>
                     </div>
                     <h3>Английский</h3>
-                    <div class="progress-line"><div style="width: 0%"></div></div>
+                    <div class="progress-line"><div id="eng-bar" style="width: 0%"></div></div>
                 </div>
-                 <div class="subject-card">
+                
+                 <div class="subject-card" onclick="openSubjectStats('Физика')">
                     <div class="subject-top">
                         <div class="sub-icon orange"><i class="fa-solid fa-bolt"></i></div>
-                        <span class="percent">0%</span>
+                        <span class="percent" id="phys-percent">0%</span>
                     </div>
                     <h3>Физика</h3>
-                    <div class="progress-line"><div style="width: 0%"></div></div>
+                    <div class="progress-line"><div id="phys-bar" style="width: 0%"></div></div>
                 </div>
-                 <div class="subject-card">
+                
+                 <div class="subject-card" onclick="openSubjectStats('Химия')">
                     <div class="subject-top">
                         <div class="sub-icon teal"><i class="fa-solid fa-flask"></i></div>
-                        <span class="percent">0%</span>
+                        <span class="percent" id="chem-percent">0%</span>
                     </div>
                     <h3>Химия</h3>
-                    <div class="progress-line"><div style="width: 0%"></div></div>
+                    <div class="progress-line"><div id="chem-bar" style="width: 0%"></div></div>
                 </div>
             </div>
         </div>
@@ -157,8 +165,8 @@
             <button id="start-tour" class="btn-primary">
                 <i class="fa-solid fa-play"></i> Начать тур
             </button>
-            <button id="exit-app-btn" class="btn-text-danger">
-                <i class="fa-solid fa-arrow-right-from-bracket"></i> Выход
+            <button id="exit-app-btn" class="btn-danger-box">
+                <i class="fa-solid fa-right-from-bracket"></i> Выход из приложения
             </button>
         </div>
     </div>
@@ -187,7 +195,7 @@
     </div>
 
     <div class="screen hidden" id="result-screen">
-        <div class="header-simple">
+        <div class="header-simple sticky-header">
             <div class="close-icon" id="back-home-x"><i class="fa-solid fa-times"></i></div>
             <h3>Результат тура</h3>
         </div>
@@ -228,11 +236,12 @@
     </div>
 
     <div class="screen hidden" id="leaderboard-screen">
-        <div class="header-simple">
+        <div class="header-simple sticky-header">
             <div class="back-btn" id="lb-back"><i class="fa-solid fa-arrow-left"></i></div>
             <h3>Лидерборд</h3>
         </div>
-        <div class="container">
+        
+        <div class="container" style="padding-top: 20px;">
             <div class="top-three">
                 <div class="winner second">
                     <div class="avatar-ring silver"><img src="https://cdn-icons-png.flaticon.com/512/4140/4140047.png"></div>
@@ -254,6 +263,12 @@
                     <div class="score">1145</div>
                 </div>
             </div>
+            
+            <div class="list-header">
+                <span>УЧАСТНИК</span>
+                <span>БАЛЛЫ</span>
+            </div>
+
             <div class="leader-list">
                 <div class="leader-row">
                     <span class="pos">4</span>
@@ -261,7 +276,42 @@
                     <div class="usr-info"><span class="u-name">Дмитрий В.</span><span class="u-meta">94%</span></div>
                     <span class="u-score">1120</span>
                 </div>
+                <div class="leader-row">
+                    <span class="pos">5</span>
+                    <div class="usr-av gray">A</div>
+                    <div class="usr-info"><span class="u-name">Аноним</span><span class="u-meta">92%</span></div>
+                    <span class="u-score">1090</span>
+                </div>
+                <div class="leader-row"><span class="pos">6</span><div class="usr-av gray">K</div><div class="usr-info"><span class="u-name">Kate W.</span><span class="u-meta">90%</span></div><span class="u-score">1050</span></div>
+                <div class="leader-row"><span class="pos">7</span><div class="usr-av gray">M</div><div class="usr-info"><span class="u-name">Max</span><span class="u-meta">88%</span></div><span class="u-score">1020</span></div>
+                <div class="leader-row"><span class="pos">8</span><div class="usr-av gray">S</div><div class="usr-info"><span class="u-name">Sam</span><span class="u-meta">85%</span></div><span class="u-score">1000</span></div>
             </div>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="subject-modal">
+        <div class="modal-card">
+            <div class="modal-handle"></div>
+            <div class="modal-icon-big" id="sm-icon-bg"><i class="fa-solid fa-book" id="sm-icon"></i></div>
+            <h2 id="sm-title">Предмет</h2>
+            <p id="sm-desc" class="small-text">Статистика ответов</p>
+            
+            <div class="stats-row" style="margin-bottom: 20px;">
+                <div class="stat-box">
+                    <div class="val" id="sm-correct">0</div>
+                    <div class="lbl">Правильно</div>
+                </div>
+                <div class="stat-box">
+                    <div class="val" id="sm-total">0</div>
+                    <div class="lbl">Всего</div>
+                </div>
+            </div>
+
+            <div class="progress-bar-line" style="height: 8px; margin-bottom: 24px;">
+                <div class="fill" id="sm-bar" style="width: 0%"></div>
+            </div>
+
+            <button class="btn-primary" onclick="document.getElementById('subject-modal').classList.add('hidden')">Понятно</button>
         </div>
     </div>
 
@@ -295,6 +345,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=9"></script>
+    <script src="script.js?v=10"></script>
 </body>
 </html>
