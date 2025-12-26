@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v29.0 (Beautiful UI & Interactive Button)');
+    console.log('App Started: v30.0 (Fix inputs & Profile Lock UI)');
   
     let telegramUserId; 
     let internalDbId = null; 
@@ -215,7 +215,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const certBtn = document.getElementById('download-cert-main-btn');
         if (!btn) return;
         
-        // Создаем чистый клон кнопки, чтобы удалить старые EventListeners
         const newBtn = btn.cloneNode(true);
         btn.parentNode.replaceChild(newBtn, btn);
         const activeBtn = document.getElementById('main-action-btn');
@@ -223,18 +222,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if (state === 'inactive') {
             activeBtn.innerHTML = '<i class="fa-solid fa-calendar-xmark"></i> Нет активных туров';
             activeBtn.disabled = true;
-            activeBtn.className = 'btn-primary'; // Сброс классов
+            activeBtn.className = 'btn-primary'; 
             activeBtn.style.background = "#8E8E93";
             certBtn.classList.add('hidden');
         } else if (state === 'completed') {
             activeBtn.innerHTML = '<i class="fa-solid fa-check"></i> Текущий тур пройден';
-            // Используем новый класс btn-success-clickable, чтобы кнопка нажималась
             activeBtn.className = 'btn-success-clickable';
             activeBtn.disabled = false;
-            activeBtn.style.background = ""; // Сброс инлайн стилей
+            activeBtn.style.background = ""; 
             certBtn.classList.remove('hidden');
             
-            // Добавляем обработчик клика для показа информации
             activeBtn.addEventListener('click', () => {
                 document.getElementById('tour-info-modal').classList.remove('hidden');
             });
@@ -251,7 +248,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function lockProfileForm() {
         document.getElementById('save-profile').classList.add('hidden');
         document.getElementById('profile-back-btn').classList.remove('hidden');
-        document.getElementById('profile-locked-msg').classList.remove('hidden');
+        
+        // Показываем новую кнопку статуса
+        document.getElementById('profile-locked-btn').classList.remove('hidden');
+        
         const inputs = document.querySelectorAll('#profile-screen input, #profile-screen select');
         inputs.forEach(el => el.disabled = true);
     }
@@ -259,7 +259,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function unlockProfileForm() {
         document.getElementById('save-profile').classList.remove('hidden');
         document.getElementById('profile-back-btn').classList.add('hidden');
-        document.getElementById('profile-locked-msg').classList.add('hidden');
+        
+        // Скрываем кнопку статуса
+        document.getElementById('profile-locked-btn').classList.add('hidden');
+        
         const inputs = document.querySelectorAll('#profile-screen input, #profile-screen select');
         inputs.forEach(el => el.disabled = false);
     }
@@ -316,7 +319,11 @@ document.addEventListener('DOMContentLoaded', function() {
     safeAddListener('open-profile-btn', 'click', () => { showScreen('profile-screen'); lockProfileForm(); });
     safeAddListener('profile-back-btn', 'click', () => showScreen('home-screen'));
     
-    // LEADERBOARD BTN
+    // Новая логика для кнопки статуса профиля
+    safeAddListener('profile-locked-btn', 'click', () => {
+        document.getElementById('profile-info-modal').classList.remove('hidden');
+    });
+
     safeAddListener('leaderboard-btn', 'click', () => {
         showScreen('leaderboard-screen');
         leaderboardMode = 'current';
