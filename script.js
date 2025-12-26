@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', function() {
   console.log('Приложение Smart Olympiad запущено');
 
   let telegramUserId;
@@ -143,17 +143,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  function updateProgressGrid(profileComplete, tourComplete) {
+  function updateProgressGrid(profileComplete, tourCompleted) {
     const progressGrid = document.getElementById('progress-grid');
     progressGrid.innerHTML = '';
 
     const subjects = [
-      { name: 'Математика', completed: tourComplete },
-      { name: 'Химия', completed: tourComplete },
-      { name: 'Биология', completed: tourComplete },
-      { name: 'Информатика', completed: tourComplete },
-      { name: 'Экономика', completed: tourComplete },
-      { name: 'SAT/IELTS', completed: tourComplete }
+      { name: 'Математика', completed: tourCompleted },
+      { name: 'Химия', completed: tourCompleted },
+      { name: 'Биология', completed: tourCompleted },
+      { name: 'Информатика', completed: tourCompleted },
+      { name: 'Экономика', completed: tourCompleted },
+      { name: 'SAT/IELTS', completed: tourCompleted }
     ];
 
     subjects.forEach(subject => {
@@ -259,7 +259,7 @@ document.addEventListener('DOMContentLoaded', function() {
     checkProfile();
   });
 
-  // Кнопка "Прогресс" (добавим ее обратно)
+  // Кнопка "Прогресс"
   const progressBtn = document.createElement('button');
   progressBtn.id = 'progress-btn';
   progressBtn.className = 'big-button secondary';
@@ -275,7 +275,7 @@ document.addEventListener('DOMContentLoaded', function() {
     alert('Функция "Прогресс" временно недоступна. Скоро будет обновление с детализацией по предметам!');
   }
 
-  // Кнопка выхода
+  // Кнопка выхода - теперь она есть!
   const exitBtn = document.createElement('button');
   exitBtn.id = 'exit-btn';
   exitBtn.className = 'big-button secondary';
