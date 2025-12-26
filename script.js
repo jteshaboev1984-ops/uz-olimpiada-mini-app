@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v16.0 (Final UI)');
+    console.log('App Started: v17.0 (Bulletproof)');
   
     let telegramUserId; 
     let internalDbId = null; 
@@ -101,7 +101,6 @@ document.addEventListener('DOMContentLoaded', function() {
   
       if (userData) internalDbId = userData.id;
   
-      // Active Tour
       const now = new Date().toISOString();
       const { data: tourData } = await supabaseClient
         .from('tours')
@@ -127,7 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
               
               if (progress) {
                   tourCompleted = true;
-                  updateMainButton('certificate'); // Показываем сертификат
+                  updateMainButton('certificate'); 
                   document.getElementById('subjects-title').textContent = "Ваши результаты";
               } else {
                   tourCompleted = false;
@@ -183,11 +182,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     window.openSubjectStats = function(subject) {
         const modal = document.getElementById('subject-modal');
-        document.getElementById('sm-title').textContent = subject;
-        const stats = calculateSubjectStats(subject);
-        document.getElementById('sm-correct').textContent = stats.correct;
-        document.getElementById('sm-total').textContent = stats.total;
-        modal.classList.remove('hidden');
+        if (modal) {
+            document.getElementById('sm-title').textContent = subject;
+            const stats = calculateSubjectStats(subject);
+            document.getElementById('sm-correct').textContent = stats.correct;
+            document.getElementById('sm-total').textContent = stats.total;
+            modal.classList.remove('hidden');
+        }
     }
 
     function fillProfileForm(data) {
@@ -208,7 +209,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('research-consent').checked = data.research_consent || false;
     }
 
-    // ЛОГИКА ГЛАВНОЙ КНОПКИ
     async function handleStartClick() {
         const btn = document.getElementById('main-action-btn');
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Загрузка...';
@@ -229,14 +229,13 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('warn-time-val').textContent = `${mins} минут`;
         document.getElementById('warn-q-val').textContent = `${count} вопросов`;
         
-        // Reset button text just in case cancel is clicked
         updateMainButton('start');
         document.getElementById('warning-modal').classList.remove('hidden');
     }
 
     function updateMainButton(state, title = "Начать тур") {
         const btn = document.getElementById('main-action-btn');
-        // Clear listeners
+        if (!btn) return;
         const newBtn = btn.cloneNode(true);
         btn.parentNode.replaceChild(newBtn, btn);
         const activeBtn = document.getElementById('main-action-btn');
@@ -247,11 +246,10 @@ document.addEventListener('DOMContentLoaded', function() {
             activeBtn.style.background = "#8E8E93";
         } else if (state === 'certificate') {
             activeBtn.innerHTML = '<i class="fa-solid fa-download"></i> Скачать сертификат';
-            activeBtn.className = 'btn-primary'; // Blue button
+            activeBtn.className = 'btn-primary';
             activeBtn.disabled = false;
             activeBtn.addEventListener('click', () => alert("Сертификат генерируется..."));
         } else {
-            // Start state
             activeBtn.innerHTML = `<i class="fa-solid fa-play"></i> ${title}`;
             activeBtn.className = 'btn-primary';
             activeBtn.disabled = false;
@@ -339,26 +337,33 @@ document.addEventListener('DOMContentLoaded', function() {
         else window.open(url, '_blank');
     }
 
-    document.getElementById('open-profile-btn').addEventListener('click', () => {
+    // --- SAFELY ADD EVENT LISTENERS ---
+    // This prevents the "null" error if a button is missing in HTML
+    function safeAddListener(id, event, handler) {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener(event, handler);
+    }
+
+    safeAddListener('open-profile-btn', 'click', () => {
         showScreen('profile-screen');
         lockProfileForm();
     });
-    document.getElementById('profile-back-btn').addEventListener('click', () => showScreen('home-screen'));
+    safeAddListener('profile-back-btn', 'click', () => showScreen('home-screen'));
     
-    document.getElementById('leaderboard-btn').addEventListener('click', () => {
+    safeAddListener('leaderboard-btn', 'click', () => {
         showScreen('leaderboard-screen');
         loadLeaderboard();
     });
     
-    document.getElementById('lb-back').addEventListener('click', () => showScreen('home-screen'));
-    document.getElementById('about-btn').addEventListener('click', () => document.getElementById('about-modal').classList.remove('hidden'));
-    document.getElementById('close-about').addEventListener('click', () => document.getElementById('about-modal').classList.add('hidden'));
+    safeAddListener('lb-back', 'click', () => showScreen('home-screen'));
+    safeAddListener('about-btn', 'click', () => document.getElementById('about-modal').classList.remove('hidden'));
+    safeAddListener('close-about', 'click', () => document.getElementById('about-modal').classList.add('hidden'));
     
-    document.getElementById('exit-app-btn').addEventListener('click', () => {
+    safeAddListener('exit-app-btn', 'click', () => {
         if(window.Telegram && Telegram.WebApp) Telegram.WebApp.close();
         else alert("Работает только в Telegram");
     });
-    document.getElementById('download-certificate-btn').addEventListener('click', () => alert("Сертификаты будут доступны после завершения олимпиады!"));
+    safeAddListener('download-certificate-btn', 'click', () => alert("Сертификаты будут доступны после завершения олимпиады!"));
   
     // --- LEADERBOARD ---
     async function loadLeaderboard() {
@@ -366,8 +371,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const podium = document.getElementById('lb-podium');
         const list = document.getElementById('lb-list');
-        podium.innerHTML = '<p style="text-align:center;width:100%;color:rgba(255,255,255,0.7);margin-top:20px;">Загрузка...</p>';
-        list.innerHTML = '';
+        if(podium) podium.innerHTML = '<p style="text-align:center;width:100%;color:rgba(255,255,255,0.7);margin-top:20px;">Загрузка...</p>';
+        if(list) list.innerHTML = '';
 
         const { data: progressData, error } = await supabaseClient
             .from('tour_progress')
@@ -377,7 +382,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .limit(20);
 
         if (error || !progressData || progressData.length === 0) {
-            podium.innerHTML = '<p style="text-align:center;width:100%;color:rgba(255,255,255,0.7);margin-top:20px;">Пока нет результатов</p>';
+            if(podium) podium.innerHTML = '<p style="text-align:center;width:100%;color:rgba(255,255,255,0.7);margin-top:20px;">Пока нет результатов</p>';
             return;
         }
 
@@ -400,47 +405,51 @@ document.addEventListener('DOMContentLoaded', function() {
             };
         });
 
-        podium.innerHTML = '';
-        const top3 = [leaderboard[1], leaderboard[0], leaderboard[2]]; 
-        const ranks = ['second', 'first', 'third'];
-        const medals = ['silver', 'gold', 'bronze'];
+        if (podium) {
+            podium.innerHTML = '';
+            const top3 = [leaderboard[1], leaderboard[0], leaderboard[2]]; 
+            const ranks = ['second', 'first', 'third'];
+            const medals = ['silver', 'gold', 'bronze'];
 
-        top3.forEach((player, i) => {
-            if (player) {
-                let html = `
-                    <div class="winner ${ranks[i]}">
-                        ${ranks[i] === 'first' ? '<div class="icon-crown"><i class="fa-solid fa-crown"></i></div>' : ''}
-                        <div class="avatar-ring ${medals[i]}">
-                            <div class="usr-av" style="width:100%;height:100%;font-size:20px;background:#eee;color:#999;">${player.avatarChar}</div>
+            top3.forEach((player, i) => {
+                if (player) {
+                    let html = `
+                        <div class="winner ${ranks[i]}">
+                            ${ranks[i] === 'first' ? '<div class="icon-crown"><i class="fa-solid fa-crown"></i></div>' : ''}
+                            <div class="avatar-ring ${medals[i]}">
+                                <div class="usr-av" style="width:100%;height:100%;font-size:20px;background:#eee;color:#999;">${player.avatarChar}</div>
+                            </div>
+                            <div class="rank-badge">#${player.rank}</div>
+                            <div class="name">${player.name}</div>
+                            <div class="score">${player.score}</div>
                         </div>
-                        <div class="rank-badge">#${player.rank}</div>
-                        <div class="name">${player.name}</div>
-                        <div class="score">${player.score}</div>
+                    `;
+                    podium.insertAdjacentHTML('beforeend', html);
+                }
+            });
+        }
+
+        if (list) {
+            leaderboard.slice(3).forEach(player => {
+                 let html = `
+                    <div class="leader-row">
+                        <span class="pos">${player.rank}</span>
+                        <div class="usr-av gray">${player.avatarChar}</div>
+                        <div class="usr-info"><span class="u-name">${player.name}</span><span class="u-meta">${player.classVal} класс</span></div>
+                        <span class="u-score">${player.score}</span>
                     </div>
                 `;
-                podium.insertAdjacentHTML('beforeend', html);
-            }
-        });
-
-        leaderboard.slice(3).forEach(player => {
-             let html = `
-                <div class="leader-row">
-                    <span class="pos">${player.rank}</span>
-                    <div class="usr-av gray">${player.avatarChar}</div>
-                    <div class="usr-info"><span class="u-name">${player.name}</span><span class="u-meta">${player.classVal} класс</span></div>
-                    <span class="u-score">${player.score}</span>
-                </div>
-            `;
-            list.insertAdjacentHTML('beforeend', html);
-        });
+                list.insertAdjacentHTML('beforeend', html);
+            });
+        }
     }
 
     // --- TOUR LOGIC ---
-    document.getElementById('cancel-start').addEventListener('click', () => {
+    safeAddListener('cancel-start', 'click', () => {
       document.getElementById('warning-modal').classList.add('hidden');
     });
   
-    document.getElementById('confirm-start').addEventListener('click', async () => {
+    safeAddListener('confirm-start', 'click', async () => {
       document.getElementById('warning-modal').classList.add('hidden');
       await startTour();
     });
@@ -548,7 +557,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
   
-    document.getElementById('next-button').addEventListener('click', async () => {
+    safeAddListener('next-button', 'click', async () => {
       const nextBtn = document.getElementById('next-button');
       nextBtn.disabled = true;
       nextBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Сохранение...';
@@ -619,18 +628,17 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('result-percent').textContent = `${percent}%`;
       
       const circle = document.getElementById('result-circle');
-      circle.style.background = `conic-gradient(var(--primary) 0% ${percent}%, #E5E5EA ${percent}% 100%)`;
+      if (circle) circle.style.background = `conic-gradient(var(--primary) 0% ${percent}%, #E5E5EA ${percent}% 100%)`;
       
-      // Update Main button to Certificate
       updateMainButton('certificate');
       document.getElementById('subjects-title').textContent = "Ваши результаты";
       fetchStatsData(); 
     }
   
-    document.getElementById('back-home').addEventListener('click', () => {
+    safeAddListener('back-home', 'click', () => {
       showScreen('home-screen');
     });
-    document.getElementById('back-home-x').addEventListener('click', () => {
+    safeAddListener('back-home-x', 'click', () => {
         showScreen('home-screen');
     });
   
