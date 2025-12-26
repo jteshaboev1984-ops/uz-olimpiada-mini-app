@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v32.0 (Fixed UI glitches)');
+    console.log('App Started: v33.0 (Better Modal & Buttons)');
   
     let telegramUserId; 
     let internalDbId = null; 
