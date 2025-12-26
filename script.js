@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v28.0 (Fixed UI & Logic)');
+    console.log('App Started: v29.0 (Beautiful UI & Interactive Button)');
   
     let telegramUserId; 
     let internalDbId = null; 
@@ -7,8 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let userAnswersCache = []; 
     let tourQuestionsCache = [];
     
-    // Переменная для режима лидерборда
-    let leaderboardMode = 'current'; // 'current' or 'total'
+    let leaderboardMode = 'current'; 
 
     const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
     const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI';
@@ -215,6 +214,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const btn = document.getElementById('main-action-btn');
         const certBtn = document.getElementById('download-cert-main-btn');
         if (!btn) return;
+        
+        // Создаем чистый клон кнопки, чтобы удалить старые EventListeners
         const newBtn = btn.cloneNode(true);
         btn.parentNode.replaceChild(newBtn, btn);
         const activeBtn = document.getElementById('main-action-btn');
@@ -222,16 +223,26 @@ document.addEventListener('DOMContentLoaded', function() {
         if (state === 'inactive') {
             activeBtn.innerHTML = '<i class="fa-solid fa-calendar-xmark"></i> Нет активных туров';
             activeBtn.disabled = true;
+            activeBtn.className = 'btn-primary'; // Сброс классов
             activeBtn.style.background = "#8E8E93";
             certBtn.classList.add('hidden');
         } else if (state === 'completed') {
             activeBtn.innerHTML = '<i class="fa-solid fa-check"></i> Текущий тур пройден';
-            activeBtn.className = 'btn-success-disabled';
+            // Используем новый класс btn-success-clickable, чтобы кнопка нажималась
+            activeBtn.className = 'btn-success-clickable';
+            activeBtn.disabled = false;
+            activeBtn.style.background = ""; // Сброс инлайн стилей
             certBtn.classList.remove('hidden');
+            
+            // Добавляем обработчик клика для показа информации
+            activeBtn.addEventListener('click', () => {
+                document.getElementById('tour-info-modal').classList.remove('hidden');
+            });
         } else {
             activeBtn.innerHTML = `<i class="fa-solid fa-play"></i> ${title}`;
             activeBtn.className = 'btn-primary';
             activeBtn.disabled = false;
+            activeBtn.style.background = "";
             certBtn.classList.add('hidden');
             activeBtn.addEventListener('click', handleStartClick);
         }
