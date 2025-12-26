@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v36.0 (Stats Live & Clean UI)');
+    console.log('App Started: v38.0 (Certificate Button in Subjects Block)');
   
     let telegramUserId; 
     let internalDbId = null; 
@@ -148,11 +148,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const { data: aData } = await supabaseClient.from('user_answers').select('question_id, is_correct').eq('user_id', internalDbId);
         if (aData) userAnswersCache = aData;
         
-        // ВЫЗЫВАЕМ ОБНОВЛЕНИЕ СТАТИСТИКИ
         updateDashboardStats();
     }
 
-    // НОВАЯ ФУНКЦИЯ ДЛЯ ОБНОВЛЕНИЯ КАРТОЧЕК
     function updateDashboardStats() {
         const subjectMap = {
             'Математика': 'math',
@@ -244,6 +242,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateMainButton(state, title = "Начать тур") {
         const btn = document.getElementById('main-action-btn');
+        // Кнопка сертификата внутри блока предметов
+        const certBtn = document.getElementById('home-cert-btn'); 
+        
         if (!btn) return;
         
         const newBtn = btn.cloneNode(true);
@@ -255,11 +256,13 @@ document.addEventListener('DOMContentLoaded', function() {
             activeBtn.disabled = true;
             activeBtn.className = 'btn-primary'; 
             activeBtn.style.background = "#8E8E93";
+            if (certBtn) certBtn.classList.add('hidden'); 
         } else if (state === 'completed') {
             activeBtn.innerHTML = '<i class="fa-solid fa-check"></i> Текущий тур пройден';
             activeBtn.className = 'btn-success-clickable';
             activeBtn.disabled = false;
             activeBtn.style.background = ""; 
+            if (certBtn) certBtn.classList.remove('hidden'); // ПОКАЗЫВАЕМ ВНУТРИ БЛОКА ПРЕДМЕТОВ
             
             activeBtn.addEventListener('click', () => {
                 document.getElementById('tour-info-modal').classList.remove('hidden');
@@ -269,6 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
             activeBtn.className = 'btn-primary';
             activeBtn.disabled = false;
             activeBtn.style.background = "";
+            if (certBtn) certBtn.classList.add('hidden'); // СКРЫВАЕМ
             activeBtn.addEventListener('click', handleStartClick);
         }
     }
@@ -360,6 +364,10 @@ document.addEventListener('DOMContentLoaded', function() {
         else alert("Работает только в Telegram");
     });
     
+    // СЛУШАТЕЛЬ ДЛЯ КНОПКИ В БЛОКЕ ПРЕДМЕТОВ
+    safeAddListener('home-cert-btn', 'click', () => {
+        showCertsModal();
+    });
     safeAddListener('download-certificate-res-btn', 'click', () => {
         showCertsModal();
     });
