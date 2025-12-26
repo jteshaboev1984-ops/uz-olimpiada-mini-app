@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v34.0 (Final Polished UI)');
+    console.log('App Started: v35.0 (Live Stats, Split Subjects, Clean UI)');
   
     let telegramUserId; 
     let internalDbId = null; 
@@ -147,9 +147,45 @@ document.addEventListener('DOMContentLoaded', function() {
         if (qData) tourQuestionsCache = qData;
         const { data: aData } = await supabaseClient.from('user_answers').select('question_id, is_correct').eq('user_id', internalDbId);
         if (aData) userAnswersCache = aData;
+        
+        // ОБНОВЛЕНИЕ СТАТИСТИКИ НА ГЛАВНОМ ЭКРАНЕ
+        updateDashboardStats();
+    }
+
+    // НОВАЯ ФУНКЦИЯ ДЛЯ ОБНОВЛЕНИЯ ПРОЦЕНТОВ НА КАРТОЧКАХ
+    function updateDashboardStats() {
+        // Карта соответствия названия предмета (из БД) -> ID элемента в HTML (префикс)
+        const subjectMap = {
+            'Математика': 'math',
+            'Английский': 'eng',
+            'Физика': 'phys',
+            'Химия': 'chem',
+            'Биология': 'bio',
+            'Информатика': 'it',
+            'Экономика': 'eco',
+            'SAT': 'sat',
+            'IELTS': 'ielts'
+        };
+
+        for (const [subjName, prefix] of Object.entries(subjectMap)) {
+            const stats = calculateSubjectStats(subjName);
+            let percent = 0;
+            if (stats.total > 0) {
+                percent = Math.round((stats.correct / stats.total) * 100);
+            }
+
+            // Обновляем текст процентов
+            const percentEl = document.getElementById(`${prefix}-percent`);
+            if (percentEl) percentEl.textContent = `${percent}%`;
+
+            // Обновляем полоску прогресса
+            const barEl = document.getElementById(`${prefix}-bar`);
+            if (barEl) barEl.style.width = `${percent}%`;
+        }
     }
 
     function calculateSubjectStats(subjectName) {
+        // Фильтруем вопросы по вхождению строки (например "SAT Math" попадет в "SAT")
         const subjectQuestions = tourQuestionsCache.filter(q => q.subject && q.subject.toLowerCase().includes(subjectName.toLowerCase()));
         if (subjectQuestions.length === 0) return { total: 0, correct: 0 };
         let correct = 0;
@@ -212,7 +248,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateMainButton(state, title = "Начать тур") {
         const btn = document.getElementById('main-action-btn');
-        const certBtn = document.getElementById('download-cert-main-btn');
+        // certBtn removed from here logic as it's not in DOM anymore in home screen
         if (!btn) return;
         
         const newBtn = btn.cloneNode(true);
@@ -224,13 +260,11 @@ document.addEventListener('DOMContentLoaded', function() {
             activeBtn.disabled = true;
             activeBtn.className = 'btn-primary'; 
             activeBtn.style.background = "#8E8E93";
-            certBtn.classList.add('hidden');
         } else if (state === 'completed') {
             activeBtn.innerHTML = '<i class="fa-solid fa-check"></i> Текущий тур пройден';
             activeBtn.className = 'btn-success-clickable';
             activeBtn.disabled = false;
             activeBtn.style.background = ""; 
-            certBtn.classList.remove('hidden');
             
             activeBtn.addEventListener('click', () => {
                 document.getElementById('tour-info-modal').classList.remove('hidden');
@@ -240,7 +274,6 @@ document.addEventListener('DOMContentLoaded', function() {
             activeBtn.className = 'btn-primary';
             activeBtn.disabled = false;
             activeBtn.style.background = "";
-            certBtn.classList.add('hidden');
             activeBtn.addEventListener('click', handleStartClick);
         }
     }
@@ -332,16 +365,14 @@ document.addEventListener('DOMContentLoaded', function() {
         else alert("Работает только в Telegram");
     });
     
-    safeAddListener('download-cert-main-btn', 'click', () => {
-        showCertsModal();
-    });
+    // Эту кнопку мы удалили с главного экрана, но оставили логику на случай, если кнопка в Results вызывает ту же функцию
+    // safeAddListener('download-cert-main-btn', 'click', () => { showCertsModal(); }); 
     safeAddListener('download-certificate-res-btn', 'click', () => {
         showCertsModal();
     });
 
     function showCertsModal() {
         const container = document.getElementById('certs-list-container');
-        // ГЕНЕРАЦИЯ КРАСИВОЙ КАРТОЧКИ
         container.innerHTML = `
             <div class="cert-card">
                 <div class="cert-icon"><i class="fa-solid fa-file-pdf"></i></div>
