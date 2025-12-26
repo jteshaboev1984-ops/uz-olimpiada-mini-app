@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v41.0 (Detailed Stats Modal & Card Cert)');
+    console.log('App Started: v42.0 (Fixed Header & Cert Card)');
   
     let telegramUserId; 
     let internalDbId = null; 
@@ -43,7 +43,6 @@ document.addEventListener('DOMContentLoaded', function() {
     let timerInterval = null;
     let tourCompleted = false;
   
-    // ПОЛНЫЙ СПИСОК РЕГИОНОВ
     const regions = {
         "Город Ташкент": ["Алмазарский", "Бектемирский", "Мирабадский", "Мирзо-Улугбекский", "Сергелийский", "Учтепинский", "Чиланзарский", "Шайхантахурский", "Юнусабадский", "Яккасарайский", "Яшнабадский", "Янгихаётский"],
         "Андижанская область": ["город Андижан", "Андижанский район", "Асакинский", "Балыкчинский", "Бозский", "Булакбашинский", "Джалакудукский", "Избасканский", "Кургантепинский", "Мархаматский", "Пахтаабадский", "Улугнарский", "Ходжаабадский", "Шахриханский"],
@@ -206,7 +205,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return { total, correct };
     }
 
-    // НОВАЯ ФУНКЦИЯ ОТКРЫТИЯ МОДАЛКИ С ДЕТАЛЬНОЙ СТАТИСТИКОЙ
     window.openSubjectStats = function(subject) {
         const modal = document.getElementById('subject-details-modal');
         const content = document.getElementById('sd-content');
