@@ -50,6 +50,27 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .btn-danger-box { background: #FF3B301A; color: var(--danger); border: 1px solid transparent; width: 100%; padding: 16px; border-radius: 14px; margin-top: 5px; font-size: 17px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .btn-danger-box:active { background: #FF3B3033; }
 
+/* НОВАЯ КРАСИВАЯ КНОПКА ЗАКРЫТЬ */
+.btn-text-simple {
+    background: none;
+    color: var(--text-sec);
+    border: none;
+    padding: 16px;
+    font-size: 15px;
+    font-weight: 600;
+    width: 100%;
+    cursor: pointer;
+    margin-top: 5px;
+    border-radius: 14px;
+    transition: background-color 0.2s;
+}
+.btn-text-simple:active {
+    background-color: rgba(0,0,0,0.05);
+    color: var(--text-main);
+}
+
+.btn-text { background: none; color: var(--text-sec); border: none; padding: 12px; font-size: 16px; width: 100%; cursor: pointer; }
+
 /* КНОПКА ЗАБЛОКИРОВАННОГО ПРОФИЛЯ */
 .locked-status-btn {
     background: #FFF2F2; color: var(--danger); 
@@ -71,20 +92,16 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .form-group { margin-bottom: 16px; }
 .form-group label { display: block; font-size: 14px; color: var(--text-sec); margin-bottom: 8px; font-weight: 500; }
 
-/* !!! ВАЖНОЕ ИСПРАВЛЕНИЕ: position: relative !!! */
-.input-wrapper { 
-    position: relative; /* ЭТОЙ СТРОКИ НЕ БЫЛО, ИЗ-ЗА ЭТОГО ИКОНКИ УЛЕТЕЛИ */
-    width: 100%; 
-}
+.input-wrapper { position: relative; width: 100%; }
 
 .input-wrapper select, .input-wrapper input { 
     width: 100%; padding: 16px 40px 16px 16px; 
     border: 1px solid var(--border); 
-    border-radius: var(--radius); /* Скругление как у карточек */
+    border-radius: var(--radius);
     background: white; 
     appearance: none; -webkit-appearance: none;
     font-size: 16px; color: var(--text-main); outline: none;
-    box-shadow: var(--shadow); /* Добавил тень, чтобы выглядело как карточка "Участник" */
+    box-shadow: var(--shadow); 
 }
 .input-wrapper select:focus, .input-wrapper input:focus { border-color: var(--primary); }
 
@@ -112,7 +129,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .checkbox-card { display: flex; gap: 12px; align-items: flex-start; border: 1px solid var(--border); padding: 16px; border-radius: var(--radius); box-shadow: var(--shadow); background: white; }
 .checkbox-card input { width: 20px; height: 20px; margin-top: 2px; }
 
-/* ОСТАЛЬНЫЕ СТИЛИ (БЕЗ ИЗМЕНЕНИЙ) */
+/* ОСТАЛЬНЫЕ СТИЛИ */
 .top-bar { display: flex; justify-content: space-between; padding: 16px 20px; background: var(--bg-color); }
 .logo-area { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 18px; }
 .profile-icon-btn { width: 36px; height: 36px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow); }
