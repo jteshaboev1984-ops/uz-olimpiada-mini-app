@@ -7,7 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="supabase.min.js?v=1"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=38">
+    <link rel="stylesheet" href="style.css?v=40">
 </head>
 <body>
 
@@ -133,11 +133,15 @@
                     <div class="subject-top"><div class="sub-icon red"><i class="fa-solid fa-graduation-cap"></i></div><span class="percent" id="ielts-percent">0%</span></div>
                     <h3>IELTS</h3><div class="progress-line"><div id="ielts-bar" style="width: 0%"></div></div>
                 </div>
-            </div>
 
-            <button id="home-cert-btn" class="btn-secondary hidden" style="margin-top: 15px;">
-                <i class="fa-solid fa-file-pdf"></i> Скачать сертификат
-            </button>
+                <div id="home-cert-btn" class="subject-card hidden" onclick="showCertsModal()">
+                    <div class="subject-top">
+                        <div class="sub-icon gold"><i class="fa-solid fa-award"></i></div>
+                    </div>
+                    <h3>Сертификат</h3>
+                    <div style="font-size: 11px; color: #8E8E93; margin-top: 5px;">Скачать PDF</div>
+                </div>
+            </div>
 
             <div class="section-header" style="margin-top: 30px;"><h2>Ресурсы</h2></div>
             <div class="resources-list">
@@ -352,6 +356,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=38"></script>
+    <script src="script.js?v=40"></script>
 </body>
 </html>
