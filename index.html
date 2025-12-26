@@ -7,7 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="supabase.min.js?v=1"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=20">
+    <link rel="stylesheet" href="style.css?v=21">
 </head>
 <body>
 
@@ -65,14 +65,17 @@
             <div class="card checkbox-card">
                 <input type="checkbox" id="research-consent">
                 <div class="checkbox-text">
-                    <strong>Согласие на обработку данных</strong>
-                    <span>Для рейтинга и сертификата.</span>
+                    <strong>Согласие на обработку</strong>
+                    <span>Для формирования рейтинга.</span>
                 </div>
             </div>
         </div>
 
         <div class="bottom-fixed">
             <button id="save-profile" class="btn-primary">Сохранить</button>
+            <div id="profile-locked-msg" class="locked-message hidden">
+                <i class="fa-solid fa-lock"></i> <span>Профиль заполнен</span>
+            </div>
             <button id="profile-back-btn" class="btn-secondary hidden" style="margin-top: 10px;">На главную</button>
         </div>
     </div>
@@ -220,8 +223,8 @@
             <div class="section-header"><h3>Работа над ошибками</h3></div>
             <div class="card error-review-card">
                 <div class="review-item">
-                    <div class="review-header"><i class="fa-solid fa-circle-check" style="color:var(--success)"></i> <span>Данные сохранены</span></div>
-                    <p style="font-size:13px; margin-top:5px; color:#666;">Детальный разбор будет доступен после подведения итогов.</p>
+                    <div class="review-header"><i class="fa-solid fa-circle-check" style="color:var(--success)"></i> <span>Результат принят</span></div>
+                    <p style="font-size:13px; margin-top:5px; color:#666;">Детальный разбор будет доступен после подведения итогов тура.</p>
                 </div>
             </div>
         </div>
@@ -230,7 +233,9 @@
             <button class="btn-secondary" id="download-certificate-res-btn">
                 <i class="fa-solid fa-download"></i> Скачать сертификат
             </button>
-            <button class="btn-primary" id="back-home">На главную</button>
+            <button class="btn-primary" id="back-home">
+                На главную
+            </button>
         </div>
     </div>
 
@@ -294,6 +299,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=20"></script>
+    <script src="script.js?v=21"></script>
 </body>
 </html>
