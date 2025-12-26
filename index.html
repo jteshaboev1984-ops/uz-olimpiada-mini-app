@@ -6,8 +6,8 @@
     <title>Smart Olympiad</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="supabase.min.js?v=1"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=17">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css?v=18">
 </head>
 <body>
 
@@ -15,11 +15,9 @@
         <div class="header-profile">
             <div class="user-avatar-small">
                 <i class="fa-solid fa-user"></i>
-                <div class="online-badge"></div>
             </div>
-            <h1>Профиль участника</h1>
+            <h1>Профиль</h1>
             <p id="profile-desc">Заполните данные для участия</p>
-            <div class="progress-bar-line"><div class="fill" style="width: 20%"></div></div>
         </div>
 
         <div class="container pb-large">
@@ -29,13 +27,13 @@
                     <div class="verified-badge"><i class="fa-solid fa-check"></i></div>
                 </div>
                 <div class="profile-text">
-                    <span class="sub-label">Вы вошли как</span>
-                    <h3 id="profile-user-name">Участник</h3>
+                    <span class="sub-label">Участник</span>
+                    <h3 id="profile-user-name">...</h3>
                 </div>
             </div>
 
             <div class="form-group">
-                <label>Класс обучения</label>
+                <label>Класс</label>
                 <div class="input-wrapper">
                     <select id="class-select"></select>
                     <i class="fa-solid fa-chevron-down arrow-icon"></i>
@@ -61,7 +59,7 @@
             <div class="form-group">
                 <label>Школа</label>
                 <div class="input-wrapper">
-                    <input type="text" id="school-input" placeholder="№ 1535 или Название">
+                    <input type="text" id="school-input" placeholder="№ школы">
                     <i class="fa-solid fa-graduation-cap icon-right"></i>
                 </div>
             </div>
@@ -69,22 +67,21 @@
             <div class="card checkbox-card">
                 <input type="checkbox" id="research-consent">
                 <div class="checkbox-text">
-                    <strong>Согласен на участие в исследовании</strong>
-                    <span>Обязательное условие для получения персональных рекомендаций.</span>
+                    <strong>Согласие на обработку данных</strong>
+                    <span>Для формирования рейтинга.</span>
                 </div>
             </div>
         </div>
 
         <div class="bottom-fixed">
             <button id="save-profile" class="btn-primary">
-                Сохранить и продолжить <i class="fa-solid fa-arrow-right"></i>
+                Сохранить <i class="fa-solid fa-arrow-right"></i>
             </button>
             <div id="profile-locked-msg" class="locked-message hidden">
-                <i class="fa-solid fa-lock"></i>
-                <span>Данные нельзя изменить по регламенту.</span>
+                <i class="fa-solid fa-lock"></i> <span>Профиль заполнен</span>
             </div>
             <button id="profile-back-btn" class="btn-secondary hidden" style="margin-top: 10px;">
-                <i class="fa-solid fa-arrow-left"></i> На главную
+                На главную
             </button>
         </div>
     </div>
@@ -102,7 +99,7 @@
 
         <div class="container pb-extra-large">
             <h1 class="greeting">Привет, <span id="home-user-name">Участник</span>! 👋</h1>
-            <p class="subtitle">Добро пожаловать на бесплатную онлайн-олимпиаду.</p>
+            <p class="subtitle">Добро пожаловать на олимпиаду.</p>
 
             <div class="action-grid">
                 <div class="action-card" id="leaderboard-btn">
@@ -155,23 +152,18 @@
             </div>
 
             <div class="section-header" style="margin-top: 30px;">
-                <h2>Ресурсы для подготовки</h2>
+                <h2>Ресурсы</h2>
             </div>
 
             <div class="resources-list">
                 <div class="resource-card" onclick="openExternalLink('https://youtube.com')">
                     <div class="res-icon youtube"><i class="fa-brands fa-youtube"></i></div>
-                    <div class="res-info"><h4>Видеоуроки</h4><p>Разборы задач по всем темам</p></div>
+                    <div class="res-info"><h4>Видеоуроки</h4><p>Разборы задач</p></div>
                     <i class="fa-solid fa-chevron-right arrow"></i>
                 </div>
                 <div class="resource-card" onclick="openExternalLink('https://t.me/your_channel')">
                     <div class="res-icon telegram"><i class="fa-solid fa-bullhorn"></i></div>
-                    <div class="res-info"><h4>Официальный канал</h4><p>Новости и анонсы туров</p></div>
-                    <i class="fa-solid fa-chevron-right arrow"></i>
-                </div>
-                <div class="resource-card" onclick="openExternalLink('https://t.me/your_group')">
-                    <div class="res-icon group"><i class="fa-solid fa-users"></i></div>
-                    <div class="res-info"><h4>Чат участников</h4><p>Обсуждение и помощь</p></div>
+                    <div class="res-info"><h4>Канал</h4><p>Новости олимпиады</p></div>
                     <i class="fa-solid fa-chevron-right arrow"></i>
                 </div>
             </div>
@@ -179,7 +171,7 @@
 
         <div class="bottom-fixed column">
             <button id="main-action-btn" class="btn-primary">
-                <i class="fa-solid fa-play"></i> Начать тур
+                Загрузка...
             </button>
             <button id="exit-app-btn" class="btn-danger-box">
                 <i class="fa-solid fa-right-from-bracket"></i> Выход
@@ -196,15 +188,15 @@
 
         <div class="container quiz-container pb-large">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <div class="subject-badge" id="subject-tag">ПРЕДМЕТ</div>
-                <div class="time-hint" id="q-time-hint"><i class="fa-solid fa-hourglass-half"></i> ~1 мин</div>
+                <div class="subject-badge" id="subject-tag">...</div>
+                <div class="time-hint" id="q-time-hint"></div>
             </div>
-            <h2 id="question-text" class="question-title">...</h2>
+            <h2 id="question-text" class="question-title">Загрузка...</h2>
             <div id="options-container" class="options-list"></div>
         </div>
 
         <div class="bottom-fixed">
-            <button id="next-button" class="btn-primary" disabled>Далее <i class="fa-solid fa-arrow-right"></i></button>
+            <button id="next-button" class="btn-primary" disabled>Далее</button>
         </div>
     </div>
 
@@ -222,32 +214,32 @@
                     </div>
                 </div>
                 <h2>Тур завершён!</h2>
-                <p style="color: #8E8E93; margin-top: 5px;">Ваш результат сохранен</p>
+                <p style="color: #8E8E93; margin-top: 5px;" id="result-tour-name">...</p>
             </div>
 
-            <div class="stats-row">
-                <div class="stat-box">
-                    <div class="icon blue"><i class="fa-solid fa-check"></i></div>
-                    <div class="val" id="stat-correct">0</div>
-                    <div class="lbl">Верно</div>
+            <div class="stats-row-custom">
+                <div class="stat-col left">
+                    <span class="lbl">ТУР</span>
+                    <span class="val" id="res-tour-title">Тур №1</span>
                 </div>
-                <div class="stat-box">
-                    <div class="icon blue"><i class="fa-solid fa-stopwatch"></i></div>
-                    <div class="val" id="stat-time">--</div>
-                    <div class="lbl">Время</div>
+                <div class="stat-col center">
+                    <span class="lbl">ВСЕГО</span>
+                    <span class="val" id="res-total">15</span>
                 </div>
-                <div class="stat-box">
-                    <div class="icon blue"><i class="fa-solid fa-trophy"></i></div>
-                    <div class="val">#--</div>
-                    <div class="lbl">Рейтинг</div>
+                <div class="stat-col right">
+                    <span class="lbl">ВЕРНО</span>
+                    <span class="val green-text" id="res-correct">0</span>
                 </div>
             </div>
 
             <div class="section-header"><h3>Работа над ошибками</h3></div>
             <div class="card error-review-card">
                 <div class="review-item">
-                    <div class="review-header"><i class="fa-solid fa-circle-xmark" style="color:var(--danger)"></i> <span>Данные сохранены</span></div>
-                    <p style="font-size:13px; margin-top:5px; color:#666;">Детальный разбор доступен после завершения тура всеми участниками.</p>
+                    <div class="review-header">
+                        <i class="fa-solid fa-circle-check" style="color:var(--success)"></i> 
+                        <span>Результат сохранен</span>
+                    </div>
+                    <p style="font-size:13px; margin-top:5px; color:#666;">Детальный разбор будет доступен в канале после завершения тура.</p>
                 </div>
             </div>
         </div>
@@ -288,13 +280,13 @@
     <div class="modal hidden" id="warning-modal">
         <div class="modal-card">
             <div class="modal-icon-big"><i class="fa-solid fa-stopwatch"></i><div class="alert-badge">!</div></div>
-            <h2>Предупреждение перед туром</h2>
+            <h2>Предупреждение</h2>
             <p>У вас будет <strong id="warn-time-val">...</strong> на <strong id="warn-q-val">...</strong>.</p>
             <div class="alert-box">
                 <i class="fa-solid fa-triangle-exclamation"></i>
                 <p>Повтор тура невозможен.</p>
             </div>
-            <button id="confirm-start" class="btn-primary">Начать тур <i class="fa-solid fa-arrow-right"></i></button>
+            <button id="confirm-start" class="btn-primary">Начать <i class="fa-solid fa-arrow-right"></i></button>
             <button id="cancel-start" class="btn-text">Отмена</button>
         </div>
     </div>
@@ -302,27 +294,12 @@
     <div class="modal hidden" id="subject-modal">
         <div class="modal-card">
             <div class="modal-handle"></div>
-            <div class="modal-icon-big" id="sm-icon-bg"><i class="fa-solid fa-book" id="sm-icon"></i></div>
             <h2 id="sm-title">Предмет</h2>
-            <p class="small-text">Результаты</p>
             <div class="stats-row" style="margin: 20px 0;">
                 <div class="stat-box"><div class="val" id="sm-correct" style="color:var(--success)">0</div><div class="lbl">Верно</div></div>
                 <div class="stat-box"><div class="val" id="sm-total">0</div><div class="lbl">Всего</div></div>
             </div>
             <button class="btn-primary" onclick="document.getElementById('subject-modal').classList.add('hidden')">Закрыть</button>
-        </div>
-    </div>
-
-    <div class="modal hidden" id="tour-completed-modal">
-        <div class="modal-card">
-            <div class="modal-icon-big"><i class="fa-solid fa-check-double"></i><div class="alert-badge" style="background:#34C759"><i class="fa-solid fa-check"></i></div></div>
-            <h2>Тур уже пройден!</h2>
-            <p>Вы успешно завершили этот этап.</p>
-            <div class="alert-box" style="background: #F2F9FF; color: #007AFF;">
-                <i class="fa-solid fa-graduation-cap"></i>
-                <p>Рекомендуем готовиться к следующему туру.</p>
-            </div>
-            <button class="btn-primary" onclick="document.getElementById('tour-completed-modal').classList.add('hidden')">Понятно</button>
         </div>
     </div>
 
@@ -335,13 +312,13 @@
             <div class="modal-body-scroll">
                 <div class="blue-banner">
                     <span class="tag">ONLINE</span>
-                    <h1>Бесплатная олимпиада</h1>
+                    <h1>Smart Olympiad</h1>
                 </div>
-                <p class="desc">Уникальное соревнование по стандартам Cambridge IGCSE / AS Level.</p>
+                <p class="desc">Cambridge IGCSE / AS Level + SAT/IELTS</p>
             </div>
         </div>
     </div>
 
-    <script src="script.js?v=17"></script>
+    <script src="script.js?v=18"></script>
 </body>
 </html>
