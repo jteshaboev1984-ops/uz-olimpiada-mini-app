@@ -2,9 +2,7 @@
 
 :root {
     --primary: #007AFF;
-    --primary-dark: #0056b3;
     --bg-color: #F2F3F5;
-    --card-bg: #FFFFFF;
     --text-main: #000000;
     --text-sec: #8E8E93;
     --border: #E5E5EA;
@@ -35,7 +33,6 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .btn-primary:active { transform: scale(0.98); }
 .btn-primary:disabled { background: #B4D5FE; cursor: default; }
 
-/* Зеленая кнопка (активная) */
 .btn-success-clickable {
     background: var(--success) !important; color: white !important; 
     width: 100%; padding: 16px; border-radius: 14px; font-size: 17px; font-weight: 600; 
@@ -50,17 +47,17 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .btn-danger-box { background: #FF3B301A; color: var(--danger); border: 1px solid transparent; width: 100%; padding: 16px; border-radius: 14px; margin-top: 5px; font-size: 17px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .btn-danger-box:active { background: #FF3B3033; }
 
-/* НОВАЯ КРАСИВАЯ КНОПКА ЗАКРЫТЬ */
+/* --- НОВАЯ КНОПКА ЗАКРЫТЬ (iOS Style) --- */
 .btn-text-simple {
-    background: none;
-    color: var(--text-sec);
+    background: transparent;
+    color: #8E8E93; /* Приятный серый */
     border: none;
     padding: 16px;
-    font-size: 15px;
+    font-size: 17px;
     font-weight: 600;
     width: 100%;
     cursor: pointer;
-    margin-top: 5px;
+    margin-top: 8px;
     border-radius: 14px;
     transition: background-color 0.2s;
 }
@@ -71,7 +68,6 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 
 .btn-text { background: none; color: var(--text-sec); border: none; padding: 12px; font-size: 16px; width: 100%; cursor: pointer; }
 
-/* КНОПКА ЗАБЛОКИРОВАННОГО ПРОФИЛЯ */
 .locked-status-btn {
     background: #FFF2F2; color: var(--danger); 
     padding: 14px; border-radius: 14px; font-size: 15px; font-weight: 600;
@@ -80,7 +76,6 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 }
 .locked-status-btn i { font-size: 16px; }
 
-/* ФИКСАЦИЯ ВНИЗУ */
 .bottom-fixed {
     position: fixed; bottom: 0; left: 0; width: 100%;
     background: #FFFFFF; padding: 16px 20px 30px; 
@@ -88,28 +83,21 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 }
 .bottom-fixed.column { display: flex; flex-direction: column; gap: 8px; }
 
-/* ФОРМЫ (ИСПРАВЛЕНО) */
+/* ФОРМЫ */
 .form-group { margin-bottom: 16px; }
 .form-group label { display: block; font-size: 14px; color: var(--text-sec); margin-bottom: 8px; font-weight: 500; }
-
 .input-wrapper { position: relative; width: 100%; }
-
 .input-wrapper select, .input-wrapper input { 
     width: 100%; padding: 16px 40px 16px 16px; 
-    border: 1px solid var(--border); 
-    border-radius: var(--radius);
-    background: white; 
-    appearance: none; -webkit-appearance: none;
-    font-size: 16px; color: var(--text-main); outline: none;
-    box-shadow: var(--shadow); 
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: white; appearance: none; -webkit-appearance: none;
+    font-size: 16px; color: var(--text-main); outline: none; box-shadow: var(--shadow); 
 }
 .input-wrapper select:focus, .input-wrapper input:focus { border-color: var(--primary); }
-
 .input-wrapper i { 
     position: absolute; right: 16px; top: 50%; transform: translateY(-50%); 
     color: var(--text-sec); pointer-events: none; font-size: 18px; z-index: 5;
 }
-
 .input-wrapper select:disabled, .input-wrapper input:disabled { 
     background: #F9F9F9; color: #666; border-color: transparent; opacity: 1; box-shadow: none;
 }
@@ -129,7 +117,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .checkbox-card { display: flex; gap: 12px; align-items: flex-start; border: 1px solid var(--border); padding: 16px; border-radius: var(--radius); box-shadow: var(--shadow); background: white; }
 .checkbox-card input { width: 20px; height: 20px; margin-top: 2px; }
 
-/* ОСТАЛЬНЫЕ СТИЛИ */
+/* HEADER & HOME */
 .top-bar { display: flex; justify-content: space-between; padding: 16px 20px; background: var(--bg-color); }
 .logo-area { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 18px; }
 .profile-icon-btn { width: 36px; height: 36px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow); }
@@ -217,6 +205,8 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .error-review-card { background: white; border-radius: 16px; padding: 16px; margin-top: 10px; }
 .review-item { padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid #F0F0F0; }
 .review-header { display: flex; gap: 8px; align-items: center; font-size: 12px; font-weight: 600; color: var(--text-sec); text-transform: uppercase; }
+
+/* MODALS */
 .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 10000; }
 .modal-card { background: white; border-radius: 24px; padding: 24px; width: 90%; max-width: 400px; text-align: center; animation: slideUp 0.3s ease; }
 @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -228,3 +218,17 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .modal-icon-big { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 16px; position: relative; }
 .alert-badge { position: absolute; top: -2px; right: -2px; width: 22px; height: 22px; background: #FF3B30; color: white; border-radius: 50%; font-size: 14px; font-weight: bold; border: 2px solid white; display: flex; align-items: center; justify-content: center; }
 .alert-box { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; background: #FFF2F2; color: #FF3B30; margin: 16px 0; font-size: 13px; text-align: left; }
+
+/* --- НОВЫЕ СТИЛИ ДЛЯ СЕРТИФИКАТОВ --- */
+.modal-header-custom { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; width: 100%; }
+.modal-header-custom h3 { margin: 0; font-size: 20px; font-weight: 700; }
+.close-icon-btn { width: 32px; height: 32px; background: #F2F2F7; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #8E8E93; transition: all 0.2s; }
+.close-icon-btn:active { background: #E5E5EA; color: #000; }
+
+.cert-card { display: flex; align-items: center; gap: 14px; padding: 16px; border: 1px solid var(--border); border-radius: 16px; background: white; box-shadow: var(--shadow); transition: transform 0.1s; text-align: left; margin-bottom: 10px; }
+.cert-card:active { transform: scale(0.98); }
+.cert-icon { width: 44px; height: 44px; background: #FFF2F2; color: #FF3B30; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.cert-info { flex: 1; }
+.cert-info h4 { font-size: 15px; margin-bottom: 4px; color: var(--text-main); }
+.cert-info p { font-size: 12px; color: var(--text-sec); }
+.badge-soon { background: #F2F2F7; padding: 4px 8px; border-radius: 8px; font-size: 11px; color: var(--text-sec); font-weight: 600; }
