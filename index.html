@@ -7,7 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="supabase.min.js?v=1"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=13">
+    <link rel="stylesheet" href="style.css?v=14">
 </head>
 <body>
 
@@ -121,39 +121,40 @@
 
             <div class="subjects-grid">
                 <div class="subject-card" onclick="openSubjectStats('Математика')">
-                    <div class="subject-top">
-                        <div class="sub-icon blue"><i class="fa-solid fa-calculator"></i></div>
-                        <span class="percent" id="math-percent">0%</span>
-                    </div>
-                    <h3>Математика</h3>
-                    <div class="progress-line"><div id="math-bar" style="width: 0%"></div></div>
+                    <div class="subject-top"><div class="sub-icon blue"><i class="fa-solid fa-calculator"></i></div><span class="percent" id="math-percent">0%</span></div>
+                    <h3>Математика</h3><div class="progress-line"><div id="math-bar" style="width: 0%"></div></div>
                 </div>
-                
                 <div class="subject-card" onclick="openSubjectStats('Английский')">
-                    <div class="subject-top">
-                        <div class="sub-icon violet"><i class="fa-solid fa-globe"></i></div>
-                        <span class="percent" id="eng-percent">0%</span>
-                    </div>
-                    <h3>Английский</h3>
-                    <div class="progress-line"><div id="eng-bar" style="width: 0%"></div></div>
+                    <div class="subject-top"><div class="sub-icon violet"><i class="fa-solid fa-globe"></i></div><span class="percent" id="eng-percent">0%</span></div>
+                    <h3>Английский</h3><div class="progress-line"><div id="eng-bar" style="width: 0%"></div></div>
                 </div>
-                
                  <div class="subject-card" onclick="openSubjectStats('Физика')">
-                    <div class="subject-top">
-                        <div class="sub-icon orange"><i class="fa-solid fa-bolt"></i></div>
-                        <span class="percent" id="phys-percent">0%</span>
-                    </div>
-                    <h3>Физика</h3>
-                    <div class="progress-line"><div id="phys-bar" style="width: 0%"></div></div>
+                    <div class="subject-top"><div class="sub-icon orange"><i class="fa-solid fa-bolt"></i></div><span class="percent" id="phys-percent">0%</span></div>
+                    <h3>Физика</h3><div class="progress-line"><div id="phys-bar" style="width: 0%"></div></div>
                 </div>
-                
                  <div class="subject-card" onclick="openSubjectStats('Химия')">
-                    <div class="subject-top">
-                        <div class="sub-icon teal"><i class="fa-solid fa-flask"></i></div>
-                        <span class="percent" id="chem-percent">0%</span>
-                    </div>
-                    <h3>Химия</h3>
-                    <div class="progress-line"><div id="chem-bar" style="width: 0%"></div></div>
+                    <div class="subject-top"><div class="sub-icon teal"><i class="fa-solid fa-flask"></i></div><span class="percent" id="chem-percent">0%</span></div>
+                    <h3>Химия</h3><div class="progress-line"><div id="chem-bar" style="width: 0%"></div></div>
+                </div>
+                <div class="subject-card" onclick="openSubjectStats('Биология')">
+                    <div class="subject-top"><div class="sub-icon green"><i class="fa-solid fa-leaf"></i></div><span class="percent">0%</span></div>
+                    <h3>Биология</h3><div class="progress-line"><div style="width: 0%"></div></div>
+                </div>
+                <div class="subject-card" onclick="openSubjectStats('Информатика')">
+                    <div class="subject-top"><div class="sub-icon cyan"><i class="fa-solid fa-desktop"></i></div><span class="percent">0%</span></div>
+                    <h3>Информатика</h3><div class="progress-line"><div style="width: 0%"></div></div>
+                </div>
+                 <div class="subject-card" onclick="openSubjectStats('География')">
+                    <div class="subject-top"><div class="sub-icon brown"><i class="fa-solid fa-earth-americas"></i></div><span class="percent">0%</span></div>
+                    <h3>География</h3><div class="progress-line"><div style="width: 0%"></div></div>
+                </div>
+                <div class="subject-card" onclick="openSubjectStats('История')">
+                    <div class="subject-top"><div class="sub-icon red"><i class="fa-solid fa-landmark"></i></div><span class="percent">0%</span></div>
+                    <h3>История</h3><div class="progress-line"><div style="width: 0%"></div></div>
+                </div>
+                <div class="subject-card" onclick="openSubjectStats('Литература')">
+                    <div class="subject-top"><div class="sub-icon pink"><i class="fa-solid fa-feather"></i></div><span class="percent">0%</span></div>
+                    <h3>Литература</h3><div class="progress-line"><div style="width: 0%"></div></div>
                 </div>
             </div>
 
@@ -164,28 +165,17 @@
             <div class="resources-list">
                 <div class="resource-card" onclick="openExternalLink('https://youtube.com')">
                     <div class="res-icon youtube"><i class="fa-brands fa-youtube"></i></div>
-                    <div class="res-info">
-                        <h4>Видеоуроки</h4>
-                        <p>Разборы задач по всем темам</p>
-                    </div>
+                    <div class="res-info"><h4>Видеоуроки</h4><p>Разборы задач по всем темам</p></div>
                     <i class="fa-solid fa-chevron-right arrow"></i>
                 </div>
-
                 <div class="resource-card" onclick="openExternalLink('https://t.me/your_channel')">
                     <div class="res-icon telegram"><i class="fa-solid fa-bullhorn"></i></div>
-                    <div class="res-info">
-                        <h4>Официальный канал</h4>
-                        <p>Новости и анонсы туров</p>
-                    </div>
+                    <div class="res-info"><h4>Официальный канал</h4><p>Новости и анонсы туров</p></div>
                     <i class="fa-solid fa-chevron-right arrow"></i>
                 </div>
-
                 <div class="resource-card" onclick="openExternalLink('https://t.me/your_group')">
                     <div class="res-icon group"><i class="fa-solid fa-users"></i></div>
-                    <div class="res-info">
-                        <h4>Чат участников</h4>
-                        <p>Обсуждение и помощь</p>
-                    </div>
+                    <div class="res-info"><h4>Чат участников</h4><p>Обсуждение и помощь</p></div>
                     <i class="fa-solid fa-chevron-right arrow"></i>
                 </div>
             </div>
@@ -273,30 +263,12 @@
     <div class="screen hidden" id="leaderboard-screen">
         <div class="header-simple sticky-header">
             <div class="back-btn" id="lb-back"><i class="fa-solid fa-arrow-left"></i></div>
-            <h3>Лидерборд</h3>
+            <h3>Лидерборд тура</h3>
         </div>
         
         <div class="container pb-large" style="padding-top: 20px;">
-            <div class="top-three">
-                <div class="winner second">
-                    <div class="avatar-ring silver"><img src="https://cdn-icons-png.flaticon.com/512/4140/4140047.png"></div>
-                    <div class="rank-badge">#2</div>
-                    <div class="name">Аноним</div>
-                    <div class="score">1150</div>
-                </div>
-                <div class="winner first">
-                    <div class="icon-crown"><i class="fa-solid fa-crown"></i></div>
-                    <div class="avatar-ring gold"><img src="https://cdn-icons-png.flaticon.com/512/3006/3006876.png"></div>
-                    <div class="rank-badge">#1</div>
-                    <div class="name">Alex S.</div>
-                    <div class="score">1200</div>
-                </div>
-                <div class="winner third">
-                    <div class="avatar-ring bronze"><img src="https://cdn-icons-png.flaticon.com/512/4140/4140039.png"></div>
-                    <div class="rank-badge">#3</div>
-                    <div class="name">Maria K.</div>
-                    <div class="score">1145</div>
-                </div>
+            <div id="lb-podium" class="top-three">
+                <p style="text-align: center; width: 100%; color: #8E8E93;">Загрузка рейтинга...</p>
             </div>
             
             <div class="list-header">
@@ -304,14 +276,7 @@
                 <span>БАЛЛЫ</span>
             </div>
 
-            <div class="leader-list">
-                <div class="leader-row">
-                    <span class="pos">4</span>
-                    <div class="usr-av"><img src="https://cdn-icons-png.flaticon.com/512/147/147144.png"></div>
-                    <div class="usr-info"><span class="u-name">Дмитрий В.</span><span class="u-meta">94%</span></div>
-                    <span class="u-score">1120</span>
-                </div>
-            </div>
+            <div id="lb-list" class="leader-list"></div>
         </div>
     </div>
 
@@ -319,9 +284,7 @@
         <div class="modal-card">
             <div class="modal-icon-big"><i class="fa-solid fa-stopwatch"></i><div class="alert-badge">!</div></div>
             <h2>Предупреждение перед туром</h2>
-            
             <p>У вас будет <strong id="warn-time-val">...</strong> на <strong id="warn-q-val">...</strong>.</p>
-            
             <div class="alert-box">
                 <i class="fa-solid fa-triangle-exclamation"></i>
                 <p>Время рассчитано исходя из сложности вопросов.</p>
@@ -373,6 +336,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=13"></script>
+    <script src="script.js?v=14"></script>
 </body>
 </html>
