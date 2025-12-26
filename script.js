@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v33.0 (Better Modal & Buttons)');
+    console.log('App Started: v34.0 (Final Polished UI)');
   
     let telegramUserId; 
     let internalDbId = null; 
@@ -248,10 +248,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function lockProfileForm() {
         document.getElementById('save-profile').classList.add('hidden');
         document.getElementById('profile-back-btn').classList.remove('hidden');
-        
-        // Показываем новую кнопку статуса
         document.getElementById('profile-locked-btn').classList.remove('hidden');
-        
         const inputs = document.querySelectorAll('#profile-screen input, #profile-screen select');
         inputs.forEach(el => el.disabled = true);
     }
@@ -259,10 +256,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function unlockProfileForm() {
         document.getElementById('save-profile').classList.remove('hidden');
         document.getElementById('profile-back-btn').classList.add('hidden');
-        
-        // Скрываем кнопку статуса
         document.getElementById('profile-locked-btn').classList.add('hidden');
-        
         const inputs = document.querySelectorAll('#profile-screen input, #profile-screen select');
         inputs.forEach(el => el.disabled = false);
     }
@@ -318,8 +312,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     safeAddListener('open-profile-btn', 'click', () => { showScreen('profile-screen'); lockProfileForm(); });
     safeAddListener('profile-back-btn', 'click', () => showScreen('home-screen'));
-    
-    // Новая логика для кнопки статуса профиля
     safeAddListener('profile-locked-btn', 'click', () => {
         document.getElementById('profile-info-modal').classList.remove('hidden');
     });
@@ -341,21 +333,30 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     safeAddListener('download-cert-main-btn', 'click', () => {
+        showCertsModal();
+    });
+    safeAddListener('download-certificate-res-btn', 'click', () => {
+        showCertsModal();
+    });
+
+    function showCertsModal() {
         const container = document.getElementById('certs-list-container');
+        // ГЕНЕРАЦИЯ КРАСИВОЙ КАРТОЧКИ
         container.innerHTML = `
-            <div style="background:#F2F9FF; padding:12px; border-radius:12px; margin-bottom:10px; border: 1px solid #007AFF;">
-                <strong>Сертификат: Тур №1</strong><br>
-                <span style="font-size:12px; color:#666;">Дата: ${new Date().toLocaleDateString()}</span><br>
-                <a href="#" style="color:#007AFF; font-weight:bold; margin-top:5px; display:inline-block;">Скачать PDF (Скоро)</a>
+            <div class="cert-card">
+                <div class="cert-icon"><i class="fa-solid fa-file-pdf"></i></div>
+                <div class="cert-info">
+                    <h4>Сертификат: Тур №1</h4>
+                    <p>${new Date().toLocaleDateString()}</p>
+                </div>
+                <div class="cert-action">
+                    <span class="badge-soon">Скоро</span>
+                </div>
             </div>
         `;
         document.getElementById('certs-modal').classList.remove('hidden');
-    });
-    safeAddListener('download-certificate-res-btn', 'click', () => {
-        document.getElementById('certs-modal').classList.remove('hidden');
-    });
+    }
   
-    // --- LEADERBOARD TABS LOGIC ---
     safeAddListener('tab-current', 'click', () => {
         leaderboardMode = 'current';
         updateTabsUI();
@@ -377,7 +378,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // --- LEADERBOARD DATA ---
     async function loadLeaderboard() {
         const podium = document.getElementById('lb-podium');
         const list = document.getElementById('lb-list');
