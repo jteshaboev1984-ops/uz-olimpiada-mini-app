@@ -2,7 +2,7 @@
 const SUPABASE_URL = 'https://fgwnqxumukkgtzentlxr.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI';
 
-// Инициализация Supabase и Telegram
+// Инициализация
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const tg = window.Telegram.WebApp;
 
@@ -13,14 +13,16 @@ tg.expand();
 initApp();
 
 async function initApp() {
-    // Получаем ID пользователя
-    const tgId = tg.initDataUnsafe?.user?.id;
-    // const tgId = 139035406; // Раскомментировать ТОЛЬКО для тестов в браузере
+    // === ВАЖНО: ТЕСТОВЫЙ РЕЖИМ ВКЛЮЧЕН ===
+    // Скрипт сначала ищет Телеграм, а если не находит — использует ID 139035406
+    const tgId = tg.initDataUnsafe?.user?.id || 139035406; 
 
     if (!tgId) {
-        console.log("Приложение открыто не в Telegram. Функции ограничены.");
+        console.log("Ошибка: ID не найден.");
         return;
     }
+
+    console.log("Ваш ID:", tgId); // Покажет в консоли, под кем мы зашли
 
     // 1. Ищем пользователя в базе
     const { data: user, error } = await supabase
@@ -39,25 +41,22 @@ async function initApp() {
         
         if (newUser) {
             currentUser = newUser;
-            showRegistration(); // Сразу просим заполнить данные
+            showRegistration(); 
         }
     } else {
         currentUser = user;
-        // 3. Проверяем, заполнены ли обязательные поля
+        // 3. Проверяем регистрацию
         if (!user.name || !user.region || !user.district || !user.school) {
             showRegistration(); 
         } else {
-            // Если всё ок — скрываем регистрацию, показываем меню
             document.getElementById('registration-modal').classList.add('hidden');
         }
     }
 }
 
-// --- ФУНКЦИИ РЕГИСТРАЦИИ ---
-
+// --- РЕГИСТРАЦИЯ ---
 function showRegistration() {
     document.getElementById('registration-modal').classList.remove('hidden');
-    // Скрываем нижнее меню, чтобы нельзя было уйти
     document.getElementById('main-tabbar').style.display = 'none';
 }
 
@@ -68,13 +67,11 @@ async function submitRegistration() {
     const school = document.getElementById('reg-school').value;
     const userClass = document.getElementById('reg-class').value;
 
-    // Простая валидация
     if (!name || !region || !district || !school || !userClass) {
         document.getElementById('reg-error').style.display = 'block';
         return;
     }
 
-    // Сохраняем в базу
     const { error } = await supabase
         .from('users')
         .update({
@@ -87,13 +84,11 @@ async function submitRegistration() {
         .eq('id', currentUser.id);
 
     if (error) {
-        alert('Ошибка при сохранении: ' + error.message);
+        alert('Ошибка: ' + error.message);
     } else {
-        // Успех
         document.getElementById('registration-modal').classList.add('hidden');
         document.getElementById('main-tabbar').style.display = 'flex';
         
-        // Обновляем данные в памяти
         currentUser.name = name;
         currentUser.region = region;
         currentUser.district = district;
@@ -105,13 +100,10 @@ async function submitRegistration() {
 }
 
 // --- НАВИГАЦИЯ ---
-
 function openTab(tabName) {
-    // Скрыть всё
     document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
 
-    // Показать нужное
     if (tabName === 'home') {
         document.getElementById('home-screen').classList.add('active');
         document.querySelectorAll('.tab-item')[0].classList.add('active');
@@ -123,14 +115,12 @@ function openTab(tabName) {
 }
 
 // --- ЛИДЕРБОРД ---
-
 async function loadLeaderboard() {
     const listContainer = document.getElementById('leaderboard-list');
     const rankDisplay = document.getElementById('user-rank-display');
     
     listContainer.innerHTML = '<div class="loading">Загрузка рейтинга...</div>';
 
-    // Запрос: берем баллы из tour_progress и данные юзера из users
     const { data, error } = await supabase
         .from('tour_progress')
         .select(`
@@ -147,8 +137,8 @@ async function loadLeaderboard() {
         .order('score', { ascending: false });
 
     if (error) {
-        listContainer.innerHTML = '<p style="text-align:center; color:red">Не удалось загрузить данные</p>';
         console.error(error);
+        listContainer.innerHTML = '<p style="text-align:center; color:red">Ошибка загрузки</p>';
         return;
     }
 
@@ -156,26 +146,19 @@ async function loadLeaderboard() {
     let myRank = '-';
     let totalParticipants = data.length;
 
-    // Перебираем всех участников
     data.forEach((item, index) => {
         const user = item.users;
-        
-        // Защита от удаленных пользователей
         if (!user) return;
 
         const rank = index + 1;
         const score = item.score;
-
-        // Формируем красивый вывод данных
         const displayName = user.name || 'Аноним';
         const displaySchool = (user.school && user.class) ? `Школа ${user.school}, ${user.class} кл.` : 'Школа не указана';
         const displayGeo = (user.region && user.district) ? `${user.region}, ${user.district}` : '';
 
-        // Проверяем, это ли я
         const isMe = (user.telegram_id === currentUser?.telegram_id);
         if (isMe) myRank = rank;
 
-        // Иконки для топ-3
         let rankIcon = rank;
         if (rank === 1) rankIcon = '🥇';
         if (rank === 2) rankIcon = '🥈';
@@ -196,11 +179,9 @@ async function loadLeaderboard() {
 
     listContainer.innerHTML = html;
     
-    // Обновляем текст с местом
     if (myRank !== '-') {
         rankDisplay.innerHTML = `Твое место: ${myRank} из ${totalParticipants}`;
     } else {
         rankDisplay.innerHTML = `Вы еще не проходили тур`;
     }
 }
-// КОНЕЦ КОДА
