@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v27.0 (Restored Cards & Fixed Leaderboard)');
+    console.log('App Started: v28.0 (Fixed UI & Logic)');
   
     let telegramUserId; 
     let internalDbId = null; 
@@ -47,7 +47,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const regions = {
       "Ташкент": ["Алмазарский", "Бектемирский", "Мирабадский", "Мирзо-Улугбекский", "Сергелийский", "Учтепинский", "Чиланзарский", "Шайхантахурский", "Юнусабадский", "Яккасарайский", "Яшнабадский"],
       "Андижанская область": ["Андижанский", "Асакинский", "Балыкчинский", "Бозский", "Булакбашинский", "Джалакудукский", "Избасканский", "Кургантепинский", "Мархаматский", "Пахтаабадский", "Ходжаабадский", "Шахриханский"],
-      // ... (остальные)
     };
     if(Object.keys(regions).length < 2) regions["Ташкент"] = ["Чиланзарский", "Юнусабадский"];
   
@@ -88,8 +87,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
   
-    // --- MAIN LOGIC ---
-
     async function checkProfileAndTour() {
       const { data: userData } = await supabaseClient
         .from('users')
