@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v8.0 (Fixes)');
+    console.log('App Started: v9.0 (UI & Nav Fixes)');
   
     // Глобальные переменные
     let telegramUserId; 
@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
   
-    // Test Mode
+    // Test Mode (для браузера)
     if (!telegramUserId) {
       let storedId = localStorage.getItem('test_user_id');
       if (!storedId) {
@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let timerInterval = null;
     let tourCompleted = false;
   
-    // Regions
+    // Regions Data
     const regions = {
       "Ташкент": ["Алмазарский", "Бектемирский", "Мирабадский", "Мирзо-Улугбекский", "Сергелийский", "Учтепинский", "Чиланзарский", "Шайхантахурский", "Юнусабадский", "Яккасарайский", "Яшнабадский"],
       "Андижанская область": ["Андижанский", "Асакинский", "Балыкчинский", "Бозский", "Булакбашинский", "Джалакудукский", "Избасканский", "Кургантепинский", "Мархаматский", "Пахтаабадский", "Ходжаабадский", "Шахриханский"],
@@ -96,6 +96,35 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   
     // --- PROFILE LOGIC ---
+    
+    // Функция блокировки формы (Вид: Только чтение)
+    function lockProfileForm() {
+        document.getElementById('class-select').disabled = true;
+        document.getElementById('region-select').disabled = true;
+        document.getElementById('district-select').disabled = true;
+        document.getElementById('school-input').disabled = true;
+        document.getElementById('research-consent').disabled = true;
+        
+        // Прячем кнопку "Сохранить", показываем "Назад"
+        document.getElementById('save-profile').classList.add('hidden');
+        document.getElementById('profile-back-btn').classList.remove('hidden');
+        document.getElementById('profile-desc').textContent = "Ваши данные сохранены";
+    }
+
+    // Функция разблокировки формы (Вид: Редактирование)
+    function unlockProfileForm() {
+        document.getElementById('class-select').disabled = false;
+        document.getElementById('region-select').disabled = false;
+        // district разблокируется при выборе региона
+        document.getElementById('school-input').disabled = false;
+        document.getElementById('research-consent').disabled = false;
+
+        // Показываем кнопку "Сохранить", прячем "Назад"
+        document.getElementById('save-profile').classList.remove('hidden');
+        document.getElementById('profile-back-btn').classList.add('hidden');
+        document.getElementById('profile-desc').textContent = "Заполните данные для участия";
+    }
+
     async function checkProfile() {
       const { data, error } = await supabaseClient
         .from('users')
@@ -103,18 +132,16 @@ document.addEventListener('DOMContentLoaded', function() {
         .eq('telegram_id', telegramUserId)
         .maybeSingle();
   
-      if (data) {
-          internalDbId = data.id;
-      }
+      if (data) internalDbId = data.id;
   
       const isProfileComplete = data && data.class && data.region && data.district && data.school;
   
       if (!data || !isProfileComplete) {
-        // Профиль пустой - показываем экран редактирования
+        // Если профиля нет -> Экран профиля, форма активна
         showScreen('profile-screen');
-        enableProfileForm();
+        unlockProfileForm();
       } else {
-        // Профиль есть - заполняем и БЛОКИРУЕМ
+        // Если профиль есть -> Заполняем данными
         document.getElementById('class-select').value = data.class;
         document.getElementById('region-select').value = data.region;
         
@@ -130,38 +157,14 @@ document.addEventListener('DOMContentLoaded', function() {
           });
         }
         districtSelect.value = data.district;
-        
         document.getElementById('school-input').value = data.school;
         document.getElementById('research-consent').checked = data.research_consent || false;
         
-        // Если открыто с главного экрана - показываем, но блокируем
-        if (!document.getElementById('home-screen').classList.contains('hidden')) {
-             // уже на главной
-        } else {
-             showScreen('home-screen');
-        }
-
+        // Переходим на Главную
+        showScreen('home-screen');
         tourCompleted = data.tour_completed === true;
         updateStartButtonState();
       }
-    }
-
-    function disableProfileForm() {
-        document.getElementById('class-select').disabled = true;
-        document.getElementById('region-select').disabled = true;
-        document.getElementById('district-select').disabled = true;
-        document.getElementById('school-input').disabled = true;
-        document.getElementById('research-consent').disabled = true;
-        document.getElementById('save-profile').style.display = 'none'; // Скрываем кнопку сохранения
-    }
-
-    function enableProfileForm() {
-        document.getElementById('class-select').disabled = false;
-        document.getElementById('region-select').disabled = false;
-        // Район активируется после выбора региона
-        document.getElementById('school-input').disabled = false;
-        document.getElementById('research-consent').disabled = false;
-        document.getElementById('save-profile').style.display = 'flex';
     }
 
     function updateStartButtonState() {
@@ -173,6 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
   
+    // ЛОГИКА СОХРАНЕНИЯ (Исправлено зависание)
     document.getElementById('save-profile').addEventListener('click', async () => {
       const classVal = document.getElementById('class-select').value;
       const region = document.getElementById('region-select').value;
@@ -207,19 +211,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
           if (data && data.length > 0) internalDbId = data[0].id;
           
+          // УСПЕШНО СОХРАНЕНО:
+          // 1. Блокируем форму на будущее
+          lockProfileForm();
+          // 2. Сразу перекидываем на главную
           showScreen('home-screen');
-          checkProfile(); // Это заблокирует форму при следующем просмотре
 
       } catch (e) {
           alert('Ошибка сохранения: ' + e.message);
-      } finally {
-          // Разблокируем кнопку, если произошла ошибка
+          // Если ошибка, возвращаем кнопку в исходное состояние
           btn.disabled = false;
           btn.innerHTML = originalText;
-      }
+      } 
     });
   
-    // Validation
+    // Validation styles
     const requiredFields = document.querySelectorAll('#class-select, #region-select, #district-select, #school-input');
     requiredFields.forEach(field => {
       field.addEventListener('input', () => {
@@ -228,21 +234,22 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     });
   
-    // --- NAV ---
+    // --- NAVIGATION ---
     function showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
         document.getElementById(screenId).classList.remove('hidden');
         window.scrollTo(0, 0);
     }
 
+    // Клик по иконке профиля с главной
     document.getElementById('open-profile-btn').addEventListener('click', () => {
         showScreen('profile-screen');
-        // При открытии профиля с главной - блокируем редактирование (View Only)
-        disableProfileForm();
-        document.getElementById('back-from-profile').classList.remove('hidden');
+        // Здесь мы уже знаем, что профиль есть (раз мы на главной), поэтому блокируем
+        lockProfileForm();
     });
 
-    document.getElementById('back-from-profile').addEventListener('click', () => {
+    // Кнопка "Назад" в профиле (которая появляется только при просмотре)
+    document.getElementById('profile-back-btn').addEventListener('click', () => {
         showScreen('home-screen');
     });
 
@@ -260,8 +267,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Кнопка СЕРТИФИКАТ
-    document.getElementById('download-certificate').addEventListener('click', () => {
+    // Кнопка СЕРТИФИКАТ (Исправлено)
+    document.getElementById('download-certificate-btn').addEventListener('click', () => {
         alert("Сертификаты будут доступны после завершения олимпиады!");
     });
   
@@ -295,8 +302,8 @@ document.addEventListener('DOMContentLoaded', function() {
       
       if (!internalDbId) await fetchInternalId();
       
+      // Fallback create user if missing
       if (!internalDbId) {
-           // Fallback create
            const { data } = await supabaseClient
               .from('users')
               .upsert({
@@ -315,8 +322,8 @@ document.addEventListener('DOMContentLoaded', function() {
       const { data, error } = await supabaseClient.from('questions').select('*').limit(50);
   
       if (error || !data || data.length === 0) {
-        alert('Ошибка загрузки вопросов.');
-        updateStartButtonState();
+        alert('Ошибка загрузки вопросов. Проверьте интернет.');
+        updateStartButtonState(); // Reset button
         return;
       }
   
