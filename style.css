@@ -29,7 +29,6 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .btn-primary:active { transform: scale(0.98); }
 .btn-primary:disabled { background: #B4D5FE; cursor: default; }
 
-/* Зеленая кнопка (неактивная) */
 .btn-success-disabled { 
     background: var(--success) !important; color: white !important; 
     width: 100%; padding: 16px; border-radius: 14px; font-size: 17px; font-weight: 600; 
@@ -42,7 +41,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .btn-danger-box { background: #FF3B301A; color: var(--danger); border: 1px solid transparent; width: 100%; padding: 16px; border-radius: 14px; margin-top: 10px; font-size: 17px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .btn-danger-box:active { background: #FF3B3033; }
 
-/* CARDS - ПРИНУДИТЕЛЬНЫЙ БЕЛЫЙ ФОН */
+/* CARDS */
 .card, .subject-card, .resource-card, .action-card, .profile-info-card { 
     background-color: #FFFFFF !important; 
     border-radius: var(--radius); 
@@ -53,8 +52,6 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 /* PROFILE */
 .header-profile { background: white; padding: 20px 16px 0; text-align: center; border-radius: 0 0 24px 24px; margin-bottom: 20px; box-shadow: var(--shadow); }
 .user-avatar-small { width: 60px; height: 60px; background: #E1F0FF; color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 12px; position: relative; }
-.progress-bar-line { height: 4px; background: #F2F2F2; width: 100%; margin-top: 20px; }
-.progress-bar-line .fill { height: 100%; background: var(--primary); }
 .profile-info-card { display: flex; align-items: center; gap: 12px; border: 1px solid var(--border); padding: 16px; }
 .avatar-circle { width: 48px; height: 48px; position: relative; flex-shrink: 0; }
 .avatar-circle img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
@@ -97,7 +94,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .resources-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; }
 .resource-card { padding: 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: transform 0.1s; }
 .res-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; flex-shrink: 0; }
-.res-icon.youtube { background: #FF0000; } .res-icon.telegram { background: #229ED9; } .res-icon.group { background: #34C759; }
+.res-icon.youtube { background: #FF0000; } .res-icon.telegram { background: #229ED9; }
 .res-info { flex: 1; }
 .res-info h4 { font-size: 16px; margin-bottom: 2px; }
 .res-info p { font-size: 13px; color: var(--text-sec); }
@@ -119,7 +116,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .option-card.selected .option-circle { background: var(--primary); color: white; }
 .answer-input { width: 100%; padding: 16px; font-size: 18px; border: 2px solid var(--border); border-radius: 14px; outline: none; }
 
-/* LEADERBOARD (FIXED) */
+/* LEADERBOARD */
 .lb-header-bg { background: #EBF4FF; padding-bottom: 20px; border-radius: 0 0 24px 24px; margin-bottom: -15px; position: relative; z-index: 2; }
 .lb-nav { display: flex; align-items: center; padding: 16px 20px; justify-content: center; position: relative; }
 .back-btn-white { position: absolute; left: 20px; color: #333; font-size: 20px; cursor: pointer; }
@@ -148,7 +145,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 /* RESULT CUSTOM STATS (FIXED STRUCTURE) */
 .stats-row-strict { 
     display: flex; 
-    justify-content: space-between; /* Распределить по краям */
+    justify-content: space-between; 
     align-items: center; 
     background: white; 
     border-radius: 16px; 
@@ -190,6 +187,3 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .modal-header .close-btn { position: absolute; right: 16px; font-size: 20px; cursor: pointer; }
 .modal-body-scroll { overflow-y: auto; flex: 1; padding: 20px; }
 .blue-banner { background: linear-gradient(135deg, #0062E0 0%, #19A0FF 100%); padding: 30px 20px; color: white; border-radius: 16px; text-align: left; margin-bottom: 20px; }
-.tag { background: #004BB3; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
-.info-card { background: #F9F9F9; padding: 16px; border-radius: 12px; display: flex; gap: 12px; text-align: left; margin-top: 10px;}
-.icon-box { width: 40px; height: 40px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); flex-shrink: 0; }
