@@ -7,7 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="supabase.min.js?v=1"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=14">
+    <link rel="stylesheet" href="style.css?v=15">
 </head>
 <body>
 
@@ -121,40 +121,33 @@
 
             <div class="subjects-grid">
                 <div class="subject-card" onclick="openSubjectStats('Математика')">
-                    <div class="subject-top"><div class="sub-icon blue"><i class="fa-solid fa-calculator"></i></div><span class="percent" id="math-percent">0%</span></div>
-                    <h3>Математика</h3><div class="progress-line"><div id="math-bar" style="width: 0%"></div></div>
+                    <div class="subject-top"><div class="sub-icon blue"><i class="fa-solid fa-calculator"></i></div></div>
+                    <h3>Математика</h3>
                 </div>
-                <div class="subject-card" onclick="openSubjectStats('Английский')">
-                    <div class="subject-top"><div class="sub-icon violet"><i class="fa-solid fa-globe"></i></div><span class="percent" id="eng-percent">0%</span></div>
-                    <h3>Английский</h3><div class="progress-line"><div id="eng-bar" style="width: 0%"></div></div>
+                
+                <div class="subject-card" onclick="openSubjectStats('Химия')">
+                    <div class="subject-top"><div class="sub-icon teal"><i class="fa-solid fa-flask"></i></div></div>
+                    <h3>Химия</h3>
                 </div>
-                 <div class="subject-card" onclick="openSubjectStats('Физика')">
-                    <div class="subject-top"><div class="sub-icon orange"><i class="fa-solid fa-bolt"></i></div><span class="percent" id="phys-percent">0%</span></div>
-                    <h3>Физика</h3><div class="progress-line"><div id="phys-bar" style="width: 0%"></div></div>
-                </div>
-                 <div class="subject-card" onclick="openSubjectStats('Химия')">
-                    <div class="subject-top"><div class="sub-icon teal"><i class="fa-solid fa-flask"></i></div><span class="percent" id="chem-percent">0%</span></div>
-                    <h3>Химия</h3><div class="progress-line"><div id="chem-bar" style="width: 0%"></div></div>
-                </div>
+
                 <div class="subject-card" onclick="openSubjectStats('Биология')">
-                    <div class="subject-top"><div class="sub-icon green"><i class="fa-solid fa-leaf"></i></div><span class="percent">0%</span></div>
-                    <h3>Биология</h3><div class="progress-line"><div style="width: 0%"></div></div>
+                    <div class="subject-top"><div class="sub-icon green"><i class="fa-solid fa-leaf"></i></div></div>
+                    <h3>Биология</h3>
                 </div>
+
                 <div class="subject-card" onclick="openSubjectStats('Информатика')">
-                    <div class="subject-top"><div class="sub-icon cyan"><i class="fa-solid fa-desktop"></i></div><span class="percent">0%</span></div>
-                    <h3>Информатика</h3><div class="progress-line"><div style="width: 0%"></div></div>
+                    <div class="subject-top"><div class="sub-icon cyan"><i class="fa-solid fa-laptop-code"></i></div></div>
+                    <h3>Информатика</h3>
                 </div>
-                 <div class="subject-card" onclick="openSubjectStats('География')">
-                    <div class="subject-top"><div class="sub-icon brown"><i class="fa-solid fa-earth-americas"></i></div><span class="percent">0%</span></div>
-                    <h3>География</h3><div class="progress-line"><div style="width: 0%"></div></div>
+
+                <div class="subject-card" onclick="openSubjectStats('Экономика')">
+                    <div class="subject-top"><div class="sub-icon orange"><i class="fa-solid fa-chart-line"></i></div></div>
+                    <h3>Экономика</h3>
                 </div>
-                <div class="subject-card" onclick="openSubjectStats('История')">
-                    <div class="subject-top"><div class="sub-icon red"><i class="fa-solid fa-landmark"></i></div><span class="percent">0%</span></div>
-                    <h3>История</h3><div class="progress-line"><div style="width: 0%"></div></div>
-                </div>
-                <div class="subject-card" onclick="openSubjectStats('Литература')">
-                    <div class="subject-top"><div class="sub-icon pink"><i class="fa-solid fa-feather"></i></div><span class="percent">0%</span></div>
-                    <h3>Литература</h3><div class="progress-line"><div style="width: 0%"></div></div>
+
+                <div class="subject-card" onclick="openSubjectStats('SAT/IELTS')">
+                    <div class="subject-top"><div class="sub-icon violet"><i class="fa-solid fa-graduation-cap"></i></div></div>
+                    <h3>SAT / IELTS</h3>
                 </div>
             </div>
 
@@ -233,19 +226,19 @@
                     </div>
                 </div>
                 <h2>Тур завершён!</h2>
-                <p>Правильных ответов: <span id="correct-count">0</span></p>
+                <p style="color: #8E8E93; margin-top: 5px;">Ваш результат сохранен</p>
             </div>
 
             <div class="stats-row">
                 <div class="stat-box">
                     <div class="icon blue"><i class="fa-solid fa-check"></i></div>
                     <div class="val" id="stat-correct">0</div>
-                    <div class="lbl">Верно</div>
+                    <div class="lbl">Правильно</div>
                 </div>
                 <div class="stat-box">
-                    <div class="icon blue"><i class="fa-solid fa-stopwatch"></i></div>
-                    <div class="val" id="stat-time">--</div>
-                    <div class="lbl">Время</div>
+                    <div class="icon blue"><i class="fa-solid fa-layer-group"></i></div>
+                    <div class="val" id="stat-total-q">15</div>
+                    <div class="lbl">Всего</div>
                 </div>
             </div>
         </div>
@@ -268,7 +261,7 @@
         
         <div class="container pb-large" style="padding-top: 20px;">
             <div id="lb-podium" class="top-three">
-                <p style="text-align: center; width: 100%; color: #8E8E93;">Загрузка рейтинга...</p>
+               <p style="text-align: center; width: 100%; color: #8E8E93;">Загрузка...</p>
             </div>
             
             <div class="list-header">
@@ -280,6 +273,27 @@
         </div>
     </div>
 
+    <div class="modal hidden" id="subject-modal">
+        <div class="modal-card">
+            <div class="modal-handle"></div>
+            <div class="modal-icon-big" id="sm-icon-bg"><i class="fa-solid fa-book" id="sm-icon"></i></div>
+            <h2 id="sm-title">Предмет</h2>
+            
+            <div class="stats-row" style="margin-bottom: 20px; margin-top: 20px;">
+                <div class="stat-box">
+                    <div class="val" id="sm-correct">0</div>
+                    <div class="lbl">Правильно</div>
+                </div>
+                <div class="stat-box">
+                    <div class="val" id="sm-total">0</div>
+                    <div class="lbl">Вопросов</div>
+                </div>
+            </div>
+
+            <button class="btn-primary" onclick="document.getElementById('subject-modal').classList.add('hidden')">Закрыть</button>
+        </div>
+    </div>
+
     <div class="modal hidden" id="warning-modal">
         <div class="modal-card">
             <div class="modal-icon-big"><i class="fa-solid fa-stopwatch"></i><div class="alert-badge">!</div></div>
@@ -287,7 +301,7 @@
             <p>У вас будет <strong id="warn-time-val">...</strong> на <strong id="warn-q-val">...</strong>.</p>
             <div class="alert-box">
                 <i class="fa-solid fa-triangle-exclamation"></i>
-                <p>Время рассчитано исходя из сложности вопросов.</p>
+                <p>Повтор тура невозможен даже при сбое связи.</p>
             </div>
             <button id="confirm-start" class="btn-primary">Начать тур <i class="fa-solid fa-arrow-right"></i></button>
             <button id="cancel-start" class="btn-text">Отмена</button>
@@ -307,19 +321,6 @@
         </div>
     </div>
 
-    <div class="modal hidden" id="subject-modal">
-        <div class="modal-card">
-            <div class="modal-handle"></div>
-            <div class="modal-icon-big" id="sm-icon-bg"><i class="fa-solid fa-book" id="sm-icon"></i></div>
-            <h2 id="sm-title">Предмет</h2>
-            <p class="small-text">Статистика ответов</p>
-            <div class="progress-bar-line" style="height: 8px; margin-bottom: 24px;">
-                <div class="fill" id="sm-bar" style="width: 0%"></div>
-            </div>
-            <button class="btn-primary" onclick="document.getElementById('subject-modal').classList.add('hidden')">Закрыть</button>
-        </div>
-    </div>
-
     <div class="modal hidden" id="about-modal">
         <div class="modal-card full-height">
             <div class="modal-header">
@@ -336,6 +337,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=14"></script>
+    <script src="script.js?v=15"></script>
 </body>
 </html>
