@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v40.0 (Certificate as Card inside Grid)');
+    console.log('App Started: v41.0 (Detailed Stats Modal & Card Cert)');
   
     let telegramUserId; 
     let internalDbId = null; 
@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let timerInterval = null;
     let tourCompleted = false;
   
-    // --- ПОЛНЫЙ СПИСОК РЕГИОНОВ И РАЙОНОВ ---
+    // ПОЛНЫЙ СПИСОК РЕГИОНОВ
     const regions = {
         "Город Ташкент": ["Алмазарский", "Бектемирский", "Мирабадский", "Мирзо-Улугбекский", "Сергелийский", "Учтепинский", "Чиланзарский", "Шайхантахурский", "Юнусабадский", "Яккасарайский", "Яшнабадский", "Янгихаётский"],
         "Андижанская область": ["город Андижан", "Андижанский район", "Асакинский", "Балыкчинский", "Бозский", "Булакбашинский", "Джалакудукский", "Избасканский", "Кургантепинский", "Мархаматский", "Пахтаабадский", "Улугнарский", "Ходжаабадский", "Шахриханский"],
@@ -206,13 +206,39 @@ document.addEventListener('DOMContentLoaded', function() {
         return { total, correct };
     }
 
+    // НОВАЯ ФУНКЦИЯ ОТКРЫТИЯ МОДАЛКИ С ДЕТАЛЬНОЙ СТАТИСТИКОЙ
     window.openSubjectStats = function(subject) {
-        const modal = document.getElementById('subject-modal');
-        if (modal) {
-            document.getElementById('sm-title').textContent = subject;
+        const modal = document.getElementById('subject-details-modal');
+        const content = document.getElementById('sd-content');
+        const title = document.getElementById('sd-title');
+        
+        if (modal && content) {
+            title.textContent = subject;
+            content.innerHTML = ''; // Очищаем старое
+
+            // Считаем статистику
             const stats = calculateSubjectStats(subject);
-            document.getElementById('sm-correct').textContent = stats.correct;
-            document.getElementById('sm-total').textContent = stats.total;
+            
+            // Формируем красивый элемент списка (сейчас только для текущего тура)
+            const html = `
+                <div class="stat-list-item">
+                    <div class="stat-list-info">
+                        <h4>Текущий тур</h4>
+                        <p>Всего вопросов: ${stats.total}</p>
+                    </div>
+                    <div class="stat-list-value" style="color:${stats.correct > 0 ? 'var(--success)' : 'var(--text-sec)'}">
+                        ${stats.correct} верно
+                    </div>
+                </div>
+            `;
+            
+            // Если вопросов нет, пишем заглушку
+            if(stats.total === 0) {
+                 content.innerHTML = `<p style="color:#8E8E93; text-align:center; padding:20px;">Нет данных по этому предмету.</p>`;
+            } else {
+                 content.innerHTML = html;
+            }
+
             modal.classList.remove('hidden');
         }
     }
@@ -254,7 +280,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateMainButton(state, title = "Начать тур") {
         const btn = document.getElementById('main-action-btn');
-        // Кнопка-карточка внутри блока предметов
         const certCard = document.getElementById('home-cert-btn'); 
         
         if (!btn) return;
@@ -268,7 +293,7 @@ document.addEventListener('DOMContentLoaded', function() {
             activeBtn.disabled = true;
             activeBtn.className = 'btn-primary'; 
             activeBtn.style.background = "#8E8E93";
-            if (certCard) certCard.classList.add('hidden'); // Скрываем карточку
+            if (certCard) certCard.classList.add('hidden'); 
         } else if (state === 'completed') {
             activeBtn.innerHTML = '<i class="fa-solid fa-check"></i> Текущий тур пройден';
             activeBtn.className = 'btn-success-clickable';
@@ -284,7 +309,7 @@ document.addEventListener('DOMContentLoaded', function() {
             activeBtn.className = 'btn-primary';
             activeBtn.disabled = false;
             activeBtn.style.background = "";
-            if (certCard) certCard.classList.add('hidden'); // Скрываем карточку
+            if (certCard) certCard.classList.add('hidden'); 
             activeBtn.addEventListener('click', handleStartClick);
         }
     }
@@ -376,13 +401,9 @@ document.addEventListener('DOMContentLoaded', function() {
         else alert("Работает только в Telegram");
     });
     
-    // СЛУШАТЕЛЬ ДЛЯ КАРТОЧКИ-КНОПКИ
-    safeAddListener('home-cert-btn', 'click', () => {
-        showCertsModal();
-    });
-    safeAddListener('download-certificate-res-btn', 'click', () => {
-        showCertsModal();
-    });
+    // СЛУШАТЕЛИ КНОПОК СЕРТИФИКАТОВ
+    safeAddListener('home-cert-btn', 'click', () => { showCertsModal(); });
+    safeAddListener('download-certificate-res-btn', 'click', () => { showCertsModal(); });
 
     function showCertsModal() {
         const container = document.getElementById('certs-list-container');
