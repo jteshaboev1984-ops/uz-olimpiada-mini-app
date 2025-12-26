@@ -7,7 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="supabase.min.js?v=1"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=29">
+    <link rel="stylesheet" href="style.css?v=30">
 </head>
 <body>
 
@@ -28,19 +28,50 @@
                     <h3 id="profile-user-name">...</h3>
                 </div>
             </div>
-            <div class="form-group"><label>Класс</label><div class="input-wrapper"><select id="class-select"></select><i class="fa-solid fa-chevron-down arrow-icon"></i></div></div>
-            <div class="form-group"><label>Регион</label><div class="input-wrapper"><select id="region-select"></select><i class="fa-solid fa-location-dot icon-right"></i></div></div>
-            <div class="form-group"><label>Район</label><div class="input-wrapper"><select id="district-select" disabled></select><i class="fa-solid fa-map icon-right"></i></div></div>
-            <div class="form-group"><label>Школа</label><div class="input-wrapper"><input type="text" id="school-input" placeholder="№ школы"><i class="fa-solid fa-graduation-cap icon-right"></i></div></div>
+            
+            <div class="form-group">
+                <label>Класс</label>
+                <div class="input-wrapper">
+                    <select id="class-select"></select>
+                    <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Регион</label>
+                <div class="input-wrapper">
+                    <select id="region-select"></select>
+                    <i class="fa-solid fa-location-dot icon-right"></i>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Район</label>
+                <div class="input-wrapper">
+                    <select id="district-select" disabled></select>
+                    <i class="fa-solid fa-map icon-right"></i>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Школа</label>
+                <div class="input-wrapper">
+                    <input type="text" id="school-input" placeholder="№ школы">
+                    <i class="fa-solid fa-graduation-cap icon-right"></i>
+                </div>
+            </div>
+
             <div class="card checkbox-card">
                 <input type="checkbox" id="research-consent">
                 <div class="checkbox-text"><strong>Согласие на обработку</strong><span>Для рейтинга.</span></div>
             </div>
         </div>
-        <div class="bottom-fixed">
+        
+        <div class="bottom-fixed column">
             <button id="save-profile" class="btn-primary">Сохранить</button>
-            <div id="profile-locked-msg" class="locked-message hidden"><i class="fa-solid fa-lock"></i> <span>Профиль заполнен</span></div>
-            <button id="profile-back-btn" class="btn-secondary hidden" style="margin-top: 10px;">На главную</button>
+            
+            <div id="profile-locked-btn" class="locked-status-btn hidden">
+                <i class="fa-solid fa-lock"></i> <span>Профиль заполнен</span>
+            </div>
+            
+            <button id="profile-back-btn" class="btn-primary hidden">На главную</button>
         </div>
     </div>
 
@@ -267,6 +298,23 @@
         </div>
     </div>
 
+    <div class="modal hidden" id="profile-info-modal">
+        <div class="modal-card">
+            <div class="modal-icon-big" style="color:var(--danger); background:#FFF2F2;"><i class="fa-solid fa-lock"></i></div>
+            <h2>Профиль заполнен</h2>
+            <p style="color:#666; font-size:14px; margin-bottom:15px;">Данные участника зафиксированы для формирования корректного рейтинга.</p>
+            
+            <div class="alert-box">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <div style="text-align:left;">
+                    <strong>Изменение невозможно</strong>
+                    <p style="margin:0; font-size:12px;">До окончания олимпиады редактирование данных отключено.</p>
+                </div>
+            </div>
+            <button class="btn-primary" onclick="document.getElementById('profile-info-modal').classList.add('hidden')">Понятно</button>
+        </div>
+    </div>
+
     <div class="modal hidden" id="about-modal">
         <div class="modal-card full-height" style="padding: 0; overflow: hidden; display:flex; flex-direction:column;">
             <div class="about-hero">
@@ -296,6 +344,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=29"></script>
+    <script src="script.js?v=30"></script>
 </body>
 </html>
