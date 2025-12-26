@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v21.0 (Final Restoration)');
+    console.log('App Started: v22.0 (Design Restore + Fixes)');
   
     let telegramUserId; 
     let internalDbId = null; 
@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', function() {
               
               if (progress) {
                   tourCompleted = true;
-                  updateMainButton('completed'); 
+                  updateMainButton('completed'); // Текущий тур пройден
                   document.getElementById('subjects-title').textContent = "Ваши результаты";
               } else {
                   tourCompleted = false;
@@ -140,7 +140,6 @@ document.addEventListener('DOMContentLoaded', function() {
           }
       }
 
-      // UI Decision
       const isProfileComplete = userData && userData.class && userData.region && userData.district && userData.school;
   
       if (!userData || !isProfileComplete) {
@@ -253,16 +252,17 @@ document.addEventListener('DOMContentLoaded', function() {
             activeBtn.style.background = "#8E8E93";
             certBtn.classList.add('hidden');
         } else if (state === 'completed') {
-            // Зеленая кнопка "Тур пройден"
+            // Зеленая кнопка "Тур пройден" (неактивная)
             activeBtn.innerHTML = '<i class="fa-solid fa-check"></i> Текущий тур пройден';
-            activeBtn.className = 'btn-success'; // Зеленый стиль
-            activeBtn.disabled = false; // Кликабельна, но просто сообщает
+            activeBtn.className = 'btn-success';
+            activeBtn.disabled = false; // Кликабельна, но просто информирует
             
             // Показываем доп. кнопку сертификатов
             certBtn.classList.remove('hidden');
             
-            // При нажатии можно показать алерт
-            activeBtn.addEventListener('click', () => alert("Вы уже прошли этот тур. Результаты сохранены."));
+            activeBtn.addEventListener('click', () => {
+                document.getElementById('tour-completed-modal').classList.remove('hidden');
+            });
         } else {
             // Состояние "Старт"
             activeBtn.innerHTML = `<i class="fa-solid fa-play"></i> ${title}`;
@@ -378,13 +378,13 @@ document.addEventListener('DOMContentLoaded', function() {
         else alert("Работает только в Telegram");
     });
     
-    // ЛОГИКА КНОПКИ СЕРТИФИКАТОВ
     safeAddListener('certs-btn', 'click', () => {
         const container = document.getElementById('certs-list-container');
         container.innerHTML = `
-            <div style="background:#F2F9FF; padding:10px; border-radius:10px; margin-bottom:10px;">
+            <div style="background:#F2F9FF; padding:12px; border-radius:12px; margin-bottom:10px; border: 1px solid #007AFF;">
                 <strong>Сертификат: Тур №1</strong><br>
-                <a href="#" style="color:#007AFF;">Скачать PDF (В разработке)</a>
+                <span style="font-size:12px; color:#666;">Дата: ${new Date().toLocaleDateString()}</span><br>
+                <a href="#" style="color:#007AFF; font-weight:bold; margin-top:5px; display:inline-block;">Скачать PDF (Скоро)</a>
             </div>
         `;
         document.getElementById('certs-modal').classList.remove('hidden');
@@ -393,7 +393,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('certs-modal').classList.remove('hidden');
     });
   
-    // --- LEADERBOARD (FIXED) ---
+    // --- LEADERBOARD (FIXED EMPTY LIST) ---
     async function loadLeaderboard() {
         if (!currentTourId) return;
         
@@ -410,17 +410,14 @@ document.addEventListener('DOMContentLoaded', function() {
             .limit(20);
 
         if (error || !progressData || progressData.length === 0) {
-            if(podium) podium.innerHTML = '<p style="text-align:center;width:100%;color:rgba(255,255,255,0.7);margin-top:20px;">Пока нет результатов</p>';
+            if(podium) podium.innerHTML = '<p style="text-align:center;width:100%;color:rgba(0,0,0,0.5);margin-top:20px;">Пока нет результатов</p>';
             return;
         }
 
         const userIds = progressData.map(p => p.user_id);
         
-        // FIX FOR 400 ERROR: Check if empty
-        if (userIds.length === 0) {
-             if(podium) podium.innerHTML = '<p style="text-align:center;width:100%;color:rgba(255,255,255,0.7);margin-top:20px;">Пока нет результатов</p>';
-             return;
-        }
+        // FIX: ПРОВЕРКА НА ПУСТОТУ
+        if (userIds.length === 0) return;
 
         const { data: usersData } = await supabaseClient
             .from('users')
@@ -452,7 +449,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="winner ${ranks[i]}">
                             ${ranks[i] === 'first' ? '<div class="icon-crown"><i class="fa-solid fa-crown"></i></div>' : ''}
                             <div class="avatar-ring ${medals[i]}">
-                                <div class="usr-av" style="width:100%;height:100%;font-size:20px;background:#eee;color:#999;">${player.avatarChar}</div>
+                                <div class="usr-av" style="width:100%;height:100%;font-size:20px;background:#eee;color:#999;border-radius:50%;display:flex;align-items:center;justify-content:center;">${player.avatarChar}</div>
                             </div>
                             <div class="rank-badge">#${player.rank}</div>
                             <div class="name">${player.name}</div>
