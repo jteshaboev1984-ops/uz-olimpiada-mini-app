@@ -20,10 +20,12 @@ body { background-color: var(--bg-color); color: var(--text-main); min-height: 1
 .hidden { display: none !important; }
 .container { padding: 16px; max-width: 500px; margin: 0 auto; }
 
+/* BUTTONS */
 .btn-primary {
     background: var(--primary); color: white; border: none; width: 100%; padding: 16px;
     border-radius: 14px; font-size: 17px; font-weight: 600; cursor: pointer;
     display: flex; align-items: center; justify-content: center; gap: 8px;
+    position: relative; z-index: 10;
 }
 .btn-primary:active { transform: scale(0.98); }
 .btn-primary:disabled { background: #B4D5FE; cursor: default; }
@@ -31,7 +33,7 @@ body { background-color: var(--bg-color); color: var(--text-main); min-height: 1
 .btn-secondary {
     background: #EBF4FF; color: var(--primary); border: none; width: 100%; padding: 16px;
     border-radius: 14px; font-size: 17px; font-weight: 600; margin-bottom: 10px;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
+    display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;
 }
 
 .btn-text { background: none; color: var(--text-sec); border: none; padding: 12px; font-size: 16px; width: 100%; cursor: pointer;}
@@ -57,12 +59,15 @@ body { background-color: var(--bg-color); color: var(--text-main); min-height: 1
 .avatar-circle img { width: 100%; height: 100%; border-radius: 50%; }
 .form-group { margin-bottom: 12px; }
 .form-group label { display: block; font-size: 14px; color: var(--text-sec); margin-bottom: 6px; }
+.input-wrapper { position: relative; }
 .input-wrapper select, .input-wrapper input {
-    width: 100%; padding: 14px 16px; border: 1px solid var(--border); border-radius: 12px; background: white; appearance: none; font-size: 16px;
+    width: 100%; padding: 14px 16px; border: 1px solid var(--border); border-radius: 12px; background: white; appearance: none; font-size: 16px; color: var(--text-main);
 }
-/* Стили для заблокированных полей (View Only) */
+.input-wrapper i { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: var(--text-sec); pointer-events: none; }
+
+/* DISABLED INPUTS */
 .input-wrapper select:disabled, .input-wrapper input:disabled {
-    background: #F2F2F7; color: var(--text-sec); border-color: transparent;
+    background: #F9F9F9; color: var(--text-sec); border-color: transparent; opacity: 1; -webkit-text-fill-color: var(--text-sec);
 }
 
 .checkbox-card { display: flex; gap: 12px; align-items: flex-start; border: 1px solid var(--border); }
@@ -71,12 +76,12 @@ body { background-color: var(--bg-color); color: var(--text-main); min-height: 1
 /* HOME STYLES */
 .top-bar { display: flex; justify-content: space-between; padding: 16px 20px; background: var(--bg-color); }
 .logo-area { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 18px; }
-.profile-icon-btn { width: 36px; height: 36px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.profile-icon-btn { width: 36px; height: 36px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 
 .greeting { font-size: 28px; margin-bottom: 8px; }
 .subtitle { color: var(--text-sec); margin-bottom: 24px; }
 .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 30px; }
-.action-card { background: white; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; box-shadow: var(--shadow); }
+.action-card { background: white; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; box-shadow: var(--shadow); cursor: pointer; }
 .icon-circle { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; }
 .gold { background: #FFF9E0; color: #FFB800; }
 .purple { background: #F2F0FF; color: #7B61FF; }
