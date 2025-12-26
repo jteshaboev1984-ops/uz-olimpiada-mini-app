@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v17.0 (Bulletproof)');
+    console.log('App Started: v18.0 (Final Logic & Fixes)');
   
     let telegramUserId; 
     let internalDbId = null; 
@@ -58,36 +58,40 @@ document.addEventListener('DOMContentLoaded', function() {
     };
   
     const regionSelect = document.getElementById('region-select');
-    regionSelect.innerHTML = '<option value="" disabled selected>Выберите регион</option>';
-    Object.keys(regions).sort().forEach(region => {
-      const option = document.createElement('option');
-      option.value = region;
-      option.textContent = region;
-      regionSelect.appendChild(option);
-    });
-  
-    regionSelect.addEventListener('change', () => {
-      const districtSelect = document.getElementById('district-select');
-      districtSelect.innerHTML = '<option value="" disabled selected>Выберите район</option>';
-      districtSelect.disabled = false;
-      const selected = regionSelect.value;
-      if (selected && regions[selected]) {
-        regions[selected].forEach(district => {
+    if (regionSelect) {
+        regionSelect.innerHTML = '<option value="" disabled selected>Выберите регион</option>';
+        Object.keys(regions).sort().forEach(region => {
           const option = document.createElement('option');
-          option.value = district;
-          option.textContent = district;
-          districtSelect.appendChild(option);
+          option.value = region;
+          option.textContent = region;
+          regionSelect.appendChild(option);
         });
-      }
-    });
+        
+        regionSelect.addEventListener('change', () => {
+          const districtSelect = document.getElementById('district-select');
+          districtSelect.innerHTML = '<option value="" disabled selected>Выберите район</option>';
+          districtSelect.disabled = false;
+          const selected = regionSelect.value;
+          if (selected && regions[selected]) {
+            regions[selected].forEach(district => {
+              const option = document.createElement('option');
+              option.value = district;
+              option.textContent = district;
+              districtSelect.appendChild(option);
+            });
+          }
+        });
+    }
   
     const classSelect = document.getElementById('class-select');
-    classSelect.innerHTML = '<option value="" disabled selected>Выберите класс</option>';
-    for (let i = 8; i <= 11; i++) {
-      const option = document.createElement('option');
-      option.value = i;
-      option.textContent = i + ' класс';
-      classSelect.appendChild(option);
+    if (classSelect) {
+        classSelect.innerHTML = '<option value="" disabled selected>Выберите класс</option>';
+        for (let i = 8; i <= 11; i++) {
+          const option = document.createElement('option');
+          option.value = i;
+          option.textContent = i + ' класс';
+          classSelect.appendChild(option);
+        }
     }
   
     // --- MAIN LOGIC ---
@@ -136,7 +140,6 @@ document.addEventListener('DOMContentLoaded', function() {
           }
       }
 
-      // UI Decision
       const isProfileComplete = userData && userData.class && userData.region && userData.district && userData.school;
   
       if (!userData || !isProfileComplete) {
@@ -337,8 +340,6 @@ document.addEventListener('DOMContentLoaded', function() {
         else window.open(url, '_blank');
     }
 
-    // --- SAFELY ADD EVENT LISTENERS ---
-    // This prevents the "null" error if a button is missing in HTML
     function safeAddListener(id, event, handler) {
         const el = document.getElementById(id);
         if (el) el.addEventListener(event, handler);
@@ -374,6 +375,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if(podium) podium.innerHTML = '<p style="text-align:center;width:100%;color:rgba(255,255,255,0.7);margin-top:20px;">Загрузка...</p>';
         if(list) list.innerHTML = '';
 
+        // 1. Get Top Scores
         const { data: progressData, error } = await supabaseClient
             .from('tour_progress')
             .select('user_id, score')
@@ -386,7 +388,12 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        // 2. Get User Names
         const userIds = progressData.map(p => p.user_id);
+        
+        // FIX: Check if array is empty to avoid 400 Bad Request
+        if (userIds.length === 0) return;
+
         const { data: usersData } = await supabaseClient
             .from('users')
             .select('id, first_name, last_name, class')
@@ -623,8 +630,9 @@ document.addEventListener('DOMContentLoaded', function() {
       const percent = Math.round((correctCount / questions.length) * 100);
   
       showScreen('result-screen');
-      document.getElementById('correct-count').textContent = correctCount;
-      document.getElementById('stat-correct').textContent = `${correctCount}/${questions.length}`;
+      document.getElementById('res-tour-title').textContent = "Тур №1"; // Можно брать из базы
+      document.getElementById('res-total').textContent = questions.length;
+      document.getElementById('res-correct').textContent = correctCount;
       document.getElementById('result-percent').textContent = `${percent}%`;
       
       const circle = document.getElementById('result-circle');
