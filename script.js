@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v22.0 (Design Restore + Fixes)');
+    console.log('App Started: v23.0 (Bulletproof)');
   
     let telegramUserId; 
     let internalDbId = null; 
@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', function() {
               
               if (progress) {
                   tourCompleted = true;
-                  updateMainButton('completed'); // Текущий тур пройден
+                  updateMainButton('completed'); 
                   document.getElementById('subjects-title').textContent = "Ваши результаты";
               } else {
                   tourCompleted = false;
@@ -213,7 +213,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function handleStartClick() {
-        const btn = document.getElementById('main-action-btn');
+        const btn = document.getElementById('start-tour-btn');
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Загрузка...';
         
         const { data } = await supabaseClient
@@ -236,40 +236,38 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('warning-modal').classList.remove('hidden');
     }
 
-    // НОВАЯ ЛОГИКА КНОПКИ
     function updateMainButton(state, title = "Начать тур") {
-        const btn = document.getElementById('main-action-btn');
-        const certBtn = document.getElementById('certs-btn');
-        if (!btn) return;
+        const container = document.getElementById('main-btn-container');
+        const certBtn = document.getElementById('download-cert-main-btn');
         
-        const newBtn = btn.cloneNode(true);
-        btn.parentNode.replaceChild(newBtn, btn);
-        const activeBtn = document.getElementById('main-action-btn');
+        // Очистка контейнера
+        container.innerHTML = ''; 
 
         if (state === 'inactive') {
-            activeBtn.innerHTML = '<i class="fa-solid fa-calendar-xmark"></i> Нет активных туров';
-            activeBtn.disabled = true;
-            activeBtn.style.background = "#8E8E93";
+            const btn = document.createElement('button');
+            btn.className = 'btn-primary';
+            btn.disabled = true;
+            btn.style.background = "#8E8E93";
+            btn.innerHTML = '<i class="fa-solid fa-calendar-xmark"></i> Нет активных туров';
+            container.appendChild(btn);
             certBtn.classList.add('hidden');
         } else if (state === 'completed') {
-            // Зеленая кнопка "Тур пройден" (неактивная)
-            activeBtn.innerHTML = '<i class="fa-solid fa-check"></i> Текущий тур пройден';
-            activeBtn.className = 'btn-success';
-            activeBtn.disabled = false; // Кликабельна, но просто информирует
+            const btn = document.createElement('button');
+            // Зеленая неактивная кнопка
+            btn.className = 'btn-success-disabled';
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Текущий тур пройден';
+            container.appendChild(btn);
             
-            // Показываем доп. кнопку сертификатов
+            // Показываем кнопку сертификатов
             certBtn.classList.remove('hidden');
-            
-            activeBtn.addEventListener('click', () => {
-                document.getElementById('tour-completed-modal').classList.remove('hidden');
-            });
         } else {
-            // Состояние "Старт"
-            activeBtn.innerHTML = `<i class="fa-solid fa-play"></i> ${title}`;
-            activeBtn.className = 'btn-primary';
-            activeBtn.disabled = false;
+            // Кнопка Старт
+            const btn = document.createElement('button');
+            btn.className = 'btn-primary';
+            btn.innerHTML = `<i class="fa-solid fa-play"></i> ${title}`;
+            btn.addEventListener('click', handleStartClick);
+            container.appendChild(btn);
             certBtn.classList.add('hidden');
-            activeBtn.addEventListener('click', handleStartClick);
         }
     }
 
@@ -378,7 +376,7 @@ document.addEventListener('DOMContentLoaded', function() {
         else alert("Работает только в Telegram");
     });
     
-    safeAddListener('certs-btn', 'click', () => {
+    safeAddListener('download-cert-main-btn', 'click', () => {
         const container = document.getElementById('certs-list-container');
         container.innerHTML = `
             <div style="background:#F2F9FF; padding:12px; border-radius:12px; margin-bottom:10px; border: 1px solid #007AFF;">
@@ -393,13 +391,13 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('certs-modal').classList.remove('hidden');
     });
   
-    // --- LEADERBOARD (FIXED EMPTY LIST) ---
+    // --- LEADERBOARD (FIX 400 + FILTER) ---
     async function loadLeaderboard() {
         if (!currentTourId) return;
         
         const podium = document.getElementById('lb-podium');
         const list = document.getElementById('lb-list');
-        if(podium) podium.innerHTML = '<p style="text-align:center;width:100%;color:rgba(255,255,255,0.7);margin-top:20px;">Загрузка...</p>';
+        if(podium) podium.innerHTML = '<p style="text-align:center;width:100%;color:rgba(0,0,0,0.5);margin-top:20px;">Загрузка...</p>';
         if(list) list.innerHTML = '';
 
         const { data: progressData, error } = await supabaseClient
@@ -414,10 +412,15 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const userIds = progressData.map(p => p.user_id);
+        // ВАЖНО: Фильтруем мусор (null/undefined)
+        const userIds = progressData
+            .map(p => p.user_id)
+            .filter(id => id !== null && id !== undefined);
         
-        // FIX: ПРОВЕРКА НА ПУСТОТУ
-        if (userIds.length === 0) return;
+        if (userIds.length === 0) {
+             if(podium) podium.innerHTML = '<p style="text-align:center;width:100%;color:rgba(0,0,0,0.5);margin-top:20px;">Пока нет результатов</p>';
+             return;
+        }
 
         const { data: usersData } = await supabaseClient
             .from('users')
@@ -427,6 +430,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!usersData) return;
 
         const leaderboard = progressData.map((entry, index) => {
+            if (!entry.user_id) return null; // Skip invalid
             const user = usersData.find(u => u.id === entry.user_id);
             return {
                 rank: index + 1,
@@ -435,7 +439,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 score: entry.score,
                 avatarChar: user && user.first_name ? user.first_name[0].toUpperCase() : 'A'
             };
-        });
+        }).filter(item => item !== null);
 
         if (podium) {
             podium.innerHTML = '';
