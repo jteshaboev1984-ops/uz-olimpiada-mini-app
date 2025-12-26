@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v35.0 (Live Stats, Split Subjects, Clean UI)');
+    console.log('App Started: v36.0 (Stats Live & Clean UI)');
   
     let telegramUserId; 
     let internalDbId = null; 
@@ -148,13 +148,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const { data: aData } = await supabaseClient.from('user_answers').select('question_id, is_correct').eq('user_id', internalDbId);
         if (aData) userAnswersCache = aData;
         
-        // ОБНОВЛЕНИЕ СТАТИСТИКИ НА ГЛАВНОМ ЭКРАНЕ
+        // ВЫЗЫВАЕМ ОБНОВЛЕНИЕ СТАТИСТИКИ
         updateDashboardStats();
     }
 
-    // НОВАЯ ФУНКЦИЯ ДЛЯ ОБНОВЛЕНИЯ ПРОЦЕНТОВ НА КАРТОЧКАХ
+    // НОВАЯ ФУНКЦИЯ ДЛЯ ОБНОВЛЕНИЯ КАРТОЧЕК
     function updateDashboardStats() {
-        // Карта соответствия названия предмета (из БД) -> ID элемента в HTML (префикс)
         const subjectMap = {
             'Математика': 'math',
             'Английский': 'eng',
@@ -174,18 +173,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 percent = Math.round((stats.correct / stats.total) * 100);
             }
 
-            // Обновляем текст процентов
             const percentEl = document.getElementById(`${prefix}-percent`);
             if (percentEl) percentEl.textContent = `${percent}%`;
 
-            // Обновляем полоску прогресса
             const barEl = document.getElementById(`${prefix}-bar`);
             if (barEl) barEl.style.width = `${percent}%`;
         }
     }
 
     function calculateSubjectStats(subjectName) {
-        // Фильтруем вопросы по вхождению строки (например "SAT Math" попадет в "SAT")
         const subjectQuestions = tourQuestionsCache.filter(q => q.subject && q.subject.toLowerCase().includes(subjectName.toLowerCase()));
         if (subjectQuestions.length === 0) return { total: 0, correct: 0 };
         let correct = 0;
@@ -248,7 +244,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateMainButton(state, title = "Начать тур") {
         const btn = document.getElementById('main-action-btn');
-        // certBtn removed from here logic as it's not in DOM anymore in home screen
         if (!btn) return;
         
         const newBtn = btn.cloneNode(true);
@@ -365,8 +360,6 @@ document.addEventListener('DOMContentLoaded', function() {
         else alert("Работает только в Telegram");
     });
     
-    // Эту кнопку мы удалили с главного экрана, но оставили логику на случай, если кнопка в Results вызывает ту же функцию
-    // safeAddListener('download-cert-main-btn', 'click', () => { showCertsModal(); }); 
     safeAddListener('download-certificate-res-btn', 'click', () => {
         showCertsModal();
     });
