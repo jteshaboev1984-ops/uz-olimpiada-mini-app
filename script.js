@@ -1,11 +1,10 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v9.0 (UI & Nav Fixes)');
+    console.log('App Started: v10.0 (UI improvements)');
   
-    // Глобальные переменные
     let telegramUserId; 
     let internalDbId = null; 
+    let allUserAnswers = []; // Храним ответы для статистики
     
-    // Supabase
     const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
     const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI';
   
@@ -21,7 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
   
-    // Test Mode (для браузера)
+    // Test Mode
     if (!telegramUserId) {
       let storedId = localStorage.getItem('test_user_id');
       if (!storedId) {
@@ -30,13 +29,11 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       telegramUserId = Number(storedId);
       document.getElementById('profile-user-name').textContent = 'Тестовый Участник';
-      console.warn('Тестовый режим. Telegram ID:', telegramUserId);
     }
   
     const { createClient } = supabase;
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
   
-    // Vars
     let questions = [];
     let currentQuestionIndex = 0;
     let correctCount = 0;
@@ -44,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let timerInterval = null;
     let tourCompleted = false;
   
-    // Regions Data
+    // --- Regions ---
     const regions = {
       "Ташкент": ["Алмазарский", "Бектемирский", "Мирабадский", "Мирзо-Улугбекский", "Сергелийский", "Учтепинский", "Чиланзарский", "Шайхантахурский", "Юнусабадский", "Яккасарайский", "Яшнабадский"],
       "Андижанская область": ["Андижанский", "Асакинский", "Балыкчинский", "Бозский", "Булакбашинский", "Джалакудукский", "Избасканский", "Кургантепинский", "Мархаматский", "Пахтаабадский", "Ходжаабадский", "Шахриханский"],
@@ -96,8 +93,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   
     // --- PROFILE LOGIC ---
-    
-    // Функция блокировки формы (Вид: Только чтение)
     function lockProfileForm() {
         document.getElementById('class-select').disabled = true;
         document.getElementById('region-select').disabled = true;
@@ -105,24 +100,24 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('school-input').disabled = true;
         document.getElementById('research-consent').disabled = true;
         
-        // Прячем кнопку "Сохранить", показываем "Назад"
         document.getElementById('save-profile').classList.add('hidden');
         document.getElementById('profile-back-btn').classList.remove('hidden');
         document.getElementById('profile-desc').textContent = "Ваши данные сохранены";
+        
+        // Показываем сообщение о блокировке
+        document.getElementById('profile-locked-msg').classList.remove('hidden');
     }
 
-    // Функция разблокировки формы (Вид: Редактирование)
     function unlockProfileForm() {
         document.getElementById('class-select').disabled = false;
         document.getElementById('region-select').disabled = false;
-        // district разблокируется при выборе региона
         document.getElementById('school-input').disabled = false;
         document.getElementById('research-consent').disabled = false;
 
-        // Показываем кнопку "Сохранить", прячем "Назад"
         document.getElementById('save-profile').classList.remove('hidden');
         document.getElementById('profile-back-btn').classList.add('hidden');
         document.getElementById('profile-desc').textContent = "Заполните данные для участия";
+        document.getElementById('profile-locked-msg').classList.add('hidden');
     }
 
     async function checkProfile() {
@@ -132,20 +127,20 @@ document.addEventListener('DOMContentLoaded', function() {
         .eq('telegram_id', telegramUserId)
         .maybeSingle();
   
-      if (data) internalDbId = data.id;
+      if (data) {
+          internalDbId = data.id;
+          // Загрузим ответы для статистики, если юзер есть
+          await fetchUserAnswers();
+      }
   
       const isProfileComplete = data && data.class && data.region && data.district && data.school;
   
       if (!data || !isProfileComplete) {
-        // Если профиля нет -> Экран профиля, форма активна
         showScreen('profile-screen');
         unlockProfileForm();
       } else {
-        // Если профиль есть -> Заполняем данными
         document.getElementById('class-select').value = data.class;
         document.getElementById('region-select').value = data.region;
-        
-        // Грузим районы
         const districtSelect = document.getElementById('district-select');
         districtSelect.innerHTML = '<option value="" disabled selected>Выберите район</option>';
         if (regions[data.region]) {
@@ -160,11 +155,47 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('school-input').value = data.school;
         document.getElementById('research-consent').checked = data.research_consent || false;
         
-        // Переходим на Главную
         showScreen('home-screen');
         tourCompleted = data.tour_completed === true;
         updateStartButtonState();
+        calculateHomeStats(); // Обновим прогресс на главной
       }
+    }
+
+    async function fetchUserAnswers() {
+        if (!internalDbId) return;
+        // Забираем ответы, чтобы посчитать статистику по предметам
+        // В реальном приложении лучше делать join, но здесь мы сделаем просто
+        const { data } = await supabaseClient
+            .from('user_answers')
+            .select('is_correct, question_id')
+            .eq('user_id', internalDbId);
+        
+        if (data) allUserAnswers = data;
+    }
+
+    // Простая логика для показа статистики (заглушка с рандомом, так как у нас в базе нет привязки ответов к предметам напрямую без JOIN)
+    // В реальном проекте тут нужно делать запрос: user_answers JOIN questions
+    function calculateHomeStats() {
+        // Пока просто визуально
+    }
+
+    // ГЛОБАЛЬНАЯ ФУНКЦИЯ ДЛЯ ОТКРЫТИЯ МОДАЛКИ ПРЕДМЕТА
+    window.openSubjectStats = function(subject) {
+        const modal = document.getElementById('subject-modal');
+        document.getElementById('sm-title').textContent = subject;
+        
+        // Пример подсчета (в реальности нужен JOIN)
+        // Для демонстрации покажем, что данных пока нет или случайные, 
+        // так как в коде выше мы не выгружали полную таблицу вопросов.
+        const total = 0; 
+        const correct = 0;
+        
+        document.getElementById('sm-correct').textContent = correct;
+        document.getElementById('sm-total').textContent = total;
+        document.getElementById('sm-bar').style.width = '0%';
+        
+        modal.classList.remove('hidden');
     }
 
     function updateStartButtonState() {
@@ -176,7 +207,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
   
-    // ЛОГИКА СОХРАНЕНИЯ (Исправлено зависание)
     document.getElementById('save-profile').addEventListener('click', async () => {
       const classVal = document.getElementById('class-select').value;
       const region = document.getElementById('region-select').value;
@@ -211,21 +241,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
           if (data && data.length > 0) internalDbId = data[0].id;
           
-          // УСПЕШНО СОХРАНЕНО:
-          // 1. Блокируем форму на будущее
           lockProfileForm();
-          // 2. Сразу перекидываем на главную
           showScreen('home-screen');
 
       } catch (e) {
           alert('Ошибка сохранения: ' + e.message);
-          // Если ошибка, возвращаем кнопку в исходное состояние
           btn.disabled = false;
           btn.innerHTML = originalText;
       } 
     });
   
-    // Validation styles
     const requiredFields = document.querySelectorAll('#class-select, #region-select, #district-select, #school-input');
     requiredFields.forEach(field => {
       field.addEventListener('input', () => {
@@ -234,21 +259,18 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     });
   
-    // --- NAVIGATION ---
+    // --- NAV ---
     function showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
         document.getElementById(screenId).classList.remove('hidden');
         window.scrollTo(0, 0);
     }
 
-    // Клик по иконке профиля с главной
     document.getElementById('open-profile-btn').addEventListener('click', () => {
         showScreen('profile-screen');
-        // Здесь мы уже знаем, что профиль есть (раз мы на главной), поэтому блокируем
-        lockProfileForm();
+        lockProfileForm(); // Блокируем при просмотре
     });
 
-    // Кнопка "Назад" в профиле (которая появляется только при просмотре)
     document.getElementById('profile-back-btn').addEventListener('click', () => {
         showScreen('home-screen');
     });
@@ -258,7 +280,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('about-btn').addEventListener('click', () => document.getElementById('about-modal').classList.remove('hidden'));
     document.getElementById('close-about').addEventListener('click', () => document.getElementById('about-modal').classList.add('hidden'));
     
-    // Кнопка ВЫХОД
     document.getElementById('exit-app-btn').addEventListener('click', () => {
         if(window.Telegram && Telegram.WebApp) {
             Telegram.WebApp.close();
@@ -267,7 +288,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Кнопка СЕРТИФИКАТ (Исправлено)
     document.getElementById('download-certificate-btn').addEventListener('click', () => {
         alert("Сертификаты будут доступны после завершения олимпиады!");
     });
@@ -302,7 +322,6 @@ document.addEventListener('DOMContentLoaded', function() {
       
       if (!internalDbId) await fetchInternalId();
       
-      // Fallback create user if missing
       if (!internalDbId) {
            const { data } = await supabaseClient
               .from('users')
@@ -323,7 +342,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
       if (error || !data || data.length === 0) {
         alert('Ошибка загрузки вопросов. Проверьте интернет.');
-        updateStartButtonState(); // Reset button
+        updateStartButtonState();
         return;
       }
   
@@ -381,20 +400,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const letter = letters[index] || '';
             const btn = document.createElement('div');
             btn.className = 'option-card';
-            
             btn.innerHTML = `<div class="option-circle">${letter}</div><div class="option-text">${option.trim()}</div>`;
-            
             btn.onclick = () => {
               document.querySelectorAll('.option-card').forEach(b => b.classList.remove('selected'));
               btn.classList.add('selected');
-              
               const optText = option.trim();
               const isLetterOption = optText.match(/^[A-DА-Г][)\.\s]/i);
               selectedAnswer = isLetterOption ? optText.charAt(0).toUpperCase() : optText;
-              
               if (!selectedAnswer && letter) selectedAnswer = letter;
               if (!selectedAnswer) selectedAnswer = optText;
-
               nextBtn.disabled = false;
             };
             container.appendChild(btn);
