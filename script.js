@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v18.0 (Final Logic & Fixes)');
+    console.log('App Started: v20.0 (Fix 400 + Logic)');
   
     let telegramUserId; 
     let internalDbId = null; 
@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', function() {
               
               if (progress) {
                   tourCompleted = true;
-                  updateMainButton('certificate'); 
+                  updateMainButton('completed');
                   document.getElementById('subjects-title').textContent = "Ваши результаты";
               } else {
                   tourCompleted = false;
@@ -140,6 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
           }
       }
 
+      // UI Decision
       const isProfileComplete = userData && userData.class && userData.region && userData.district && userData.school;
   
       if (!userData || !isProfileComplete) {
@@ -238,7 +239,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateMainButton(state, title = "Начать тур") {
         const btn = document.getElementById('main-action-btn');
+        const certBtn = document.getElementById('certs-btn');
         if (!btn) return;
+        
         const newBtn = btn.cloneNode(true);
         btn.parentNode.replaceChild(newBtn, btn);
         const activeBtn = document.getElementById('main-action-btn');
@@ -247,15 +250,23 @@ document.addEventListener('DOMContentLoaded', function() {
             activeBtn.innerHTML = '<i class="fa-solid fa-calendar-xmark"></i> Нет активных туров';
             activeBtn.disabled = true;
             activeBtn.style.background = "#8E8E93";
-        } else if (state === 'certificate') {
-            activeBtn.innerHTML = '<i class="fa-solid fa-download"></i> Скачать сертификат';
-            activeBtn.className = 'btn-primary';
+            certBtn.classList.add('hidden');
+        } else if (state === 'completed') {
+            // Зеленая кнопка "Тур пройден"
+            activeBtn.innerHTML = '<i class="fa-solid fa-check"></i> Тур пройден';
+            activeBtn.className = 'btn-success';
             activeBtn.disabled = false;
-            activeBtn.addEventListener('click', () => alert("Сертификат генерируется..."));
+            // Показываем кнопку сертификатов
+            certBtn.classList.remove('hidden');
+            
+            // Нажатие на "Тур пройден" (необязательно, можно убрать)
+            activeBtn.addEventListener('click', () => alert("Вы уже прошли этот тур. Ждите следующий!"));
         } else {
+            // Состояние "Старт"
             activeBtn.innerHTML = `<i class="fa-solid fa-play"></i> ${title}`;
             activeBtn.className = 'btn-primary';
             activeBtn.disabled = false;
+            certBtn.classList.add('hidden');
             activeBtn.addEventListener('click', handleStartClick);
         }
     }
@@ -364,9 +375,24 @@ document.addEventListener('DOMContentLoaded', function() {
         if(window.Telegram && Telegram.WebApp) Telegram.WebApp.close();
         else alert("Работает только в Telegram");
     });
-    safeAddListener('download-certificate-btn', 'click', () => alert("Сертификаты будут доступны после завершения олимпиады!"));
+    
+    // ЛОГИКА КНОПКИ СЕРТИФИКАТОВ
+    safeAddListener('certs-btn', 'click', () => {
+        // Показываем список (здесь логика поиска пройденных туров)
+        const container = document.getElementById('certs-list-container');
+        container.innerHTML = `
+            <div style="background:#F2F9FF; padding:10px; border-radius:10px; margin-bottom:10px;">
+                <strong>Сертификат: Тур №1</strong><br>
+                <a href="#" style="color:#007AFF;">Скачать PDF</a>
+            </div>
+        `;
+        document.getElementById('certs-modal').classList.remove('hidden');
+    });
+    safeAddListener('download-certificate-res-btn', 'click', () => {
+        document.getElementById('certs-modal').classList.remove('hidden');
+    });
   
-    // --- LEADERBOARD ---
+    // --- LEADERBOARD (FIXED EMPTY LIST) ---
     async function loadLeaderboard() {
         if (!currentTourId) return;
         
@@ -375,7 +401,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if(podium) podium.innerHTML = '<p style="text-align:center;width:100%;color:rgba(255,255,255,0.7);margin-top:20px;">Загрузка...</p>';
         if(list) list.innerHTML = '';
 
-        // 1. Get Top Scores
         const { data: progressData, error } = await supabaseClient
             .from('tour_progress')
             .select('user_id, score')
@@ -383,15 +408,15 @@ document.addEventListener('DOMContentLoaded', function() {
             .order('score', { ascending: false })
             .limit(20);
 
+        // ИСПРАВЛЕНИЕ ОШИБКИ 400: Если нет данных, просто выходим
         if (error || !progressData || progressData.length === 0) {
-            if(podium) podium.innerHTML = '<p style="text-align:center;width:100%;color:rgba(255,255,255,0.7);margin-top:20px;">Пока нет результатов</p>';
+            if(podium) podium.innerHTML = '<p style="text-align:center;width:100%;color:#555;margin-top:20px;">Пока нет результатов</p>';
             return;
         }
 
-        // 2. Get User Names
         const userIds = progressData.map(p => p.user_id);
         
-        // FIX: Check if array is empty to avoid 400 Bad Request
+        // ВАЖНО: Проверка на пустоту массива перед запросом
         if (userIds.length === 0) return;
 
         const { data: usersData } = await supabaseClient
@@ -630,7 +655,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const percent = Math.round((correctCount / questions.length) * 100);
   
       showScreen('result-screen');
-      document.getElementById('res-tour-title').textContent = "Тур №1"; // Можно брать из базы
+      document.getElementById('res-tour-title').textContent = "Тур №1";
       document.getElementById('res-total').textContent = questions.length;
       document.getElementById('res-correct').textContent = correctCount;
       document.getElementById('result-percent').textContent = `${percent}%`;
@@ -638,7 +663,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const circle = document.getElementById('result-circle');
       if (circle) circle.style.background = `conic-gradient(var(--primary) 0% ${percent}%, #E5E5EA ${percent}% 100%)`;
       
-      updateMainButton('certificate');
+      updateMainButton('completed');
       document.getElementById('subjects-title').textContent = "Ваши результаты";
       fetchStatsData(); 
     }
