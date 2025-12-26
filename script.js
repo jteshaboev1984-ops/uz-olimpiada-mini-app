@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v30.0 (Fix inputs & Profile Lock UI)');
+    console.log('App Started: v32.0 (Fixed UI glitches)');
   
     let telegramUserId; 
     let internalDbId = null; 
