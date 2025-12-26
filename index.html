@@ -7,7 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="supabase.min.js?v=1"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=22">
+    <link rel="stylesheet" href="style.css?v=23">
 </head>
 <body>
 
@@ -17,7 +17,6 @@
             <h1>Профиль</h1>
             <p>Данные участника</p>
         </div>
-
         <div class="container pb-large">
             <div class="card profile-info-card">
                 <div class="avatar-circle">
@@ -29,66 +28,25 @@
                     <h3 id="profile-user-name">...</h3>
                 </div>
             </div>
-
-            <div class="form-group">
-                <label>Класс</label>
-                <div class="input-wrapper">
-                    <select id="class-select"></select>
-                    <i class="fa-solid fa-chevron-down arrow-icon"></i>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>Регион</label>
-                <div class="input-wrapper">
-                    <select id="region-select"></select>
-                    <i class="fa-solid fa-location-dot icon-right"></i>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>Район / Город</label>
-                <div class="input-wrapper">
-                    <select id="district-select" disabled></select>
-                    <i class="fa-solid fa-map icon-right"></i>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>Школа</label>
-                <div class="input-wrapper">
-                    <input type="text" id="school-input" placeholder="№ школы">
-                    <i class="fa-solid fa-graduation-cap icon-right"></i>
-                </div>
-            </div>
-
+            <div class="form-group"><label>Класс</label><div class="input-wrapper"><select id="class-select"></select><i class="fa-solid fa-chevron-down arrow-icon"></i></div></div>
+            <div class="form-group"><label>Регион</label><div class="input-wrapper"><select id="region-select"></select><i class="fa-solid fa-location-dot icon-right"></i></div></div>
+            <div class="form-group"><label>Район</label><div class="input-wrapper"><select id="district-select" disabled></select><i class="fa-solid fa-map icon-right"></i></div></div>
+            <div class="form-group"><label>Школа</label><div class="input-wrapper"><input type="text" id="school-input" placeholder="№ школы"><i class="fa-solid fa-graduation-cap icon-right"></i></div></div>
             <div class="card checkbox-card">
                 <input type="checkbox" id="research-consent">
-                <div class="checkbox-text">
-                    <strong>Согласие на обработку</strong>
-                    <span>Для формирования рейтинга.</span>
-                </div>
+                <div class="checkbox-text"><strong>Согласие на обработку</strong><span>Для рейтинга.</span></div>
             </div>
         </div>
-
         <div class="bottom-fixed">
             <button id="save-profile" class="btn-primary">Сохранить</button>
-            
-            <div id="profile-locked-msg" class="locked-message hidden">
-                <i class="fa-solid fa-lock"></i>
-                <span>Данные нельзя изменить по регламенту олимпиады.</span>
-            </div>
-            
+            <div id="profile-locked-msg" class="locked-message hidden"><i class="fa-solid fa-lock"></i> <span>Профиль заполнен</span></div>
             <button id="profile-back-btn" class="btn-secondary hidden" style="margin-top: 10px;">На главную</button>
         </div>
     </div>
 
     <div class="screen hidden" id="home-screen">
         <div class="top-bar">
-            <div class="logo-area">
-                <div class="logo-icon"><i class="fa-solid fa-graduation-cap"></i></div>
-                <span>Smart Olympiad</span>
-            </div>
+            <div class="logo-area"><div class="logo-icon"><i class="fa-solid fa-graduation-cap"></i></div><span>Smart Olympiad</span></div>
             <div class="profile-icon-btn" id="open-profile-btn"><i class="fa-regular fa-user"></i></div>
         </div>
 
@@ -160,15 +118,15 @@
         </div> 
 
         <div class="bottom-fixed column">
-            <button id="main-action-btn" class="btn-primary">Загрузка...</button>
+            <div id="main-btn-container" style="width: 100%;">
+                <button id="start-tour-btn" class="btn-primary">Загрузка...</button>
+            </div>
             
-            <button id="certs-btn" class="btn-secondary hidden">
-                <i class="fa-solid fa-award"></i> Мои сертификаты
+            <button id="download-cert-main-btn" class="btn-secondary hidden">
+                <i class="fa-solid fa-file-pdf"></i> Скачать сертификат
             </button>
             
-            <button id="exit-app-btn" class="btn-danger-box">
-                <i class="fa-solid fa-right-from-bracket"></i> Выход
-            </button>
+            <button id="exit-app-btn" class="btn-danger-box">Выход</button>
         </div>
     </div>
 
@@ -178,7 +136,6 @@
             <div class="q-counter"><span id="question-number">1</span> / <span id="total-q-count">15</span></div>
         </div>
         <div class="quiz-progress"><div class="fill" id="quiz-progress-fill" style="width: 0%;"></div></div>
-
         <div class="container quiz-container pb-large">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                 <div class="subject-badge" id="subject-tag">...</div>
@@ -187,7 +144,6 @@
             <h2 id="question-text" class="question-title">Загрузка...</h2>
             <div id="options-container" class="options-list"></div>
         </div>
-
         <div class="bottom-fixed">
             <button id="next-button" class="btn-primary" disabled>Далее</button>
         </div>
@@ -238,9 +194,7 @@
             <button class="btn-secondary" id="download-certificate-res-btn">
                 <i class="fa-solid fa-download"></i> Скачать сертификат
             </button>
-            <button class="btn-primary" id="back-home">
-                На главную
-            </button>
+            <button class="btn-primary" id="back-home">На главную</button>
         </div>
     </div>
 
@@ -294,19 +248,6 @@
         </div>
     </div>
 
-    <div class="modal hidden" id="tour-completed-modal">
-        <div class="modal-card">
-            <div class="modal-icon-big"><i class="fa-solid fa-check-double"></i><div class="alert-badge" style="background:#34C759"><i class="fa-solid fa-check"></i></div></div>
-            <h2>Тур уже пройден!</h2>
-            <p>Вы успешно завершили этот этап.</p>
-            <div class="alert-box" style="background: #F2F9FF; color: #007AFF;">
-                <i class="fa-solid fa-graduation-cap"></i>
-                <p>Рекомендуем готовиться к следующему туру по видеоурокам.</p>
-            </div>
-            <button class="btn-primary" onclick="document.getElementById('tour-completed-modal').classList.add('hidden')">Понятно</button>
-        </div>
-    </div>
-
     <div class="modal hidden" id="about-modal">
         <div class="modal-card full-height">
             <div class="modal-header"><h3>О проекте</h3><div class="close-btn" id="close-about"><i class="fa-solid fa-times"></i></div></div>
@@ -317,6 +258,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=22"></script>
+    <script src="script.js?v=23"></script>
 </body>
 </html>
