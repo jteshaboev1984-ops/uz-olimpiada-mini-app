@@ -7,7 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="supabase.min.js?v=1"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=36">
+    <link rel="stylesheet" href="style.css?v=38">
 </head>
 <body>
 
@@ -105,11 +105,11 @@
                     <div class="subject-top"><div class="sub-icon violet"><i class="fa-solid fa-globe"></i></div><span class="percent" id="eng-percent">0%</span></div>
                     <h3>Английский</h3><div class="progress-line"><div id="eng-bar" style="width: 0%"></div></div>
                 </div>
-                <div class="subject-card" onclick="openSubjectStats('Физика')">
+                 <div class="subject-card" onclick="openSubjectStats('Физика')">
                     <div class="subject-top"><div class="sub-icon orange"><i class="fa-solid fa-bolt"></i></div><span class="percent" id="phys-percent">0%</span></div>
                     <h3>Физика</h3><div class="progress-line"><div id="phys-bar" style="width: 0%"></div></div>
                 </div>
-                <div class="subject-card" onclick="openSubjectStats('Химия')">
+                 <div class="subject-card" onclick="openSubjectStats('Химия')">
                     <div class="subject-top"><div class="sub-icon teal"><i class="fa-solid fa-flask"></i></div><span class="percent" id="chem-percent">0%</span></div>
                     <h3>Химия</h3><div class="progress-line"><div id="chem-bar" style="width: 0%"></div></div>
                 </div>
@@ -121,11 +121,10 @@
                     <div class="subject-top"><div class="sub-icon cyan"><i class="fa-solid fa-laptop-code"></i></div><span class="percent" id="it-percent">0%</span></div>
                     <h3>Информатика</h3><div class="progress-line"><div id="it-bar" style="width: 0%"></div></div>
                 </div>
-                <div class="subject-card" onclick="openSubjectStats('Экономика')">
+                 <div class="subject-card" onclick="openSubjectStats('Экономика')">
                     <div class="subject-top"><div class="sub-icon brown"><i class="fa-solid fa-chart-line"></i></div><span class="percent" id="eco-percent">0%</span></div>
                     <h3>Экономика</h3><div class="progress-line"><div id="eco-bar" style="width: 0%"></div></div>
                 </div>
-                
                 <div class="subject-card" onclick="openSubjectStats('SAT')">
                     <div class="subject-top"><div class="sub-icon red"><i class="fa-solid fa-brain"></i></div><span class="percent" id="sat-percent">0%</span></div>
                     <h3>SAT</h3><div class="progress-line"><div id="sat-bar" style="width: 0%"></div></div>
@@ -135,6 +134,10 @@
                     <h3>IELTS</h3><div class="progress-line"><div id="ielts-bar" style="width: 0%"></div></div>
                 </div>
             </div>
+
+            <button id="home-cert-btn" class="btn-secondary hidden" style="margin-top: 15px;">
+                <i class="fa-solid fa-file-pdf"></i> Скачать сертификат
+            </button>
 
             <div class="section-header" style="margin-top: 30px;"><h2>Ресурсы</h2></div>
             <div class="resources-list">
@@ -349,6 +352,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=36"></script>
+    <script src="script.js?v=38"></script>
 </body>
 </html>
