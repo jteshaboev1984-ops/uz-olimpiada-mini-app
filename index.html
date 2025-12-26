@@ -7,7 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="supabase.min.js?v=1"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=11">
+    <link rel="stylesheet" href="style.css?v=13">
 </head>
 <body>
 
@@ -116,8 +116,7 @@
             </div>
 
             <div class="section-header">
-                <h2>Мои предметы</h2>
-                <span class="link-text">ПОДРОБНЕЕ</span>
+                <h2>Предметы</h2>
             </div>
 
             <div class="subjects-grid">
@@ -159,7 +158,7 @@
             </div>
 
             <div class="section-header" style="margin-top: 30px;">
-                <h2>Материалы для подготовки</h2>
+                <h2>Ресурсы для подготовки</h2>
             </div>
 
             <div class="resources-list">
@@ -191,7 +190,9 @@
                 </div>
             </div>
 
-        </div> <div class="bottom-fixed column">
+        </div> 
+
+        <div class="bottom-fixed column">
             <button id="start-tour" class="btn-primary">
                 <i class="fa-solid fa-play"></i> Начать тур
             </button>
@@ -204,16 +205,20 @@
     <div class="screen hidden" id="quiz-screen">
         <div class="quiz-top-bar">
             <div class="timer-badge">
-                <i class="fa-regular fa-clock"></i> <span id="timer">40:00</span>
+                <i class="fa-regular fa-clock"></i> <span id="timer">00:00</span>
             </div>
-            <div class="q-counter"><span id="question-number">1</span> / 15</div>
+            <div class="q-counter"><span id="question-number">1</span> / <span id="total-q-count">15</span></div>
         </div>
-        <div class="quiz-progress"><div class="fill" id="quiz-progress-fill" style="width: 7%;"></div></div>
+        <div class="quiz-progress"><div class="fill" id="quiz-progress-fill" style="width: 0%;"></div></div>
 
-        <div class="container quiz-container">
-            <div class="subject-badge" id="subject-tag">ПРЕДМЕТ</div>
+        <div class="container quiz-container pb-large">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <div class="subject-badge" id="subject-tag">ПРЕДМЕТ</div>
+                <div class="time-hint" id="q-time-hint"><i class="fa-solid fa-hourglass-half"></i> ~1 мин</div>
+            </div>
+            
             <h2 id="question-text" class="question-title">Загрузка...</h2>
-            <p class="hint-text">Выберите вариант ответа:</p>
+            
             <div id="options-container" class="options-list"></div>
         </div>
 
@@ -238,18 +243,18 @@
                     </div>
                 </div>
                 <h2>Тур завершён!</h2>
-                <p>Правильных ответов: <span id="correct-count">0</span> из 15</p>
+                <p>Правильных ответов: <span id="correct-count">0</span></p>
             </div>
 
             <div class="stats-row">
                 <div class="stat-box">
                     <div class="icon blue"><i class="fa-solid fa-check"></i></div>
-                    <div class="val" id="stat-correct">0/15</div>
+                    <div class="val" id="stat-correct">0</div>
                     <div class="lbl">Верно</div>
                 </div>
                 <div class="stat-box">
                     <div class="icon blue"><i class="fa-solid fa-stopwatch"></i></div>
-                    <div class="val" id="stat-time">40м</div>
+                    <div class="val" id="stat-time">--</div>
                     <div class="lbl">Время</div>
                 </div>
             </div>
@@ -306,14 +311,36 @@
                     <div class="usr-info"><span class="u-name">Дмитрий В.</span><span class="u-meta">94%</span></div>
                     <span class="u-score">1120</span>
                 </div>
-                <div class="leader-row">
-                    <span class="pos">5</span>
-                    <div class="usr-av gray">A</div>
-                    <div class="usr-info"><span class="u-name">Аноним</span><span class="u-meta">92%</span></div>
-                    <span class="u-score">1090</span>
-                </div>
-                <div class="leader-row"><span class="pos">6</span><div class="usr-av gray">K</div><div class="usr-info"><span class="u-name">Kate W.</span><span class="u-meta">90%</span></div><span class="u-score">1050</span></div>
             </div>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="warning-modal">
+        <div class="modal-card">
+            <div class="modal-icon-big"><i class="fa-solid fa-stopwatch"></i><div class="alert-badge">!</div></div>
+            <h2>Предупреждение перед туром</h2>
+            
+            <p>У вас будет <strong id="warn-time-val">...</strong> на <strong id="warn-q-val">...</strong>.</p>
+            
+            <div class="alert-box">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <p>Время рассчитано исходя из сложности вопросов.</p>
+            </div>
+            <button id="confirm-start" class="btn-primary">Начать тур <i class="fa-solid fa-arrow-right"></i></button>
+            <button id="cancel-start" class="btn-text">Отмена</button>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="tour-completed-modal">
+        <div class="modal-card">
+            <div class="modal-icon-big"><i class="fa-solid fa-check-double"></i><div class="alert-badge" style="background:#34C759"><i class="fa-solid fa-check"></i></div></div>
+            <h2>Тур уже пройден!</h2>
+            <p>Вы успешно завершили этот этап.</p>
+            <div class="alert-box" style="background: #F2F9FF; color: #007AFF;">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <p>Рекомендуем готовиться к следующему туру по видеоурокам.</p>
+            </div>
+            <button class="btn-primary" onclick="document.getElementById('tour-completed-modal').classList.add('hidden')">Понятно</button>
         </div>
     </div>
 
@@ -322,38 +349,11 @@
             <div class="modal-handle"></div>
             <div class="modal-icon-big" id="sm-icon-bg"><i class="fa-solid fa-book" id="sm-icon"></i></div>
             <h2 id="sm-title">Предмет</h2>
-            <p class="small-text">Текущая статистика</p>
-            <div class="progress-bar-line" style="height: 8px; margin-bottom: 20px;">
+            <p class="small-text">Статистика ответов</p>
+            <div class="progress-bar-line" style="height: 8px; margin-bottom: 24px;">
                 <div class="fill" id="sm-bar" style="width: 0%"></div>
             </div>
             <button class="btn-primary" onclick="document.getElementById('subject-modal').classList.add('hidden')">Закрыть</button>
-        </div>
-    </div>
-
-    <div class="modal hidden" id="tour-completed-modal">
-        <div class="modal-card">
-            <div class="modal-icon-big"><i class="fa-solid fa-check-double"></i><div class="alert-badge" style="background:#34C759"><i class="fa-solid fa-check"></i></div></div>
-            <h2>Тур уже пройден!</h2>
-            <p>Вы успешно завершили этот этап олимпиады.</p>
-            <div class="alert-box" style="background: #F2F9FF; color: #007AFF;">
-                <i class="fa-solid fa-graduation-cap"></i>
-                <p>Рекомендуем готовиться к следующему туру, используя видеоуроки ниже.</p>
-            </div>
-            <button class="btn-primary" onclick="document.getElementById('tour-completed-modal').classList.add('hidden')">Понятно</button>
-        </div>
-    </div>
-
-    <div class="modal hidden" id="warning-modal">
-        <div class="modal-card">
-            <div class="modal-icon-big"><i class="fa-solid fa-stopwatch"></i><div class="alert-badge">!</div></div>
-            <h2>Предупреждение перед туром</h2>
-            <p>У вас будет <strong>40 минут</strong> на <strong>15 вопросов</strong>.</p>
-            <div class="alert-box">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-                <p>Повтор тура невозможен даже при сбое связи.</p>
-            </div>
-            <button id="confirm-start" class="btn-primary">Начать тур <i class="fa-solid fa-arrow-right"></i></button>
-            <button id="cancel-start" class="btn-text">Отмена</button>
         </div>
     </div>
 
@@ -373,6 +373,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=11"></script>
+    <script src="script.js?v=13"></script>
 </body>
 </html>
