@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v26.0 (Leaderboard Tabs & Gap Fix)');
+    console.log('App Started: v27.0 (Restored Cards & Fixed Leaderboard)');
   
     let telegramUserId; 
     let internalDbId = null; 
@@ -44,9 +44,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let timerInterval = null;
     let tourCompleted = false;
   
-    // Регионы (сократил в коде, но они там есть)
     const regions = {
       "Ташкент": ["Алмазарский", "Бектемирский", "Мирабадский", "Мирзо-Улугбекский", "Сергелийский", "Учтепинский", "Чиланзарский", "Шайхантахурский", "Юнусабадский", "Яккасарайский", "Яшнабадский"],
+      "Андижанская область": ["Андижанский", "Асакинский", "Балыкчинский", "Бозский", "Булакбашинский", "Джалакудукский", "Избасканский", "Кургантепинский", "Мархаматский", "Пахтаабадский", "Ходжаабадский", "Шахриханский"],
       // ... (остальные)
     };
     if(Object.keys(regions).length < 2) regions["Ташкент"] = ["Чиланзарский", "Юнусабадский"];
@@ -311,7 +311,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // LEADERBOARD BTN
     safeAddListener('leaderboard-btn', 'click', () => {
         showScreen('leaderboard-screen');
-        // По умолчанию грузим текущий
         leaderboardMode = 'current';
         updateTabsUI();
         loadLeaderboard();
@@ -374,7 +373,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (leaderboardMode === 'current') {
             if (!currentTourId) return;
-            // Fetch Current
             const { data: progressData, error } = await supabaseClient
                 .from('tour_progress')
                 .select('user_id, score')
@@ -384,7 +382,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (!error && progressData) leaderboardData = progressData;
         } else {
-            // Fetch Total (Client-side aggregation for now)
             const { data: allProgress } = await supabaseClient
                 .from('tour_progress')
                 .select('user_id, score');
@@ -427,7 +424,6 @@ document.addEventListener('DOMContentLoaded', function() {
             };
         }).filter(item => item !== null);
 
-        // Render Podium
         if (podium) {
             podium.innerHTML = '';
             const top3 = [leaderboard[1], leaderboard[0], leaderboard[2]]; 
@@ -452,7 +448,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        // Render List
         if (list) {
             leaderboard.slice(3).forEach(player => {
                  let html = `
