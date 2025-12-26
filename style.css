@@ -1,4 +1,4 @@
-* {
+{
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -77,9 +77,6 @@ h1 {
   margin: 12px 0;
   transition: all 0.2s ease;
   box-shadow: var(--shadow);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
 .big-button:hover:not(:disabled) {
@@ -107,16 +104,11 @@ h1 {
   border-color: var(--primary-dark);
 }
 
-.big-button .arrow {
-  font-size: 20px;
-  font-weight: bold;
-}
-
 .hidden {
   display: none !important;
 }
 
-/* Progress Grid - теперь "Мои предметы" */
+/* Progress Grid */
 .progress-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -160,12 +152,21 @@ h1 {
   font-weight: 600;
 }
 
-/* Quiz Screen - обновленный дизайн */
+/* Quiz Screen */
 .quiz-header {
   margin-bottom: 24px;
+}
+
+.progress-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 16px;
+}
+
+.progress-top span {
+  font-size: 18px;
+  font-weight: 600;
 }
 
 .timer {
@@ -177,23 +178,16 @@ h1 {
   font-size: 16px;
 }
 
-.question-counter {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--gray);
-}
-
 #subject-tag {
   background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
   color: white;
-  padding: 12px 20px;
-  border-radius: 24px;
-  font-size: 18px;
-  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
   display: inline-block;
-  margin: 20px 0;
+  margin-bottom: 20px;
   text-align: center;
-  width: 100%;
 }
 
 #question-text {
@@ -249,67 +243,31 @@ textarea:focus {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
-/* Result Screen - обновленный дизайн */
+/* Result Screen */
 .result-container {
   text-align: center;
-}
-
-.result-title {
-  font-size: 24px;
-  margin-bottom: 20px;
-  color: var(--gray);
-}
-
-.result-percent-large {
-  font-size: 64px;
-  font-weight: 800;
-  background: linear-gradient(135deg, var(--success) 0%, var(--primary) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin: 20px 0;
 }
 
 .result-text {
   font-size: 18px;
   color: var(--gray);
-  margin: 12px 0;
+  margin: 24px 0 8px;
 }
 
 .result-score {
-  font-size: 24px;
+  font-size: 32px;
   font-weight: 700;
   color: var(--primary);
-  margin-bottom: 24px;
-}
-
-.subject-progress {
-  background: white;
-  border-radius: var(--border-radius);
-  padding: 16px;
-  margin: 12px 0;
-  box-shadow: var(--shadow);
-}
-
-.subject-progress h3 {
-  font-size: 16px;
-  font-weight: 600;
   margin-bottom: 8px;
-  color: var(--dark);
 }
 
-.progress-bar {
-  height: 8px;
-  background: var(--light-gray);
-  border-radius: 4px;
-  overflow: hidden;
-  margin-top: 8px;
-}
-
-.progress-fill {
-  height: 100%;
-  background: var(--success);
-  border-radius: 4px;
+.result-percent {
+  font-size: 28px;
+  font-weight: 600;
+  background: linear-gradient(135deg, var(--success) 0%, var(--primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 /* Modals */
@@ -443,10 +401,6 @@ select:focus, input:focus {
   
   .modal-content {
     padding: 24px 20px;
-  }
-  
-  .result-percent-large {
-    font-size: 48px;
   }
 }
 
