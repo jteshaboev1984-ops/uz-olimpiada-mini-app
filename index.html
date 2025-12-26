@@ -7,7 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="supabase.min.js?v=1"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=16">
+    <link rel="stylesheet" href="style.css?v=17">
 </head>
 <body>
 
@@ -81,7 +81,7 @@
             </button>
             <div id="profile-locked-msg" class="locked-message hidden">
                 <i class="fa-solid fa-lock"></i>
-                <span>Данные зафиксированы.</span>
+                <span>Данные нельзя изменить по регламенту.</span>
             </div>
             <button id="profile-back-btn" class="btn-secondary hidden" style="margin-top: 10px;">
                 <i class="fa-solid fa-arrow-left"></i> На главную
@@ -169,6 +169,11 @@
                     <div class="res-info"><h4>Официальный канал</h4><p>Новости и анонсы туров</p></div>
                     <i class="fa-solid fa-chevron-right arrow"></i>
                 </div>
+                <div class="resource-card" onclick="openExternalLink('https://t.me/your_group')">
+                    <div class="res-icon group"><i class="fa-solid fa-users"></i></div>
+                    <div class="res-info"><h4>Чат участников</h4><p>Обсуждение и помощь</p></div>
+                    <i class="fa-solid fa-chevron-right arrow"></i>
+                </div>
             </div>
         </div> 
 
@@ -217,7 +222,7 @@
                     </div>
                 </div>
                 <h2>Тур завершён!</h2>
-                <p>Правильных ответов: <span id="correct-count">0</span> из 15</p>
+                <p style="color: #8E8E93; margin-top: 5px;">Ваш результат сохранен</p>
             </div>
 
             <div class="stats-row">
@@ -241,21 +246,19 @@
             <div class="section-header"><h3>Работа над ошибками</h3></div>
             <div class="card error-review-card">
                 <div class="review-item">
-                    <div class="review-header"><i class="fa-solid fa-circle-xmark" style="color:var(--danger)"></i> <span>Вопрос 5 • Математика</span></div>
-                    <p style="font-size:14px; margin-top:5px; color:#333;">Ваш ответ: 31.4 см²</p>
-                    <p style="font-size:14px; color:var(--success); font-weight:600;">Верно: 78.5 см²</p>
+                    <div class="review-header"><i class="fa-solid fa-circle-xmark" style="color:var(--danger)"></i> <span>Данные сохранены</span></div>
+                    <p style="font-size:13px; margin-top:5px; color:#666;">Детальный разбор доступен после завершения тура всеми участниками.</p>
                 </div>
-                <div class="review-item" style="border:none">
-                    <div class="review-header"><i class="fa-solid fa-circle-xmark" style="color:var(--danger)"></i> <span>Вопрос 12 • Логика</span></div>
-                    <p style="font-size:14px; margin-top:5px; color:#333;">Ваш ответ: Аргумент А</p>
-                    <p style="font-size:14px; color:var(--success); font-weight:600;">Верно: Аргумент С</p>
-                </div>
-                <div style="text-align:center; margin-top:10px; color:var(--primary); font-size:13px;">Показать все ошибки <i class="fa-solid fa-chevron-down"></i></div>
             </div>
         </div>
 
         <div class="bottom-fixed column">
-            <button class="btn-primary" id="back-home">На главную</button>
+            <button class="btn-secondary" id="download-certificate-btn">
+                <i class="fa-solid fa-download"></i> Скачать сертификат
+            </button>
+            <button class="btn-primary" id="back-home">
+                На главную
+            </button>
         </div>
     </div>
 
@@ -289,7 +292,7 @@
             <p>У вас будет <strong id="warn-time-val">...</strong> на <strong id="warn-q-val">...</strong>.</p>
             <div class="alert-box">
                 <i class="fa-solid fa-triangle-exclamation"></i>
-                <p>Повтор тура невозможен. Результаты сохраняются автоматически.</p>
+                <p>Повтор тура невозможен.</p>
             </div>
             <button id="confirm-start" class="btn-primary">Начать тур <i class="fa-solid fa-arrow-right"></i></button>
             <button id="cancel-start" class="btn-text">Отмена</button>
@@ -301,19 +304,25 @@
             <div class="modal-handle"></div>
             <div class="modal-icon-big" id="sm-icon-bg"><i class="fa-solid fa-book" id="sm-icon"></i></div>
             <h2 id="sm-title">Предмет</h2>
-            <p class="small-text">Результаты текущего тура</p>
-            
+            <p class="small-text">Результаты</p>
             <div class="stats-row" style="margin: 20px 0;">
-                <div class="stat-box">
-                    <div class="val" id="sm-correct" style="color:var(--success)">0</div>
-                    <div class="lbl">Верно</div>
-                </div>
-                <div class="stat-box">
-                    <div class="val" id="sm-total">0</div>
-                    <div class="lbl">Всего вопросов</div>
-                </div>
+                <div class="stat-box"><div class="val" id="sm-correct" style="color:var(--success)">0</div><div class="lbl">Верно</div></div>
+                <div class="stat-box"><div class="val" id="sm-total">0</div><div class="lbl">Всего</div></div>
             </div>
             <button class="btn-primary" onclick="document.getElementById('subject-modal').classList.add('hidden')">Закрыть</button>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="tour-completed-modal">
+        <div class="modal-card">
+            <div class="modal-icon-big"><i class="fa-solid fa-check-double"></i><div class="alert-badge" style="background:#34C759"><i class="fa-solid fa-check"></i></div></div>
+            <h2>Тур уже пройден!</h2>
+            <p>Вы успешно завершили этот этап.</p>
+            <div class="alert-box" style="background: #F2F9FF; color: #007AFF;">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <p>Рекомендуем готовиться к следующему туру.</p>
+            </div>
+            <button class="btn-primary" onclick="document.getElementById('tour-completed-modal').classList.add('hidden')">Понятно</button>
         </div>
     </div>
 
@@ -329,14 +338,10 @@
                     <h1>Бесплатная олимпиада</h1>
                 </div>
                 <p class="desc">Уникальное соревнование по стандартам Cambridge IGCSE / AS Level.</p>
-                <div class="info-card">
-                    <div class="icon-box"><i class="fa-solid fa-trophy"></i></div>
-                    <div><h4>Цели проекта</h4><p>Выявление талантливых школьников.</p></div>
-                </div>
             </div>
         </div>
     </div>
 
-    <script src="script.js?v=16"></script>
+    <script src="script.js?v=17"></script>
 </body>
 </html>
