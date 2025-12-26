@@ -1,12 +1,10 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v15.0 (Clean Subjects & Stats)');
+    console.log('App Started: v16.0 (Final UI)');
   
     let telegramUserId; 
     let internalDbId = null; 
     let currentTourId = null;
-    // Кэш для ответов пользователя, чтобы считать статистику
     let userAnswersCache = []; 
-    // Кэш вопросов текущего тура для сопоставления ID -> Предмет
     let tourQuestionsCache = [];
     
     const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
@@ -46,10 +44,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const regions = {
       "Ташкент": ["Алмазарский", "Бектемирский", "Мирабадский", "Мирзо-Улугбекский", "Сергелийский", "Учтепинский", "Чиланзарский", "Шайхантахурский", "Юнусабадский", "Яккасарайский", "Яшнабадский"],
       "Андижанская область": ["Андижанский", "Асакинский", "Балыкчинский", "Бозский", "Булакбашинский", "Джалакудукский", "Избасканский", "Кургантепинский", "Мархаматский", "Пахтаабадский", "Ходжаабадский", "Шахриханский"],
-      // ... (остальные регионы, как были)
+      "Бухарская область": ["Бухарский", "Вабкентский", "Гиждуванский", "Жондорский", "Каганский", "Каракульский", "Караулбазарский", "Пешкунский", "Рометанский", "Шафирканский"],
+      "Джизакская область": ["Арнасайский", "Бахмальский", "Галляаральский", "Дустликский", "Зафарабадский", "Зарбдарский", "Мирзачульский", "Пахтакорский", "Фаришский", "Шараф-Рашидовский"],
+      "Кашкадарьинская область": ["Чиракчинский", "Дехканабадский", "Гузарский", "Камашинский", "Каршинский", "Касанский", "Китабский", "Кукдалинский", "Миришкорский", "Мубарекский", "Нишанский", "Шахрисабзский", "Яккабагский"],
+      "Навоийская область": ["Канимехский", "Кызылтепинский", "Навбахорский", "Навоийский", "Нуратинский", "Тамдынский", "Учкудукский", "Хатырчинский"],
+      "Наманганская область": ["Касансайский", "Наманганский", "Папский", "Туракурганский", "Уйчинский", "Учкурганский", "Чартакский", "Чустский", "Янгикурганский"],
+      "Самаркандская область": ["Булунгурский", "Иштиханский", "Каттакурганский", "Кошрабадский", "Нарпайский", "Пайарыкский", "Пастдаргомский", "Самаркандский", "Тайлакский", "Ургутский"],
+      "Сурхандарьинская область": ["Алтынсайский", "Ангорский", "Байсунский", "Денауский", "Джаркурганский", "Кумкурганский", "Музрабадский", "Сариасийский", "Термезский", "Узунский", "Шерабадский", "Шурчинский"],
+      "Сырдарьинская область": ["Акалтынский", "Баяутский", "Гулистанский", "Мирзаабадский", "Сайхунабадский", "Сардобский", "Сырдарьинский", "Хавастский"],
+      "Ферганская область": ["Алтыарыкский", "Багдадский", "Бешарыкский", "Дангаринский", "Ферганский", "Фуркатский", "Кувинский", "Кушкупырский", "Риштанский", "Ташлакский", "Учкуприкский", "Узбекистанский", "Язъяванский"],
+      "Хорезмская область": ["Багатский", "Гурленский", "Ханкинский", "Хазараспский", "Ургенчский", "Шаватский", "Янгиарыкский", "Янгибазарский"],
+      "Каракалпакстан": ["Амударьинский", "Берунийский", "Бозатауский", "Кегейлийский", "Канлыкульский", "Караузякский", "Кунградский", "Муйнакский", "Нукусский", "Тахтакупырский", "Турткульский", "Ходжейлийский", "Чимбайский", "Шуманайский", "Элликкалинский"]
     };
-    // Заглушка для теста, если регионы сокращены в коде
-    if(Object.keys(regions).length < 2) regions["Ташкент"] = ["Чиланзарский", "Юнусабадский"];
   
     const regionSelect = document.getElementById('region-select');
     regionSelect.innerHTML = '<option value="" disabled selected>Выберите регион</option>';
@@ -87,7 +93,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- MAIN LOGIC ---
 
     async function checkProfileAndTour() {
-      // 1. Get User
       const { data: userData } = await supabaseClient
         .from('users')
         .select('*')
@@ -96,7 +101,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
       if (userData) internalDbId = userData.id;
   
-      // 2. Find Active Tour
+      // Active Tour
       const now = new Date().toISOString();
       const { data: tourData } = await supabaseClient
         .from('tours')
@@ -107,14 +112,9 @@ document.addEventListener('DOMContentLoaded', function() {
         .maybeSingle();
 
       if (!tourData) {
-          const btn = document.getElementById('start-tour');
-          btn.innerHTML = '<i class="fa-solid fa-calendar-xmark"></i> Нет активных туров';
-          btn.disabled = true;
-          btn.style.background = "#8E8E93";
+          updateMainButton('inactive');
       } else {
           currentTourId = tourData.id;
-          
-          // ЗАГРУЖАЕМ ОТВЕТЫ И ВОПРОСЫ ДЛЯ СТАТИСТИКИ
           await fetchStatsData();
 
           if (internalDbId) {
@@ -127,15 +127,17 @@ document.addEventListener('DOMContentLoaded', function() {
               
               if (progress) {
                   tourCompleted = true;
-                  updateStartButtonState(true);
+                  updateMainButton('certificate'); // Показываем сертификат
+                  document.getElementById('subjects-title').textContent = "Ваши результаты";
               } else {
                   tourCompleted = false;
-                  updateStartButtonState(false, tourData.title);
+                  updateMainButton('start', tourData.title);
+                  document.getElementById('subjects-title').textContent = "Предметы";
               }
           }
       }
 
-      // 3. UI Decision
+      // UI Decision
       const isProfileComplete = userData && userData.class && userData.region && userData.district && userData.school;
   
       if (!userData || !isProfileComplete) {
@@ -147,60 +149,44 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
 
-    // Загрузка данных для подсчета статистики по предметам
     async function fetchStatsData() {
         if (!internalDbId || !currentTourId) return;
-
-        // 1. Берем все вопросы тура (чтобы знать их subject)
         const { data: qData } = await supabaseClient
             .from('questions')
             .select('id, subject')
             .eq('tour_id', currentTourId);
-        
         if (qData) tourQuestionsCache = qData;
 
-        // 2. Берем ответы юзера
         const { data: aData } = await supabaseClient
             .from('user_answers')
             .select('question_id, is_correct')
             .eq('user_id', internalDbId);
-            
         if (aData) userAnswersCache = aData;
     }
 
     function calculateSubjectStats(subjectName) {
-        // Фильтруем вопросы по предмету
         const subjectQuestions = tourQuestionsCache.filter(q => 
             q.subject && q.subject.toLowerCase().includes(subjectName.toLowerCase())
         );
-        
         if (subjectQuestions.length === 0) return { total: 0, correct: 0 };
-
         let correct = 0;
         let total = 0;
-
-        // Смотрим, ответил ли юзер на эти вопросы
         subjectQuestions.forEach(q => {
             const answer = userAnswersCache.find(a => a.question_id === q.id);
             if (answer) {
-                total++; // Юзер отвечал на этот вопрос
+                total++; 
                 if (answer.is_correct) correct++;
             }
         });
-
         return { total, correct };
     }
 
-    // Открытие модалки с реальной статистикой
     window.openSubjectStats = function(subject) {
         const modal = document.getElementById('subject-modal');
         document.getElementById('sm-title').textContent = subject;
-        
         const stats = calculateSubjectStats(subject);
-        
         document.getElementById('sm-correct').textContent = stats.correct;
-        document.getElementById('sm-total').textContent = stats.total; // Сколько он решал
-        
+        document.getElementById('sm-total').textContent = stats.total;
         modal.classList.remove('hidden');
     }
 
@@ -222,9 +208,9 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('research-consent').checked = data.research_consent || false;
     }
 
-    // Кнопка старта с проверкой
+    // ЛОГИКА ГЛАВНОЙ КНОПКИ
     async function handleStartClick() {
-        const btn = document.getElementById('start-tour');
+        const btn = document.getElementById('main-action-btn');
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Загрузка...';
         
         const { data } = await supabaseClient
@@ -239,33 +225,37 @@ document.addEventListener('DOMContentLoaded', function() {
             data.forEach(q => totalSeconds += (q.time_limit_seconds || 60));
             count = Math.min(data.length, 15);
         }
-        
         const mins = Math.ceil(totalSeconds / 60);
         document.getElementById('warn-time-val').textContent = `${mins} минут`;
         document.getElementById('warn-q-val').textContent = `${count} вопросов`;
         
-        updateStartButtonState(false);
+        // Reset button text just in case cancel is clicked
+        updateMainButton('start');
         document.getElementById('warning-modal').classList.remove('hidden');
     }
 
-    function updateStartButtonState(isCompleted, tourTitle = "Начать тур") {
-        const btn = document.getElementById('start-tour');
+    function updateMainButton(state, title = "Начать тур") {
+        const btn = document.getElementById('main-action-btn');
+        // Clear listeners
         const newBtn = btn.cloneNode(true);
         btn.parentNode.replaceChild(newBtn, btn);
+        const activeBtn = document.getElementById('main-action-btn');
 
-        if (isCompleted) {
-            newBtn.innerHTML = '<i class="fa-solid fa-check"></i> Тур пройден';
-            newBtn.classList.remove('btn-primary');
-            newBtn.classList.add('btn-success');
-            newBtn.addEventListener('click', () => {
-                document.getElementById('tour-completed-modal').classList.remove('hidden');
-            });
+        if (state === 'inactive') {
+            activeBtn.innerHTML = '<i class="fa-solid fa-calendar-xmark"></i> Нет активных туров';
+            activeBtn.disabled = true;
+            activeBtn.style.background = "#8E8E93";
+        } else if (state === 'certificate') {
+            activeBtn.innerHTML = '<i class="fa-solid fa-download"></i> Скачать сертификат';
+            activeBtn.className = 'btn-primary'; // Blue button
+            activeBtn.disabled = false;
+            activeBtn.addEventListener('click', () => alert("Сертификат генерируется..."));
         } else {
-            newBtn.innerHTML = `<i class="fa-solid fa-play"></i> ${tourTitle}`;
-            newBtn.classList.remove('btn-success');
-            newBtn.classList.add('btn-primary');
-            newBtn.disabled = false;
-            newBtn.addEventListener('click', handleStartClick);
+            // Start state
+            activeBtn.innerHTML = `<i class="fa-solid fa-play"></i> ${title}`;
+            activeBtn.className = 'btn-primary';
+            activeBtn.disabled = false;
+            activeBtn.addEventListener('click', handleStartClick);
         }
     }
 
@@ -357,7 +347,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     document.getElementById('leaderboard-btn').addEventListener('click', () => {
         showScreen('leaderboard-screen');
-        loadLeaderboard(); // Загружаем при клике
+        loadLeaderboard();
     });
     
     document.getElementById('lb-back').addEventListener('click', () => showScreen('home-screen'));
@@ -370,13 +360,13 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     document.getElementById('download-certificate-btn').addEventListener('click', () => alert("Сертификаты будут доступны после завершения олимпиады!"));
   
-    // --- LEADERBOARD LOGIC ---
+    // --- LEADERBOARD ---
     async function loadLeaderboard() {
         if (!currentTourId) return;
         
         const podium = document.getElementById('lb-podium');
         const list = document.getElementById('lb-list');
-        podium.innerHTML = '<p style="text-align:center;width:100%;color:#8E8E93;margin-top:20px;">Загрузка...</p>';
+        podium.innerHTML = '<p style="text-align:center;width:100%;color:rgba(255,255,255,0.7);margin-top:20px;">Загрузка...</p>';
         list.innerHTML = '';
 
         const { data: progressData, error } = await supabaseClient
@@ -387,7 +377,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .limit(20);
 
         if (error || !progressData || progressData.length === 0) {
-            podium.innerHTML = '<p style="text-align:center;width:100%;color:#8E8E93;margin-top:20px;">Пока нет результатов</p>';
+            podium.innerHTML = '<p style="text-align:center;width:100%;color:rgba(255,255,255,0.7);margin-top:20px;">Пока нет результатов</p>';
             return;
         }
 
@@ -410,7 +400,6 @@ document.addEventListener('DOMContentLoaded', function() {
             };
         });
 
-        // PODIUM (Top 3)
         podium.innerHTML = '';
         const top3 = [leaderboard[1], leaderboard[0], leaderboard[2]]; 
         const ranks = ['second', 'first', 'third'];
@@ -433,7 +422,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // LIST (Rest)
         leaderboard.slice(3).forEach(player => {
              let html = `
                 <div class="leader-row">
@@ -472,7 +460,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
   
       questions = data.sort(() => Math.random() - 0.5).slice(0, 15);
-      
       let totalSeconds = 0;
       questions.forEach(q => totalSeconds += (q.time_limit_seconds || 60));
 
@@ -634,8 +621,10 @@ document.addEventListener('DOMContentLoaded', function() {
       const circle = document.getElementById('result-circle');
       circle.style.background = `conic-gradient(var(--primary) 0% ${percent}%, #E5E5EA ${percent}% 100%)`;
       
-      updateStartButtonState(true);
-      fetchStatsData(); // Обновить статистику после тура
+      // Update Main button to Certificate
+      updateMainButton('certificate');
+      document.getElementById('subjects-title').textContent = "Ваши результаты";
+      fetchStatsData(); 
     }
   
     document.getElementById('back-home').addEventListener('click', () => {
