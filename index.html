@@ -7,7 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="supabase.min.js?v=1"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=21">
+    <link rel="stylesheet" href="style.css?v=22">
 </head>
 <body>
 
@@ -15,7 +15,7 @@
         <div class="header-profile">
             <div class="user-avatar-small"><i class="fa-solid fa-user"></i></div>
             <h1>Профиль</h1>
-            <p>Заполните данные участника</p>
+            <p>Данные участника</p>
         </div>
 
         <div class="container pb-large">
@@ -73,9 +73,12 @@
 
         <div class="bottom-fixed">
             <button id="save-profile" class="btn-primary">Сохранить</button>
+            
             <div id="profile-locked-msg" class="locked-message hidden">
-                <i class="fa-solid fa-lock"></i> <span>Профиль заполнен</span>
+                <i class="fa-solid fa-lock"></i>
+                <span>Данные нельзя изменить по регламенту олимпиады.</span>
             </div>
+            
             <button id="profile-back-btn" class="btn-secondary hidden" style="margin-top: 10px;">На главную</button>
         </div>
     </div>
@@ -163,7 +166,9 @@
                 <i class="fa-solid fa-award"></i> Мои сертификаты
             </button>
             
-            <button id="exit-app-btn" class="btn-danger-box">Выход</button>
+            <button id="exit-app-btn" class="btn-danger-box">
+                <i class="fa-solid fa-right-from-bracket"></i> Выход
+            </button>
         </div>
     </div>
 
@@ -205,17 +210,17 @@
                 <p style="color: #8E8E93; margin-top: 5px;">Ваш результат сохранен</p>
             </div>
 
-            <div class="stats-row-custom">
-                <div class="stat-col left">
+            <div class="stats-row-strict">
+                <div class="col-left">
                     <span class="lbl">ТУР</span>
                     <span class="val" id="res-tour-title">Тур №1</span>
                 </div>
-                <div class="stat-col center">
-                    <span class="lbl">ВСЕГО</span>
+                <div class="col-center">
+                    <span class="lbl">ВСЕГО ВОПРОСОВ</span>
                     <span class="val" id="res-total">15</span>
                 </div>
-                <div class="stat-col right">
-                    <span class="lbl">ВЕРНО</span>
+                <div class="col-right">
+                    <span class="lbl">ВЕРНЫЕ ОТВЕТЫ</span>
                     <span class="val green-text" id="res-correct">0</span>
                 </div>
             </div>
@@ -223,7 +228,7 @@
             <div class="section-header"><h3>Работа над ошибками</h3></div>
             <div class="card error-review-card">
                 <div class="review-item">
-                    <div class="review-header"><i class="fa-solid fa-circle-check" style="color:var(--success)"></i> <span>Результат принят</span></div>
+                    <div class="review-header"><i class="fa-solid fa-circle-check" style="color:var(--success)"></i> <span>Данные сохранены</span></div>
                     <p style="font-size:13px; margin-top:5px; color:#666;">Детальный разбор будет доступен после подведения итогов тура.</p>
                 </div>
             </div>
@@ -247,7 +252,7 @@
             </div>
             <div class="container" style="padding-top: 10px;">
                 <div id="lb-podium" class="top-three">
-                   <p style="color:#555; text-align:center; width:100%;">Загрузка...</p>
+                   <p style="color:rgba(0,0,0,0.5); text-align:center; width:100%; margin-top:20px;">Загрузка...</p>
                 </div>
             </div>
         </div>
@@ -289,6 +294,19 @@
         </div>
     </div>
 
+    <div class="modal hidden" id="tour-completed-modal">
+        <div class="modal-card">
+            <div class="modal-icon-big"><i class="fa-solid fa-check-double"></i><div class="alert-badge" style="background:#34C759"><i class="fa-solid fa-check"></i></div></div>
+            <h2>Тур уже пройден!</h2>
+            <p>Вы успешно завершили этот этап.</p>
+            <div class="alert-box" style="background: #F2F9FF; color: #007AFF;">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <p>Рекомендуем готовиться к следующему туру по видеоурокам.</p>
+            </div>
+            <button class="btn-primary" onclick="document.getElementById('tour-completed-modal').classList.add('hidden')">Понятно</button>
+        </div>
+    </div>
+
     <div class="modal hidden" id="about-modal">
         <div class="modal-card full-height">
             <div class="modal-header"><h3>О проекте</h3><div class="close-btn" id="close-about"><i class="fa-solid fa-times"></i></div></div>
@@ -299,6 +317,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=21"></script>
+    <script src="script.js?v=22"></script>
 </body>
 </html>
