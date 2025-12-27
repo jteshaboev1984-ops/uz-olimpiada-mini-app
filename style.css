@@ -140,7 +140,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .error-review-card { text-align: left; background: white; padding: 20px; border-radius: 16px; border: 1px solid #E5E5EA; }
 .review-header { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; margin-bottom: 5px; }
 
-/* LEADERBOARD & V51 FIXES */
+/* LEADERBOARD & V52 FIXES */
 .lb-header-bg { background: white; padding-bottom: 10px; border-radius: 0 0 24px 24px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
 .lb-nav { display: flex; align-items: center; padding: 16px 20px; justify-content: center; position: relative; margin-bottom: 10px; }
 .back-btn-simple { position: absolute; left: 20px; color: var(--primary); font-size: 24px; cursor: pointer; padding: 5px; }
@@ -162,16 +162,18 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .rk-1 { background: #FFD700; width: 28px; height: 28px; font-size: 14px; }
 .rk-2 { background: #C0C0C0; }
 .rk-3 { background: #CD7F32; }
-.winner-name { font-weight: 700; font-size: 13px; color: #000; margin-bottom: 2px; text-align: center; line-height: 1.2; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.winner-class { font-size: 10px; color: #8E8E93; margin-bottom: 4px; text-align: center; max-width: 100%; word-wrap: break-word; }
+.winner-name { font-weight: 700; font-size: 13px; color: #000; margin-bottom: 2px; text-align: center; line-height: 1.2; width: 100%; white-space: normal; max-width: 100px; }
+.winner-class { font-size: 10px; color: #8E8E93; margin-bottom: 4px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.winner-class .meta-row { justify-content: center; width: 100%; white-space: nowrap; }
+.winner-class .meta-row i { font-size: 9px; margin-right: 3px; color: var(--primary); opacity: 0.8; }
 .winner-score { font-weight: 800; font-size: 16px; color: var(--primary); }
 .lb-list-scroll { padding: 10px 16px 100px; background: #fff; min-height: 50vh; }
 .list-header { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: #8E8E93; margin-bottom: 8px; }
 
-/* === LEADERBOARD CARD STYLES (VERTICAL STACK) === */
+/* === LEADERBOARD CARD STYLES === */
 .leader-card { 
     background: white; border-radius: 16px; padding: 12px 16px; 
-    display: flex; align-items: flex-start; /* ВАЖНО: Выравнивание сверху */
+    display: flex; align-items: flex-start; 
     gap: 12px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); 
     border: 1px solid #f0f0f0; min-height: 64px; height: auto; 
 }
@@ -182,7 +184,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .l-info { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; gap: 4px; overflow: hidden; }
 .l-name { font-weight: 700; font-size: 15px; display: block; color: #000; line-height: 1.2; }
 .l-sub { font-size: 11px; color: #8E8E93; line-height: 1.4; display: flex; flex-direction: column; gap: 2px; }
-.meta-row { display: flex; align-items: center; gap: 5px; } /* Красивая строка данных */
+.meta-row { display: flex; align-items: center; gap: 5px; } 
 .meta-row i { width: 14px; text-align: center; font-size: 10px; color: #bbb; }
 .l-score { font-weight: 700; font-size: 16px; color: #000; flex-shrink: 0; margin-left: 5px; align-self: flex-start; margin-top: 4px; }
 
