@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v57.0 (Secure Answers Check)');
+    console.log('App Started: v58.0 (Secure Score Trigger)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -623,7 +623,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
     
-    // === ОБНОВЛЕННАЯ БЕЗОПАСНАЯ ЛОГИКА ПРОВЕРКИ ===
+    // === БЕЗОПАСНАЯ ЛОГИКА ОТПРАВКИ ОТВЕТОВ ===
     safeAddListener('next-button', 'click', async () => {
       const nextBtn = document.getElementById('next-button');
       nextBtn.disabled = true;
@@ -636,21 +636,22 @@ document.addEventListener('DOMContentLoaded', function() {
       
       const q = questions[currentQuestionIndex];
 
-      // ШАГ БЕЗОПАСНОСТИ: Спрашиваем у сервера, верен ли ответ
-      // Превращаем ID в число явно, чтобы избежать ошибок типов
+      // ШАГ БЕЗОПАСНОСТИ 1: Превращаем ID в число (чтобы не было ошибки 400)
       const questionIdNumber = Number(q.id);
-      
+
+      // ШАГ БЕЗОПАСНОСТИ 2: Проверяем ответ на сервере, а не в браузере
       const { data: isCorrect, error: rpcError } = await supabaseClient.rpc('check_user_answer', {
           p_question_id: questionIdNumber,
           p_user_answer: selectedAnswer
       });
       
-      // Если isCorrect null или ошибка - считаем неверным (на всякий случай)
       const finalIsCorrect = (isCorrect === true);
 
       if (finalIsCorrect) correctCount++;
       
       try {
+          // Отправляем ответ в таблицу user_answers
+          // Триггер в базе данных (on_answer_update) сам пересчитает баллы и обновит рейтинг
           const { error } = await supabaseClient.from('user_answers').upsert({
               user_id: internalDbId, question_id: q.id, answer: selectedAnswer, is_correct: finalIsCorrect
             }, { onConflict: 'user_id,question_id' });
@@ -669,11 +670,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function finishTour() {
       clearInterval(timerInterval);
-      if (internalDbId && currentTourId) {
-          await supabaseClient.from('tour_progress').upsert({ 
-                user_id: internalDbId, tour_id: currentTourId, score: correctCount
-            }, { onConflict: 'user_id,tour_id' });
-      }
+      
+      // === БЕЗОПАСНОСТЬ (v58) ===
+      // Мы УДАЛИЛИ отправку баллов отсюда.
+      // База данных уже посчитала их сама.
+      // ==========================
+
       tourCompleted = true;
       const percent = Math.round((correctCount / questions.length) * 100);
       showScreen('result-screen');
@@ -728,4 +730,3 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     checkProfileAndTour();
 });
-
