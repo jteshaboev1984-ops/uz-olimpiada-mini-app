@@ -637,9 +637,11 @@ document.addEventListener('DOMContentLoaded', function() {
       const q = questions[currentQuestionIndex];
 
       // ШАГ БЕЗОПАСНОСТИ: Спрашиваем у сервера, верен ли ответ
-      // Больше не проверяем это в браузере (там нет правильного ответа)
+      // Превращаем ID в число явно, чтобы избежать ошибок типов
+      const questionIdNumber = Number(q.id);
+      
       const { data: isCorrect, error: rpcError } = await supabaseClient.rpc('check_user_answer', {
-          p_question_id: q.id,
+          p_question_id: questionIdNumber,
           p_user_answer: selectedAnswer
       });
       
@@ -726,3 +728,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     checkProfileAndTour();
 });
+
