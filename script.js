@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v48.0 (Smart Leaderboard Details)');
+    console.log('App Started: v49.0 (Auto-Height Cards)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -7,12 +7,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let internalDbId = null; 
     let currentTourId = null;
     let currentUserData = null;
-    
-    // Кэши
     let userAnswersCache = []; 
     let tourQuestionsCache = [];
-    
-    // Лидерборд фильтр
     let currentLbFilter = 'republic'; 
 
     // === НАСТРОЙКИ SUPABASE ===
@@ -21,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const { createClient } = supabase;
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
   
-    // === ИНИЦИАЛИЗАЦИЯ TELEGRAM ===
+    // === ИНИЦИАЛИЗАЦИЯ ===
     if (window.Telegram && window.Telegram.WebApp) {
       Telegram.WebApp.ready();
       Telegram.WebApp.expand();
@@ -30,14 +26,12 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('profile-user-name').textContent = user.first_name + ' ' + (user.last_name || '');
         document.getElementById('home-user-name').textContent = user.first_name || 'Участник';
         telegramUserId = Number(user.id);
-        
         telegramData.firstName = user.first_name;
         telegramData.lastName = user.last_name;
         if (user.photo_url) telegramData.photoUrl = user.photo_url;
       }
     }
   
-    // ТЕСТОВЫЙ РЕЖИМ
     if (!telegramUserId) {
       let storedId = localStorage.getItem('test_user_id');
       if (!storedId) {
@@ -50,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function() {
       telegramData.lastName = 'Участник';
     }
   
-    // === ПЕРЕМЕННЫЕ ТЕСТА ===
+    // === ПЕРЕМЕННЫЕ ТЕСТА И РЕГИОНЫ ===
     let questions = [];
     let currentQuestionIndex = 0;
     let correctCount = 0;
@@ -58,7 +52,6 @@ document.addEventListener('DOMContentLoaded', function() {
     let timerInterval = null;
     let tourCompleted = false;
   
-    // === ДАННЫЕ РЕГИОНОВ ===
     const regions = {
         "Город Ташкент": ["Алмазарский", "Бектемирский", "Мирабадский", "Мирзо-Улугбекский", "Сергелийский", "Учтепинский", "Чиланзарский", "Шайхантахурский", "Юнусабадский", "Яккасарайский", "Яшнабадский", "Янгихаётский"],
         "Андижанская область": ["город Андижан", "Андижанский район", "Асакинский", "Балыкчинский", "Бозский", "Булакбашинский", "Джалакудукский", "Избасканский", "Кургантепинский", "Мархаматский", "Пахтаабадский", "Улугнарский", "Ходжаабадский", "Шахриханский"],
@@ -114,42 +107,23 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
   
-    // === ГЛАВНАЯ ЛОГИКА ЗАГРУЗКИ ===
+    // === ГЛАВНАЯ ЛОГИКА ===
     async function checkProfileAndTour() {
-      const { data: userData } = await supabaseClient
-        .from('users')
-        .select('*')
-        .eq('telegram_id', telegramUserId)
-        .maybeSingle();
-  
+      const { data: userData } = await supabaseClient.from('users').select('*').eq('telegram_id', telegramUserId).maybeSingle();
       if (userData) {
           internalDbId = userData.id;
           currentUserData = userData; 
       }
-  
       const now = new Date().toISOString();
-      const { data: tourData } = await supabaseClient
-        .from('tours')
-        .select('*')
-        .lte('start_date', now)
-        .gte('end_date', now)
-        .eq('is_active', true)
-        .maybeSingle();
+      const { data: tourData } = await supabaseClient.from('tours').select('*').lte('start_date', now).gte('end_date', now).eq('is_active', true).maybeSingle();
 
       if (!tourData) {
           updateMainButton('inactive');
       } else {
           currentTourId = tourData.id;
           await fetchStatsData();
-
           if (internalDbId) {
-              const { data: progress } = await supabaseClient
-                  .from('tour_progress')
-                  .select('*')
-                  .eq('user_id', internalDbId)
-                  .eq('tour_id', currentTourId)
-                  .maybeSingle();
-              
+              const { data: progress } = await supabaseClient.from('tour_progress').select('*').eq('user_id', internalDbId).eq('tour_id', currentTourId).maybeSingle();
               if (progress) {
                   tourCompleted = true;
                   updateMainButton('completed');
@@ -161,9 +135,7 @@ document.addEventListener('DOMContentLoaded', function() {
               }
           }
       }
-
       const isProfileComplete = userData && userData.class && userData.region && userData.district && userData.school;
-  
       if (!userData || !isProfileComplete) {
         showScreen('profile-screen');
         unlockProfileForm();
@@ -173,7 +145,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
 
-    // === СТАТИСТИКА ===
     async function fetchStatsData() {
         if (!internalDbId || !currentTourId) return;
         const { data: qData } = await supabaseClient.from('questions').select('id, subject').eq('tour_id', currentTourId);
@@ -189,12 +160,10 @@ document.addEventListener('DOMContentLoaded', function() {
             'Химия': 'chem', 'Биология': 'bio', 'Информатика': 'it',
             'Экономика': 'eco', 'SAT': 'sat', 'IELTS': 'ielts'
         };
-
         for (const [subjName, prefix] of Object.entries(subjectMap)) {
             const stats = calculateSubjectStats(subjName);
             let percent = 0;
             if (stats.total > 0) percent = Math.round((stats.correct / stats.total) * 100);
-            
             const percentEl = document.getElementById(`${prefix}-percent`);
             if (percentEl) percentEl.textContent = `${percent}%`;
             const barEl = document.getElementById(`${prefix}-bar`);
@@ -219,7 +188,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const modal = document.getElementById('subject-details-modal');
         const content = document.getElementById('sd-content');
         const title = document.getElementById('sd-title');
-        
         if (modal && content) {
             title.textContent = subject;
             const stats = calculateSubjectStats(subject);
@@ -229,8 +197,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="stat-list-value" style="color:${stats.correct > 0 ? 'var(--success)' : 'var(--text-sec)'}">
                         ${stats.correct} верно
                     </div>
-                </div>
-            `;
+                </div>`;
             content.innerHTML = stats.total === 0 ? `<p style="color:#8E8E93;text-align:center;padding:20px;">Нет данных</p>` : html;
             modal.classList.remove('hidden');
         }
@@ -261,10 +228,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             if (currentLbFilter === 'republic') {
-                let query = supabaseClient.from('tour_progress')
-                    .select('user_id, score')
-                    .order('score', { ascending: false })
-                    .limit(50);
+                let query = supabaseClient.from('tour_progress').select('user_id, score').order('score', { ascending: false }).limit(50);
                 if (currentTourId) query = query.eq('tour_id', currentTourId);
                 const { data, error } = await query;
                 if(error) throw error;
@@ -274,18 +238,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     podium.innerHTML = '<p style="text-align:center;width:100%;color:#999;">Заполните профиль</p>';
                     return;
                 }
-                
                 let userQuery = supabaseClient.from('users').select('id');
                 if (currentLbFilter === 'region') userQuery = userQuery.eq('region', currentUserData.region);
                 else if (currentLbFilter === 'district') userQuery = userQuery.eq('district', currentUserData.district);
 
-                let pQuery = supabaseClient.from('tour_progress')
-                    .select('user_id, score')
-                    .order('score', { ascending: false })
-                    .limit(300);
+                let pQuery = supabaseClient.from('tour_progress').select('user_id, score').order('score', { ascending: false }).limit(300);
                 if (currentTourId) pQuery = pQuery.eq('tour_id', currentTourId);
                 const { data: pData } = await pQuery;
-
                 if (pData && pData.length > 0) {
                     const pUserIds = pData.map(p => p.user_id);
                     const { data: localUsers } = await userQuery.in('id', pUserIds);
@@ -302,14 +261,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const userIdsToFetch = [...new Set(progressData.map(p => p.user_id))];
-            
-            // Запрашиваем все данные для красивого отображения
             let usersData = [];
             const { data, error } = await supabaseClient
                 .from('users')
                 .select('id, name, class, avatar_url, region, district, school') 
                 .in('id', userIdsToFetch);
-            
             if (error) throw error;
             usersData = data;
 
@@ -330,7 +286,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }).filter(item => item !== null);
 
             fullList.sort((a, b) => b.score - a.score);
-
             renderLeaderboardUI(fullList, podium, list);
             updateMyStickyBar(fullList, stickyBar);
 
@@ -348,29 +303,30 @@ document.addEventListener('DOMContentLoaded', function() {
         const rkClasses = ['rk-2', 'rk-1', 'rk-3'];
         const realRanks = [2, 1, 3];
 
-        // === ГЛАВНАЯ ФИШКА: УМНОЕ ФОРМАТИРОВАНИЕ АДРЕСА ===
+        // === ФОРМИРОВАНИЕ ПОДПИСИ (ТВОЯ ЛОГИКА) ===
         const getSubText = (player) => {
             let parts = [];
             
-            // 1. Всегда показываем класс
-            parts.push(`${player.classVal} класс`); 
-
-            // 2. Добавляем детали в зависимости от фильтра
+            // 1. Сначала добавляем данные о локации
             if (currentLbFilter === 'republic') {
-                // Если смотрим республику -> нужно знать Регион и Район
+                // Республика -> Регион, Район, Школа
                 if(player.region) parts.push(player.region);
                 if(player.district) parts.push(player.district);
-                if(player.school) parts.push(`Шк. ${player.school}`);
+                if(player.school) parts.push(`Школа ${player.school}`);
             } else if (currentLbFilter === 'region') {
-                // Если смотрим регион -> нужно знать Район
+                // Регион -> Район, Школа
                 if(player.district) parts.push(player.district);
-                if(player.school) parts.push(`Шк. ${player.school}`);
+                if(player.school) parts.push(`Школа ${player.school}`);
             } else if (currentLbFilter === 'district') {
-                // Если смотрим район -> только Школа
+                // Район -> Школа
                 if(player.school) parts.push(`Школа ${player.school}`);
             }
+
+            // 2. В конце всегда Класс
+            parts.push(`${player.classVal} класс`);
             
-            return parts.join(' • '); // Красивый разделитель
+            // Соединяем запятой
+            return parts.join(', '); 
         };
 
         top3.forEach((player, i) => {
@@ -386,7 +342,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="rank-circle ${rkClasses[i]}">${realRanks[i]}</div>
                         </div>
                         <div class="winner-name">${player.name}</div>
-                        <div class="winner-class" style="font-size:10px; opacity:0.8; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        <div class="winner-class" style="font-size:10px; opacity:0.8; max-width:100%; word-wrap:break-word;">
                             ${getSubText(player)}
                         </div>
                         <div class="winner-score">${player.score}</div>
@@ -414,7 +370,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="l-info">
                         <span class="l-name">${player.name}</span>
-                        <span class="l-sub" style="font-size:11px;">${getSubText(player)}</span>
+                        <span class="l-sub">${getSubText(player)}</span>
                     </div>
                     <div class="l-score">${player.score}</div>
                 </div>
@@ -429,12 +385,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let myRank = currentList.findIndex(p => p.isMe) + 1;
 
         if (!me && currentTourId) {
-             const { data } = await supabaseClient
-                .from('tour_progress')
-                .select('score')
-                .eq('user_id', internalDbId)
-                .eq('tour_id', currentTourId)
-                .maybeSingle();
+             const { data } = await supabaseClient.from('tour_progress').select('score').eq('user_id', internalDbId).eq('tour_id', currentTourId).maybeSingle();
              if (data) {
                  me = { score: data.score };
                  myRank = "50+";
@@ -450,7 +401,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // === СОХРАНЕНИЕ ПРОФИЛЯ ===
     function fillProfileForm(data) {
         document.getElementById('class-select').value = data.class;
         document.getElementById('region-select').value = data.region;
@@ -475,36 +425,23 @@ document.addEventListener('DOMContentLoaded', function() {
       const district = document.getElementById('district-select').value;
       const school = document.getElementById('school-input').value.trim();
       const consent = document.getElementById('research-consent').checked;
-
       if (!classVal || !region || !district || !school) { alert('Заполните все поля!'); return; }
       const btn = document.getElementById('save-profile');
       const originalText = btn.innerHTML;
       btn.disabled = true;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Сохранение...';
-      
       try {
           let fullName = null;
-          if (telegramData.firstName) {
-              fullName = telegramData.firstName + (telegramData.lastName ? ' ' + telegramData.lastName : '');
-          }
-
-          const updateData = { 
-              telegram_id: telegramUserId, 
-              class: classVal, region: region, district: district, 
-              school: school, research_consent: consent 
-          };
-          
+          if (telegramData.firstName) fullName = telegramData.firstName + (telegramData.lastName ? ' ' + telegramData.lastName : '');
+          const updateData = { telegram_id: telegramUserId, class: classVal, region: region, district: district, school: school, research_consent: consent };
           if (telegramData.photoUrl) updateData.avatar_url = telegramData.photoUrl;
           if (fullName) updateData.name = fullName;
-
           const { data, error } = await supabaseClient.from('users').upsert(updateData, { onConflict: 'telegram_id' }).select(); 
           if(error) throw error;
-
           if (data && data.length > 0) {
               internalDbId = data[0].id;
               currentUserData = data[0];
           }
-
           lockProfileForm();
           showScreen('home-screen');
           checkProfileAndTour();
@@ -515,21 +452,18 @@ document.addEventListener('DOMContentLoaded', function() {
       } 
     });
   
-    // === ВАЛИДАЦИЯ И ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
     function lockProfileForm() {
         document.getElementById('save-profile').classList.add('hidden');
         document.getElementById('profile-back-btn').classList.remove('hidden');
         document.getElementById('profile-locked-btn').classList.remove('hidden');
         document.querySelectorAll('#profile-screen input, #profile-screen select').forEach(el => el.disabled = true);
     }
-
     function unlockProfileForm() {
         document.getElementById('save-profile').classList.remove('hidden');
         document.getElementById('profile-back-btn').classList.add('hidden');
         document.getElementById('profile-locked-btn').classList.add('hidden');
         document.querySelectorAll('#profile-screen input, #profile-screen select').forEach(el => el.disabled = false);
     }
-
     const requiredFields = document.querySelectorAll('#class-select, #region-select, #district-select, #school-input');
     requiredFields.forEach(field => {
       field.addEventListener('input', () => {
@@ -537,8 +471,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('save-profile').disabled = !allFilled;
       });
     });
-
-    // === ТУР И ТЕСТЫ ===
     async function handleStartClick() {
         const btn = document.getElementById('main-action-btn');
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Загрузка...';
@@ -555,7 +487,6 @@ document.addEventListener('DOMContentLoaded', function() {
         updateMainButton('start');
         document.getElementById('warning-modal').classList.remove('hidden');
     }
-
     function updateMainButton(state, title = "Начать тур") {
         const btn = document.getElementById('main-action-btn');
         const certCard = document.getElementById('home-cert-btn'); 
@@ -563,7 +494,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const newBtn = btn.cloneNode(true);
         btn.parentNode.replaceChild(newBtn, btn);
         const activeBtn = document.getElementById('main-action-btn');
-
         if (state === 'inactive') {
             activeBtn.innerHTML = '<i class="fa-solid fa-calendar-xmark"></i> Нет активных туров';
             activeBtn.disabled = true;
@@ -586,12 +516,10 @@ document.addEventListener('DOMContentLoaded', function() {
             activeBtn.addEventListener('click', handleStartClick);
         }
     }
-
     safeAddListener('confirm-start', 'click', async () => {
       document.getElementById('warning-modal').classList.add('hidden');
       await startTour();
     });
-  
     async function startTour() {
       if (!currentTourId) return;
       const { data, error } = await supabaseClient.from('questions').select('*').eq('tour_id', currentTourId).limit(50);
@@ -605,7 +533,6 @@ document.addEventListener('DOMContentLoaded', function() {
       startTimer(totalSeconds);
       showQuestion();
     }
-  
     function startTimer(seconds) {
       let timeLeft = seconds;
       const timerEl = document.getElementById('timer');
@@ -618,7 +545,6 @@ document.addEventListener('DOMContentLoaded', function() {
         timeLeft--;
       }, 1000);
     }
-  
     function showQuestion() {
       const q = questions[currentQuestionIndex];
       document.getElementById('question-number').textContent = currentQuestionIndex + 1;
@@ -669,7 +595,6 @@ document.addEventListener('DOMContentLoaded', function() {
         container.appendChild(textarea);
       }
     }
-  
     safeAddListener('next-button', 'click', async () => {
       const nextBtn = document.getElementById('next-button');
       nextBtn.disabled = true;
@@ -702,7 +627,6 @@ document.addEventListener('DOMContentLoaded', function() {
           nextBtn.innerHTML = 'Повторить';
       }
     });
-  
     async function finishTour() {
       clearInterval(timerInterval);
       if (internalDbId && currentTourId) {
@@ -723,7 +647,6 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('subjects-title').textContent = "Ваши результаты";
       fetchStatsData(); 
     }
-
     function showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
         document.getElementById(screenId).classList.remove('hidden');
@@ -737,12 +660,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const el = document.getElementById(id);
         if (el) el.addEventListener(event, handler);
     }
-    
-    // === СЛУШАТЕЛИ ===
     safeAddListener('open-profile-btn', 'click', () => { showScreen('profile-screen'); lockProfileForm(); });
     safeAddListener('profile-back-btn', 'click', () => showScreen('home-screen'));
     safeAddListener('profile-locked-btn', 'click', () => document.getElementById('profile-info-modal').classList.remove('hidden'));
-    
     safeAddListener('leaderboard-btn', 'click', () => {
         showScreen('leaderboard-screen');
         setLeaderboardFilter('republic');
@@ -756,7 +676,6 @@ document.addEventListener('DOMContentLoaded', function() {
     safeAddListener('cancel-start', 'click', () => document.getElementById('warning-modal').classList.add('hidden'));
     safeAddListener('back-home', 'click', () => showScreen('home-screen'));
     safeAddListener('back-home-x', 'click', () => showScreen('home-screen'));
-
     function showCertsModal() {
         const container = document.getElementById('certs-list-container');
         container.innerHTML = `
@@ -767,6 +686,5 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>`;
         document.getElementById('certs-modal').classList.remove('hidden');
     }
-
     checkProfileAndTour();
 });
