@@ -1,12 +1,12 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v43.0 (Leaderboard Pro)');
+    console.log('App Started: v44.0 (Safe Leaderboard)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
-    let telegramPhotoUrl = null; // Фото профиля
+    let telegramPhotoUrl = null; 
     let internalDbId = null; 
     let currentTourId = null;
-    let currentUserData = null; // Данные пользователя (регион, класс)
+    let currentUserData = null;
     
     // Кэши
     let userAnswersCache = []; 
@@ -30,12 +30,11 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('profile-user-name').textContent = user.first_name + ' ' + (user.last_name || '');
         document.getElementById('home-user-name').textContent = user.first_name || 'Участник';
         telegramUserId = Number(user.id);
-        // Сохраняем фото
         if (user.photo_url) telegramPhotoUrl = user.photo_url;
       }
     }
   
-    // ТЕСТОВЫЙ РЕЖИМ (ЕСЛИ НЕ В ТГ)
+    // ТЕСТОВЫЙ РЕЖИМ
     if (!telegramUserId) {
       let storedId = localStorage.getItem('test_user_id');
       if (!storedId) {
@@ -120,7 +119,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
       if (userData) {
           internalDbId = userData.id;
-          currentUserData = userData; // Сохраняем данные для фильтрации лидерборда
+          currentUserData = userData; 
       }
   
       const now = new Date().toISOString();
@@ -176,7 +175,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (qData) tourQuestionsCache = qData;
         const { data: aData } = await supabaseClient.from('user_answers').select('question_id, is_correct').eq('user_id', internalDbId);
         if (aData) userAnswersCache = aData;
-        
         updateDashboardStats();
     }
 
@@ -233,7 +231,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // === ЛИДЕРБОРД (НОВАЯ ЛОГИКА) ===
+    // === ЛИДЕРБОРД (ИСПРАВЛЕННЫЙ И БЕЗОПАСНЫЙ) ===
     window.setLeaderboardFilter = function(filter) {
         currentLbFilter = filter;
         document.querySelectorAll('.lb-segment').forEach(el => el.classList.remove('active'));
@@ -258,7 +256,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             if (currentLbFilter === 'republic') {
-                // Топ 50 по стране
                 let query = supabaseClient.from('tour_progress')
                     .select('user_id, score')
                     .order('score', { ascending: false })
@@ -268,7 +265,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 if(error) throw error;
                 progressData = data;
             } else {
-                // Регион/Район: умная фильтрация
                 if (!currentUserData) {
                     podium.innerHTML = '<p style="text-align:center;width:100%;color:#999;">Заполните профиль</p>';
                     return;
@@ -278,7 +274,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (currentLbFilter === 'region') userQuery = userQuery.eq('region', currentUserData.region);
                 else if (currentLbFilter === 'district') userQuery = userQuery.eq('district', currentUserData.district);
 
-                // Берем топ 300 и фильтруем на клиенте (компромисс для скорости)
                 let pQuery = supabaseClient.from('tour_progress')
                     .select('user_id, score')
                     .order('score', { ascending: false })
@@ -302,11 +297,28 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const userIdsToFetch = [...new Set(progressData.map(p => p.user_id))];
-            const { data: usersData } = await supabaseClient
+            
+            // --- БЕЗОПАСНАЯ ЗАГРУЗКА ПОЛЬЗОВАТЕЛЕЙ (ФИКС ОШИБКИ) ---
+            let usersData = [];
+            // Попытка 1: С аватарками
+            let { data: usersWithAvatars, error: uError } = await supabaseClient
                 .from('users')
                 .select('id, first_name, last_name, class, avatar_url')
                 .in('id', userIdsToFetch);
-                
+
+            if (uError) {
+                console.warn('Ошибка загрузки аватарок (возможно, нет колонки), пробуем без них...');
+                // Попытка 2: Без аватарок (Fallback)
+                const { data: usersSimple } = await supabaseClient
+                    .from('users')
+                    .select('id, first_name, last_name, class')
+                    .in('id', userIdsToFetch);
+                usersData = usersSimple || [];
+            } else {
+                usersData = usersWithAvatars || [];
+            }
+
+            // Безопасный маппинг
             let fullList = progressData.map(p => {
                 const u = usersData.find(user => user.id === p.user_id);
                 if (!u) return null;
@@ -314,20 +326,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     id: u.id,
                     name: (u.first_name || 'Аноним') + ' ' + (u.last_name ? u.last_name[0] + '.' : ''),
                     classVal: u.class,
-                    avatarUrl: u.avatar_url,
+                    avatarUrl: u.avatar_url || null, // Если колонки нет, будет null
                     score: p.score,
                     isMe: u.id === internalDbId
                 };
             }).filter(item => item !== null);
 
-            fullList.sort((a, b) => b.score - a.score); // Финальная сортировка
+            fullList.sort((a, b) => b.score - a.score);
 
             renderLeaderboardUI(fullList, podium, list);
             updateMyStickyBar(fullList, stickyBar);
 
         } catch (e) {
             console.error(e);
-            podium.innerHTML = '<p style="text-align:center;color:red;">Ошибка</p>';
+            podium.innerHTML = '<p style="text-align:center;color:red;">Ошибка загрузки</p>';
         }
     }
 
@@ -339,7 +351,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const rkClasses = ['rk-2', 'rk-1', 'rk-3'];
         const realRanks = [2, 1, 3];
 
-        // Подиум
         top3.forEach((player, i) => {
             if (player) {
                 const avatarHtml = player.avatarUrl 
@@ -363,7 +374,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Список
         list.slice(3).forEach((player, index) => {
             const realRank = index + 4;
             const avatarHtml = player.avatarUrl 
@@ -416,7 +426,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // === СОХРАНЕНИЕ ПРОФИЛЯ ===
+    // === СОХРАНЕНИЕ ПРОФИЛЯ (БЕЗОПАСНОЕ) ===
     function fillProfileForm(data) {
         document.getElementById('class-select').value = data.class;
         document.getElementById('region-select').value = data.region;
@@ -435,22 +445,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('research-consent').checked = data.research_consent || false;
     }
 
-    function lockProfileForm() {
-        document.getElementById('save-profile').classList.add('hidden');
-        document.getElementById('profile-back-btn').classList.remove('hidden');
-        document.getElementById('profile-locked-btn').classList.remove('hidden');
-        const inputs = document.querySelectorAll('#profile-screen input, #profile-screen select');
-        inputs.forEach(el => el.disabled = true);
-    }
-
-    function unlockProfileForm() {
-        document.getElementById('save-profile').classList.remove('hidden');
-        document.getElementById('profile-back-btn').classList.add('hidden');
-        document.getElementById('profile-locked-btn').classList.add('hidden');
-        const inputs = document.querySelectorAll('#profile-screen input, #profile-screen select');
-        inputs.forEach(el => el.disabled = false);
-    }
-  
     document.getElementById('save-profile').addEventListener('click', async () => {
       const classVal = document.getElementById('class-select').value;
       const region = document.getElementById('region-select').value;
@@ -472,12 +466,29 @@ document.addEventListener('DOMContentLoaded', function() {
           };
           if (telegramPhotoUrl) updateData.avatar_url = telegramPhotoUrl;
 
+          // Используем обычный upsert, если нет колонки - ошибка вылетит, но мы её поймаем
           const { data, error } = await supabaseClient.from('users').upsert(updateData, { onConflict: 'telegram_id' }).select(); 
-          if (error) throw error;
+          
+          if (error) {
+              // Если ошибка в avatar_url, пробуем без него
+              if(error.message.includes('avatar_url')) {
+                  delete updateData.avatar_url;
+                  const { error: err2 } = await supabaseClient.from('users').upsert(updateData, { onConflict: 'telegram_id' }).select(); 
+                  if(err2) throw err2;
+              } else {
+                  throw error;
+              }
+          }
+
           if (data && data.length > 0) {
               internalDbId = data[0].id;
               currentUserData = data[0];
+          } else {
+               // Перезапрашиваем ID если data пуст (бывает при upsert)
+               const {data: u} = await supabaseClient.from('users').select('id').eq('telegram_id', telegramUserId).single();
+               if(u) internalDbId = u.id;
           }
+
           lockProfileForm();
           showScreen('home-screen');
           checkProfileAndTour();
@@ -488,7 +499,21 @@ document.addEventListener('DOMContentLoaded', function() {
       } 
     });
   
-    // === ВАЛИДАЦИЯ ФОРМЫ ===
+    // === ВАЛИДАЦИЯ И ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
+    function lockProfileForm() {
+        document.getElementById('save-profile').classList.add('hidden');
+        document.getElementById('profile-back-btn').classList.remove('hidden');
+        document.getElementById('profile-locked-btn').classList.remove('hidden');
+        document.querySelectorAll('#profile-screen input, #profile-screen select').forEach(el => el.disabled = true);
+    }
+
+    function unlockProfileForm() {
+        document.getElementById('save-profile').classList.remove('hidden');
+        document.getElementById('profile-back-btn').classList.add('hidden');
+        document.getElementById('profile-locked-btn').classList.add('hidden');
+        document.querySelectorAll('#profile-screen input, #profile-screen select').forEach(el => el.disabled = false);
+    }
+
     const requiredFields = document.querySelectorAll('#class-select, #region-select, #district-select, #school-input');
     requiredFields.forEach(field => {
       field.addEventListener('input', () => {
@@ -683,7 +708,6 @@ document.addEventListener('DOMContentLoaded', function() {
       fetchStatsData(); 
     }
 
-    // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
     function showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
         document.getElementById(screenId).classList.remove('hidden');
