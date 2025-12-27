@@ -1,5 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
+/* ... (ВЕСЬ КОД CSS ОСТАЕТСЯ БЕЗ ИЗМЕНЕНИЙ ИЗ ВЕРСИИ 54) ... */
+/* Просто убедись, что подключил style.css?v=55 в index.html */
+/* Я привожу полный код для надежности: */
+
 :root {
     --primary: #007AFF;
     --primary-dark: #0056b3;
@@ -73,14 +77,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
 .section-header h2 { font-size: 19px; font-weight: 700; }
 .subjects-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-
-/* КАРТОЧКА ПРЕДМЕТА - ИСПРАВЛЕНО (v53) */
-.subject-card { 
-    background: white; border-radius: 18px; padding: 16px; 
-    position: relative; /* ВАЖНО для процента */
-    box-shadow: 0 2px 6px rgba(0,0,0,0.04); 
-    transition: transform 0.1s; cursor: pointer; border: 1px solid transparent; 
-}
+.subject-card { background: white; border-radius: 18px; padding: 16px; position: relative; box-shadow: 0 2px 6px rgba(0,0,0,0.04); transition: transform 0.1s; cursor: pointer; border: 1px solid transparent; }
 .subject-card:active { transform: scale(0.97); }
 .subject-top { display: flex; justify-content: space-between; margin-bottom: 12px; }
 .sub-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
@@ -93,20 +90,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .sub-icon.brown { background: #EFEBE9; color: #795548; }
 .sub-icon.red { background: #FFEBEE; color: #D32F2F; }
 .sub-icon.gold { background: #FFF8E1; color: #FFC107; }
-
-/* ПРОЦЕНТ В УГЛУ - ИСПРАВЛЕНО (v53) */
-.percent-badge { 
-    position: absolute; 
-    top: 12px; 
-    right: 12px; 
-    font-size: 12px; 
-    font-weight: 700; 
-    background: #F2F2F7; 
-    padding: 4px 8px; 
-    border-radius: 8px; 
-    color: var(--text-sec); 
-}
-
+.percent-badge { position: absolute; top: 12px; right: 12px; font-size: 12px; font-weight: 700; background: #F2F2F7; padding: 4px 8px; border-radius: 8px; color: var(--text-sec); }
 .subject-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
 .progress-line { height: 4px; background: #F2F2F7; border-radius: 2px; overflow: hidden; }
 .progress-line div { height: 100%; background: var(--primary); border-radius: 2px; transition: width 0.5s; }
@@ -160,7 +144,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .error-review-card { text-align: left; background: white; padding: 20px; border-radius: 16px; border: 1px solid #E5E5EA; }
 .review-header { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; margin-bottom: 5px; }
 
-/* LEADERBOARD */
+/* LEADERBOARD & V54 FIXES */
 .lb-header-bg { background: white; padding-bottom: 10px; border-radius: 0 0 24px 24px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
 .lb-nav { display: flex; align-items: center; padding: 16px 20px; justify-content: center; position: relative; margin-bottom: 10px; }
 .back-btn-simple { position: absolute; left: 20px; color: var(--primary); font-size: 24px; cursor: pointer; padding: 5px; }
@@ -183,9 +167,23 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .rk-2 { background: #C0C0C0; }
 .rk-3 { background: #CD7F32; }
 .winner-name { font-weight: 700; font-size: 13px; color: #000; margin-bottom: 2px; text-align: center; line-height: 1.2; width: 100%; white-space: normal; max-width: 100px; }
-.winner-class { font-size: 10px; color: #8E8E93; margin-bottom: 4px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.winner-class .meta-row { justify-content: center; width: 100%; white-space: nowrap; }
-.winner-class .meta-row i { font-size: 9px; margin-right: 3px; color: var(--primary); opacity: 0.8; }
+
+/* ОБНОВЛЕННЫЕ СТИЛИ ПОДИУМА (v54) - РОВНЫЙ СТОЛБИК ПО ЦЕНТРУ */
+.winner-class { 
+    font-size: 10px; color: #8E8E93; margin-bottom: 4px; 
+    /* Делаем блок inline-flex, чтобы он ужался по контенту */
+    display: inline-flex; 
+    flex-direction: column; 
+    align-items: flex-start; /* Выравнивание внутри блока - влево */
+    justify-content: center;
+    gap: 2px;
+}
+.winner-class .meta-row { 
+    display: flex; align-items: center; gap: 4px; 
+    white-space: nowrap; /* Не переносить строки внутри данных */
+}
+.winner-class .meta-row i { font-size: 9px; margin-right: 2px; color: var(--primary); opacity: 0.8; width: 12px; text-align: center; }
+
 .winner-score { font-weight: 800; font-size: 16px; color: var(--primary); }
 .lb-list-scroll { padding: 10px 16px 100px; background: #fff; min-height: 50vh; }
 .list-header { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: #8E8E93; margin-bottom: 8px; }
