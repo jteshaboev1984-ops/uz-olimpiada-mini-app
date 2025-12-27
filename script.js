@@ -1,9 +1,13 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v44.0 (Safe Leaderboard)');
+    console.log('App Started: v46.0 (Matches Database Screenshots)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
-    let telegramPhotoUrl = null; 
+    let telegramData = { 
+        firstName: null, 
+        lastName: null, 
+        photoUrl: null 
+    };
     let internalDbId = null; 
     let currentTourId = null;
     let currentUserData = null;
@@ -30,7 +34,11 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('profile-user-name').textContent = user.first_name + ' ' + (user.last_name || '');
         document.getElementById('home-user-name').textContent = user.first_name || 'Участник';
         telegramUserId = Number(user.id);
-        if (user.photo_url) telegramPhotoUrl = user.photo_url;
+        
+        // Сохраняем данные во временный объект
+        telegramData.firstName = user.first_name;
+        telegramData.lastName = user.last_name;
+        if (user.photo_url) telegramData.photoUrl = user.photo_url;
       }
     }
   
@@ -43,6 +51,8 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       telegramUserId = Number(storedId);
       document.getElementById('profile-user-name').textContent = 'Тестовый Участник';
+      telegramData.firstName = 'Тестовый';
+      telegramData.lastName = 'Участник';
     }
   
     // === ПЕРЕМЕННЫЕ ТЕСТА ===
@@ -231,7 +241,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // === ЛИДЕРБОРД (ИСПРАВЛЕННЫЙ И БЕЗОПАСНЫЙ) ===
+    // === ЛИДЕРБОРД (ИСПРАВЛЕННЫЙ ПОД ТВОЮ БАЗУ) ===
     window.setLeaderboardFilter = function(filter) {
         currentLbFilter = filter;
         document.querySelectorAll('.lb-segment').forEach(el => el.classList.remove('active'));
@@ -298,35 +308,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const userIdsToFetch = [...new Set(progressData.map(p => p.user_id))];
             
-            // --- БЕЗОПАСНАЯ ЗАГРУЗКА ПОЛЬЗОВАТЕЛЕЙ (ФИКС ОШИБКИ) ---
+            // --- ИСПРАВЛЕНИЕ: ЗАПРАШИВАЕМ КОЛОНКИ, КОТОРЫЕ ЕСТЬ В БАЗЕ ---
+            // Используем 'name' вместо 'first_name, last_name'
             let usersData = [];
-            // Попытка 1: С аватарками
-            let { data: usersWithAvatars, error: uError } = await supabaseClient
+            const { data, error } = await supabaseClient
                 .from('users')
-                .select('id, first_name, last_name, class, avatar_url')
+                .select('id, name, class, avatar_url')
                 .in('id', userIdsToFetch);
+            
+            if (error) throw error;
+            usersData = data;
 
-            if (uError) {
-                console.warn('Ошибка загрузки аватарок (возможно, нет колонки), пробуем без них...');
-                // Попытка 2: Без аватарок (Fallback)
-                const { data: usersSimple } = await supabaseClient
-                    .from('users')
-                    .select('id, first_name, last_name, class')
-                    .in('id', userIdsToFetch);
-                usersData = usersSimple || [];
-            } else {
-                usersData = usersWithAvatars || [];
-            }
-
-            // Безопасный маппинг
             let fullList = progressData.map(p => {
                 const u = usersData.find(user => user.id === p.user_id);
                 if (!u) return null;
+                // Используем поле 'name' из базы или "Аноним", если оно пустое
                 return {
                     id: u.id,
-                    name: (u.first_name || 'Аноним') + ' ' + (u.last_name ? u.last_name[0] + '.' : ''),
-                    classVal: u.class,
-                    avatarUrl: u.avatar_url || null, // Если колонки нет, будет null
+                    name: u.name || 'Аноним', 
+                    classVal: u.class || '?',
+                    avatarUrl: u.avatar_url || null,
                     score: p.score,
                     isMe: u.id === internalDbId
                 };
@@ -426,7 +427,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // === СОХРАНЕНИЕ ПРОФИЛЯ (БЕЗОПАСНОЕ) ===
+    // === СОХРАНЕНИЕ ПРОФИЛЯ ===
     function fillProfileForm(data) {
         document.getElementById('class-select').value = data.class;
         document.getElementById('region-select').value = data.region;
@@ -459,34 +460,28 @@ document.addEventListener('DOMContentLoaded', function() {
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Сохранение...';
       
       try {
+          // ИСПРАВЛЕНИЕ: Формируем поле 'name' из данных Телеграма
+          let fullName = null;
+          if (telegramData.firstName) {
+              fullName = telegramData.firstName + (telegramData.lastName ? ' ' + telegramData.lastName : '');
+          }
+
           const updateData = { 
               telegram_id: telegramUserId, 
               class: classVal, region: region, district: district, 
               school: school, research_consent: consent 
           };
-          if (telegramPhotoUrl) updateData.avatar_url = telegramPhotoUrl;
-
-          // Используем обычный upsert, если нет колонки - ошибка вылетит, но мы её поймаем
-          const { data, error } = await supabaseClient.from('users').upsert(updateData, { onConflict: 'telegram_id' }).select(); 
           
-          if (error) {
-              // Если ошибка в avatar_url, пробуем без него
-              if(error.message.includes('avatar_url')) {
-                  delete updateData.avatar_url;
-                  const { error: err2 } = await supabaseClient.from('users').upsert(updateData, { onConflict: 'telegram_id' }).select(); 
-                  if(err2) throw err2;
-              } else {
-                  throw error;
-              }
-          }
+          // Добавляем имя и фото, если они есть
+          if (telegramData.photoUrl) updateData.avatar_url = telegramData.photoUrl;
+          if (fullName) updateData.name = fullName; // Пишем в колонку 'name'
+
+          const { data, error } = await supabaseClient.from('users').upsert(updateData, { onConflict: 'telegram_id' }).select(); 
+          if(error) throw error;
 
           if (data && data.length > 0) {
               internalDbId = data[0].id;
               currentUserData = data[0];
-          } else {
-               // Перезапрашиваем ID если data пуст (бывает при upsert)
-               const {data: u} = await supabaseClient.from('users').select('id').eq('telegram_id', telegramUserId).single();
-               if(u) internalDbId = u.id;
           }
 
           lockProfileForm();
@@ -713,44 +708,4 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById(screenId).classList.remove('hidden');
         window.scrollTo(0, 0);
     }
-    window.openExternalLink = function(url) {
-        if(window.Telegram && Telegram.WebApp) Telegram.WebApp.openLink(url);
-        else window.open(url, '_blank');
-    }
-    function safeAddListener(id, event, handler) {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener(event, handler);
-    }
-    
-    // === СЛУШАТЕЛИ ===
-    safeAddListener('open-profile-btn', 'click', () => { showScreen('profile-screen'); lockProfileForm(); });
-    safeAddListener('profile-back-btn', 'click', () => showScreen('home-screen'));
-    safeAddListener('profile-locked-btn', 'click', () => document.getElementById('profile-info-modal').classList.remove('hidden'));
-    
-    safeAddListener('leaderboard-btn', 'click', () => {
-        showScreen('leaderboard-screen');
-        setLeaderboardFilter('republic');
-    });
-    safeAddListener('lb-back', 'click', () => showScreen('home-screen'));
-    safeAddListener('about-btn', 'click', () => document.getElementById('about-modal').classList.remove('hidden'));
-    safeAddListener('close-about', 'click', () => document.getElementById('about-modal').classList.add('hidden'));
-    safeAddListener('exit-app-btn', 'click', () => window.Telegram && Telegram.WebApp ? Telegram.WebApp.close() : alert("Только в Telegram"));
-    safeAddListener('home-cert-btn', 'click', () => showCertsModal());
-    safeAddListener('download-certificate-res-btn', 'click', () => showCertsModal());
-    safeAddListener('cancel-start', 'click', () => document.getElementById('warning-modal').classList.add('hidden'));
-    safeAddListener('back-home', 'click', () => showScreen('home-screen'));
-    safeAddListener('back-home-x', 'click', () => showScreen('home-screen'));
-
-    function showCertsModal() {
-        const container = document.getElementById('certs-list-container');
-        container.innerHTML = `
-            <div class="cert-card">
-                <div class="cert-icon"><i class="fa-solid fa-file-pdf"></i></div>
-                <div class="cert-info"><h4>Сертификат: Тур №1</h4><p>${new Date().toLocaleDateString()}</p></div>
-                <div class="cert-action"><span class="badge-soon">Скоро</span></div>
-            </div>`;
-        document.getElementById('certs-modal').classList.remove('hidden');
-    }
-
-    checkProfileAndTour();
-});
+    window.openExternalLink = function(
