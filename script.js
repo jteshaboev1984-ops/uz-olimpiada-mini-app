@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v51.0 (Fixed Highlight & Stats)');
+    console.log('App Started: v52.0 (Full Info on Podium)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -26,7 +26,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('profile-user-name').textContent = user.first_name + ' ' + (user.last_name || '');
         document.getElementById('home-user-name').textContent = user.first_name || 'Участник';
         telegramUserId = Number(user.id);
-        
         telegramData.firstName = user.first_name;
         telegramData.lastName = user.last_name;
         if (user.photo_url) telegramData.photoUrl = user.photo_url;
@@ -124,11 +123,8 @@ document.addEventListener('DOMContentLoaded', function() {
           updateMainButton('inactive');
       } else {
           currentTourId = tourData.id;
-          
-          // ЗАГРУЖАЕМ СТАТИСТИКУ СРАЗУ
           if (internalDbId && currentTourId) {
               await fetchStatsData(); // Ждем загрузки вопросов и ответов
-              
               const { data: progress } = await supabaseClient.from('tour_progress').select('*').eq('user_id', internalDbId).eq('tour_id', currentTourId).maybeSingle();
               if (progress) {
                   tourCompleted = true;
@@ -141,7 +137,6 @@ document.addEventListener('DOMContentLoaded', function() {
               }
           }
       }
-      
       const isProfileComplete = userData && userData.class && userData.region && userData.district && userData.school;
       if (!userData || !isProfileComplete) {
         showScreen('profile-screen');
@@ -154,15 +149,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function fetchStatsData() {
         if (!internalDbId || !currentTourId) return;
-        
-        // Загружаем ВСЕ вопросы тура, чтобы знать Total
         const { data: qData } = await supabaseClient.from('questions').select('id, subject').eq('tour_id', currentTourId);
         if (qData) tourQuestionsCache = qData;
-        
-        // Загружаем ответы пользователя
         const { data: aData } = await supabaseClient.from('user_answers').select('question_id, is_correct').eq('user_id', internalDbId);
         if (aData) userAnswersCache = aData;
-        
         updateDashboardStats();
     }
 
@@ -176,7 +166,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const stats = calculateSubjectStats(subjName);
             let percent = 0;
             if (stats.total > 0) percent = Math.round((stats.correct / stats.total) * 100);
-            
             const percentEl = document.getElementById(`${prefix}-percent`);
             if (percentEl) percentEl.textContent = `${percent}%`;
             const barEl = document.getElementById(`${prefix}-bar`);
@@ -185,14 +174,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function calculateSubjectStats(subjectName) {
-        // Фильтруем вопросы по предмету
         const subjectQuestions = tourQuestionsCache.filter(q => q.subject && q.subject.toLowerCase().includes(subjectName.toLowerCase()));
         if (subjectQuestions.length === 0) return { total: 0, correct: 0 };
-        
         let correct = 0;
-        let total = subjectQuestions.length;
-        
+        let total = 0;
         subjectQuestions.forEach(q => {
+            total++; 
             const answer = userAnswersCache.find(a => a.question_id === q.id);
             if (answer && answer.is_correct) correct++;
         });
@@ -287,7 +274,6 @@ document.addEventListener('DOMContentLoaded', function() {
             let fullList = progressData.map(p => {
                 const u = usersData.find(user => user.id === p.user_id);
                 if (!u) return null;
-                // СТРОГОЕ СРАВНЕНИЕ ID ДЛЯ ПОДСВЕТКИ
                 return {
                     id: u.id,
                     name: u.name || 'Аноним', 
@@ -323,16 +309,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const getSubHtml = (player) => {
             let parts = [];
             
-            // Если Республика -> Имя (уже есть), Регион, Район, Школа, Класс
+            // Если Республика -> Регион, Район, Школа, Класс
             if (currentLbFilter === 'republic') {
                 if(player.region) parts.push(`<span class="meta-row"><i class="fa-solid fa-location-dot"></i> ${player.region}</span>`);
                 if(player.district) parts.push(`<span class="meta-row"><i class="fa-solid fa-map-pin"></i> ${player.district}</span>`);
             } 
-            // Если Регион -> Имя, Район, Школа, Класс
+            // Если Регион -> Район, Школа, Класс
             else if (currentLbFilter === 'region') {
                 if(player.district) parts.push(`<span class="meta-row"><i class="fa-solid fa-map-pin"></i> ${player.district}</span>`);
             }
-            // Если Район -> Имя, Школа, Класс (район уже выбран)
+            // Если Район -> Школа, Класс
             
             if(player.school) parts.push(`<span class="meta-row"><i class="fa-solid fa-school"></i> Школа ${player.school}</span>`);
             parts.push(`<span class="meta-row"><i class="fa-solid fa-user-graduate"></i> ${player.classVal} класс</span>`);
@@ -353,8 +339,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="rank-circle ${rkClasses[i]}">${realRanks[i]}</div>
                         </div>
                         <div class="winner-name">${player.name}</div>
-                        <div class="winner-class" style="display:flex; flex-direction:column; align-items:center;">
-                            <span style="font-size:10px; opacity:0.7;">${player.classVal} класс</span>
+                        <div class="winner-class">
+                            ${getSubHtml(player)}
                         </div>
                         <div class="winner-score">${player.score}</div>
                     </div>
@@ -372,7 +358,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 : '';
             const fallbackAvatar = `<div class="no-img">${player.name[0]}</div>`;
 
-            // СТРОГОЕ УСЛОВИЕ ДЛЯ ПОДСВЕТКИ (Border only if isMe is true)
             let cardStyle = player.isMe ? 'background:#F0F8FF; border:1px solid var(--primary);' : '';
 
             let html = `
@@ -389,7 +374,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="l-score">${player.score}</div>
                 </div>
             `;
-            listEl.insertAdjacentHTML('beforeend', html);
+            list.insertAdjacentHTML('beforeend', html);
         });
     }
 
