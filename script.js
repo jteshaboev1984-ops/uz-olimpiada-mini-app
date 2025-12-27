@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v53.0 (Fix Crash & Style)');
+    console.log('App Started: v55.0 (School-Dash-Name & Separate Class)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -215,11 +215,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function loadLeaderboard() {
         const podium = document.getElementById('lb-podium');
-        const list = document.getElementById('lb-list');
+        const listEl = document.getElementById('lb-list');
         const stickyBar = document.getElementById('lb-user-sticky');
         
         if(podium) podium.innerHTML = '<p style="text-align:center;width:100%;color:#999;margin-top:20px;"><i class="fa-solid fa-spinner fa-spin"></i> Загрузка...</p>';
-        if(list) list.innerHTML = '';
+        if(listEl) listEl.innerHTML = '';
 
         if (!currentUserData && internalDbId) {
              const { data } = await supabaseClient.from('users').select('*').eq('id', internalDbId).single();
@@ -288,7 +288,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }).filter(item => item !== null);
 
             fullList.sort((a, b) => b.score - a.score);
-            renderLeaderboardUI(fullList, podium, list);
+            renderLeaderboardUI(fullList, podium, listEl);
             updateMyStickyBar(fullList, stickyBar);
 
         } catch (e) {
@@ -305,16 +305,37 @@ document.addEventListener('DOMContentLoaded', function() {
         const rkClasses = ['rk-2', 'rk-1', 'rk-3'];
         const realRanks = [2, 1, 3];
 
+        // === ИСПРАВЛЕННЫЙ ТЕКСТ (v55): Школа - Название, Класс отдельно ===
         const getSubHtml = (player) => {
             let parts = [];
-            if (currentLbFilter === 'republic') {
-                if(player.region) parts.push(`<span class="meta-row"><i class="fa-solid fa-location-dot"></i> ${player.region}</span>`);
-                if(player.district) parts.push(`<span class="meta-row"><i class="fa-solid fa-map-pin"></i> ${player.district}</span>`);
-            } else if (currentLbFilter === 'region') {
-                if(player.district) parts.push(`<span class="meta-row"><i class="fa-solid fa-map-pin"></i> ${player.district}</span>`);
+            
+            // 1. Регион
+            if (currentLbFilter === 'republic' && player.region) {
+                let r = player.region;
+                if(r.trim() === 'Ташкент' || r.trim() === 'Город Ташкент') r = 'г. Ташкент';
+                parts.push(`<span class="meta-row"><i class="fa-solid fa-location-dot"></i> ${r}</span>`);
             }
-            if(player.school) parts.push(`<span class="meta-row"><i class="fa-solid fa-school"></i> Школа ${player.school}</span>`);
+
+            // 2. Район
+            if ((currentLbFilter === 'republic' || currentLbFilter === 'region') && player.district) {
+                let d = player.district;
+                if(!d.toLowerCase().includes('район')) d += ' район';
+                parts.push(`<span class="meta-row"><i class="fa-solid fa-map-pin"></i> ${d}</span>`);
+            }
+
+            // 3. Школа (Через тире "Школа - №5")
+            if(player.school) {
+                let s = player.school;
+                // Если в названии нет слова "школа", добавляем "Школа - "
+                if(!s.toLowerCase().includes('школа') && !s.toLowerCase().includes('school')) {
+                    s = `Школа - ${s}`;
+                }
+                parts.push(`<span class="meta-row"><i class="fa-solid fa-school"></i> ${s}</span>`);
+            }
+
+            // 4. Класс (ОТДЕЛЬНОЙ СТРОКОЙ)
             parts.push(`<span class="meta-row"><i class="fa-solid fa-user-graduate"></i> ${player.classVal} класс</span>`);
+            
             return parts.join(''); 
         };
 
@@ -366,7 +387,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="l-score">${player.score}</div>
                 </div>
             `;
-            // !!! ВОТ ЗДЕСЬ БЫЛА ОШИБКА !!!
             listEl.insertAdjacentHTML('beforeend', html);
         });
     }
