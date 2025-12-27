@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v55.0 (School-Dash-Name & Separate Class)');
+    console.log('App Started: v56.0 (Name Sync Fix)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -111,11 +111,29 @@ document.addEventListener('DOMContentLoaded', function() {
   
     // === ГЛАВНАЯ ЛОГИКА ===
     async function checkProfileAndTour() {
+      // 1. Получаем пользователя из базы
       const { data: userData } = await supabaseClient.from('users').select('*').eq('telegram_id', telegramUserId).maybeSingle();
+      
       if (userData) {
           internalDbId = userData.id;
           currentUserData = userData; 
+
+          // === FIX: СИНХРОНИЗАЦИЯ ИМЕНИ ===
+          // Если имя в Telegram есть, а в базе нет (или оно старое/отличается) — обновляем базу
+          if (telegramData.firstName) {
+              let tgName = telegramData.firstName + (telegramData.lastName ? ' ' + telegramData.lastName : '');
+              tgName = tgName.trim();
+
+              if (!userData.name || userData.name !== tgName) {
+                  // Обновляем имя в базе фоном
+                  await supabaseClient.from('users').update({ name: tgName }).eq('id', userData.id);
+                  // Обновляем локальную переменную, чтобы лидерборд сразу показал верное имя
+                  currentUserData.name = tgName; 
+              }
+          }
+          // ================================
       }
+
       const now = new Date().toISOString();
       const { data: tourData } = await supabaseClient.from('tours').select('*').lte('start_date', now).gte('end_date', now).eq('is_active', true).maybeSingle();
 
@@ -137,7 +155,10 @@ document.addEventListener('DOMContentLoaded', function() {
               }
           }
       }
+      
+      // Проверка заполненности обязательных полей
       const isProfileComplete = userData && userData.class && userData.region && userData.district && userData.school;
+      
       if (!userData || !isProfileComplete) {
         showScreen('profile-screen');
         unlockProfileForm();
@@ -305,7 +326,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const rkClasses = ['rk-2', 'rk-1', 'rk-3'];
         const realRanks = [2, 1, 3];
 
-        // === ИСПРАВЛЕННЫЙ ТЕКСТ (v55): Школа - Название, Класс отдельно ===
         const getSubHtml = (player) => {
             let parts = [];
             
