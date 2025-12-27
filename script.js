@@ -1,13 +1,9 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v46.0 (Matches Database Screenshots)');
+    console.log('App Started: v48.0 (Smart Leaderboard Details)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
-    let telegramData = { 
-        firstName: null, 
-        lastName: null, 
-        photoUrl: null 
-    };
+    let telegramData = { firstName: null, lastName: null, photoUrl: null };
     let internalDbId = null; 
     let currentTourId = null;
     let currentUserData = null;
@@ -35,7 +31,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('home-user-name').textContent = user.first_name || 'Участник';
         telegramUserId = Number(user.id);
         
-        // Сохраняем данные во временный объект
         telegramData.firstName = user.first_name;
         telegramData.lastName = user.last_name;
         if (user.photo_url) telegramData.photoUrl = user.photo_url;
@@ -241,7 +236,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // === ЛИДЕРБОРД (ИСПРАВЛЕННЫЙ ПОД ТВОЮ БАЗУ) ===
+    // === ЛИДЕРБОРД ===
     window.setLeaderboardFilter = function(filter) {
         currentLbFilter = filter;
         document.querySelectorAll('.lb-segment').forEach(el => el.classList.remove('active'));
@@ -308,12 +303,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const userIdsToFetch = [...new Set(progressData.map(p => p.user_id))];
             
-            // --- ИСПРАВЛЕНИЕ: ЗАПРАШИВАЕМ КОЛОНКИ, КОТОРЫЕ ЕСТЬ В БАЗЕ ---
-            // Используем 'name' вместо 'first_name, last_name'
+            // Запрашиваем все данные для красивого отображения
             let usersData = [];
             const { data, error } = await supabaseClient
                 .from('users')
-                .select('id, name, class, avatar_url')
+                .select('id, name, class, avatar_url, region, district, school') 
                 .in('id', userIdsToFetch);
             
             if (error) throw error;
@@ -322,11 +316,13 @@ document.addEventListener('DOMContentLoaded', function() {
             let fullList = progressData.map(p => {
                 const u = usersData.find(user => user.id === p.user_id);
                 if (!u) return null;
-                // Используем поле 'name' из базы или "Аноним", если оно пустое
                 return {
                     id: u.id,
                     name: u.name || 'Аноним', 
                     classVal: u.class || '?',
+                    region: u.region,
+                    district: u.district,
+                    school: u.school,
                     avatarUrl: u.avatar_url || null,
                     score: p.score,
                     isMe: u.id === internalDbId
@@ -352,6 +348,31 @@ document.addEventListener('DOMContentLoaded', function() {
         const rkClasses = ['rk-2', 'rk-1', 'rk-3'];
         const realRanks = [2, 1, 3];
 
+        // === ГЛАВНАЯ ФИШКА: УМНОЕ ФОРМАТИРОВАНИЕ АДРЕСА ===
+        const getSubText = (player) => {
+            let parts = [];
+            
+            // 1. Всегда показываем класс
+            parts.push(`${player.classVal} класс`); 
+
+            // 2. Добавляем детали в зависимости от фильтра
+            if (currentLbFilter === 'republic') {
+                // Если смотрим республику -> нужно знать Регион и Район
+                if(player.region) parts.push(player.region);
+                if(player.district) parts.push(player.district);
+                if(player.school) parts.push(`Шк. ${player.school}`);
+            } else if (currentLbFilter === 'region') {
+                // Если смотрим регион -> нужно знать Район
+                if(player.district) parts.push(player.district);
+                if(player.school) parts.push(`Шк. ${player.school}`);
+            } else if (currentLbFilter === 'district') {
+                // Если смотрим район -> только Школа
+                if(player.school) parts.push(`Школа ${player.school}`);
+            }
+            
+            return parts.join(' • '); // Красивый разделитель
+        };
+
         top3.forEach((player, i) => {
             if (player) {
                 const avatarHtml = player.avatarUrl 
@@ -365,7 +386,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="rank-circle ${rkClasses[i]}">${realRanks[i]}</div>
                         </div>
                         <div class="winner-name">${player.name}</div>
-                        <div class="winner-class">${player.classVal} класс</div>
+                        <div class="winner-class" style="font-size:10px; opacity:0.8; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                            ${getSubText(player)}
+                        </div>
                         <div class="winner-score">${player.score}</div>
                     </div>
                 `;
@@ -391,7 +414,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="l-info">
                         <span class="l-name">${player.name}</span>
-                        <span class="l-sub">${player.classVal} класс</span>
+                        <span class="l-sub" style="font-size:11px;">${getSubText(player)}</span>
                     </div>
                     <div class="l-score">${player.score}</div>
                 </div>
@@ -460,7 +483,6 @@ document.addEventListener('DOMContentLoaded', function() {
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Сохранение...';
       
       try {
-          // ИСПРАВЛЕНИЕ: Формируем поле 'name' из данных Телеграма
           let fullName = null;
           if (telegramData.firstName) {
               fullName = telegramData.firstName + (telegramData.lastName ? ' ' + telegramData.lastName : '');
@@ -472,9 +494,8 @@ document.addEventListener('DOMContentLoaded', function() {
               school: school, research_consent: consent 
           };
           
-          // Добавляем имя и фото, если они есть
           if (telegramData.photoUrl) updateData.avatar_url = telegramData.photoUrl;
-          if (fullName) updateData.name = fullName; // Пишем в колонку 'name'
+          if (fullName) updateData.name = fullName;
 
           const { data, error } = await supabaseClient.from('users').upsert(updateData, { onConflict: 'telegram_id' }).select(); 
           if(error) throw error;
