@@ -708,4 +708,44 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById(screenId).classList.remove('hidden');
         window.scrollTo(0, 0);
     }
-    window.openExternalLink = function(
+    window.openExternalLink = function(url) {
+        if(window.Telegram && Telegram.WebApp) Telegram.WebApp.openLink(url);
+        else window.open(url, '_blank');
+    }
+    function safeAddListener(id, event, handler) {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener(event, handler);
+    }
+    
+    // === СЛУШАТЕЛИ ===
+    safeAddListener('open-profile-btn', 'click', () => { showScreen('profile-screen'); lockProfileForm(); });
+    safeAddListener('profile-back-btn', 'click', () => showScreen('home-screen'));
+    safeAddListener('profile-locked-btn', 'click', () => document.getElementById('profile-info-modal').classList.remove('hidden'));
+    
+    safeAddListener('leaderboard-btn', 'click', () => {
+        showScreen('leaderboard-screen');
+        setLeaderboardFilter('republic');
+    });
+    safeAddListener('lb-back', 'click', () => showScreen('home-screen'));
+    safeAddListener('about-btn', 'click', () => document.getElementById('about-modal').classList.remove('hidden'));
+    safeAddListener('close-about', 'click', () => document.getElementById('about-modal').classList.add('hidden'));
+    safeAddListener('exit-app-btn', 'click', () => window.Telegram && Telegram.WebApp ? Telegram.WebApp.close() : alert("Только в Telegram"));
+    safeAddListener('home-cert-btn', 'click', () => showCertsModal());
+    safeAddListener('download-certificate-res-btn', 'click', () => showCertsModal());
+    safeAddListener('cancel-start', 'click', () => document.getElementById('warning-modal').classList.add('hidden'));
+    safeAddListener('back-home', 'click', () => showScreen('home-screen'));
+    safeAddListener('back-home-x', 'click', () => showScreen('home-screen'));
+
+    function showCertsModal() {
+        const container = document.getElementById('certs-list-container');
+        container.innerHTML = `
+            <div class="cert-card">
+                <div class="cert-icon"><i class="fa-solid fa-file-pdf"></i></div>
+                <div class="cert-info"><h4>Сертификат: Тур №1</h4><p>${new Date().toLocaleDateString()}</p></div>
+                <div class="cert-action"><span class="badge-soon">Скоро</span></div>
+            </div>`;
+        document.getElementById('certs-modal').classList.remove('hidden');
+    }
+
+    checkProfileAndTour();
+});
