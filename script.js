@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v52.0 (Full Info on Podium)');
+    console.log('App Started: v53.0 (Fix Crash & Style)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -305,24 +305,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const rkClasses = ['rk-2', 'rk-1', 'rk-3'];
         const realRanks = [2, 1, 3];
 
-        // === ИСПРАВЛЕННЫЙ ВЕРТИКАЛЬНЫЙ ТЕКСТ ===
         const getSubHtml = (player) => {
             let parts = [];
-            
-            // Если Республика -> Регион, Район, Школа, Класс
             if (currentLbFilter === 'republic') {
                 if(player.region) parts.push(`<span class="meta-row"><i class="fa-solid fa-location-dot"></i> ${player.region}</span>`);
                 if(player.district) parts.push(`<span class="meta-row"><i class="fa-solid fa-map-pin"></i> ${player.district}</span>`);
-            } 
-            // Если Регион -> Район, Школа, Класс
-            else if (currentLbFilter === 'region') {
+            } else if (currentLbFilter === 'region') {
                 if(player.district) parts.push(`<span class="meta-row"><i class="fa-solid fa-map-pin"></i> ${player.district}</span>`);
             }
-            // Если Район -> Школа, Класс
-            
             if(player.school) parts.push(`<span class="meta-row"><i class="fa-solid fa-school"></i> Школа ${player.school}</span>`);
             parts.push(`<span class="meta-row"><i class="fa-solid fa-user-graduate"></i> ${player.classVal} класс</span>`);
-            
             return parts.join(''); 
         };
 
@@ -374,7 +366,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="l-score">${player.score}</div>
                 </div>
             `;
-            list.insertAdjacentHTML('beforeend', html);
+            // !!! ВОТ ЗДЕСЬ БЫЛА ОШИБКА !!!
+            listEl.insertAdjacentHTML('beforeend', html);
         });
     }
 
