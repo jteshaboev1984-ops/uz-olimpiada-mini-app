@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v56.0 (Name Sync Fix)');
+    console.log('App Started: v57.0 (Secure Answers Check)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -118,16 +118,13 @@ document.addEventListener('DOMContentLoaded', function() {
           internalDbId = userData.id;
           currentUserData = userData; 
 
-          // === FIX: СИНХРОНИЗАЦИЯ ИМЕНИ ===
-          // Если имя в Telegram есть, а в базе нет (или оно старое/отличается) — обновляем базу
+          // === СИНХРОНИЗАЦИЯ ИМЕНИ ===
           if (telegramData.firstName) {
               let tgName = telegramData.firstName + (telegramData.lastName ? ' ' + telegramData.lastName : '');
               tgName = tgName.trim();
 
               if (!userData.name || userData.name !== tgName) {
-                  // Обновляем имя в базе фоном
                   await supabaseClient.from('users').update({ name: tgName }).eq('id', userData.id);
-                  // Обновляем локальную переменную, чтобы лидерборд сразу показал верное имя
                   currentUserData.name = tgName; 
               }
           }
@@ -142,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function() {
       } else {
           currentTourId = tourData.id;
           if (internalDbId && currentTourId) {
-              await fetchStatsData(); // Ждем загрузки вопросов и ответов
+              await fetchStatsData(); 
               const { data: progress } = await supabaseClient.from('tour_progress').select('*').eq('user_id', internalDbId).eq('tour_id', currentTourId).maybeSingle();
               if (progress) {
                   tourCompleted = true;
@@ -156,7 +153,6 @@ document.addEventListener('DOMContentLoaded', function() {
           }
       }
       
-      // Проверка заполненности обязательных полей
       const isProfileComplete = userData && userData.class && userData.region && userData.district && userData.school;
       
       if (!userData || !isProfileComplete) {
@@ -170,8 +166,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function fetchStatsData() {
         if (!internalDbId || !currentTourId) return;
+        // ВАЖНО: Мы больше НЕ запрашиваем correct_answer, так как доступ к нему закрыт
         const { data: qData } = await supabaseClient.from('questions').select('id, subject').eq('tour_id', currentTourId);
         if (qData) tourQuestionsCache = qData;
+        
         const { data: aData } = await supabaseClient.from('user_answers').select('question_id, is_correct').eq('user_id', internalDbId);
         if (aData) userAnswersCache = aData;
         updateDashboardStats();
@@ -328,34 +326,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const getSubHtml = (player) => {
             let parts = [];
-            
-            // 1. Регион
             if (currentLbFilter === 'republic' && player.region) {
                 let r = player.region;
                 if(r.trim() === 'Ташкент' || r.trim() === 'Город Ташкент') r = 'г. Ташкент';
                 parts.push(`<span class="meta-row"><i class="fa-solid fa-location-dot"></i> ${r}</span>`);
             }
-
-            // 2. Район
             if ((currentLbFilter === 'republic' || currentLbFilter === 'region') && player.district) {
                 let d = player.district;
                 if(!d.toLowerCase().includes('район')) d += ' район';
                 parts.push(`<span class="meta-row"><i class="fa-solid fa-map-pin"></i> ${d}</span>`);
             }
-
-            // 3. Школа (Через тире "Школа - №5")
             if(player.school) {
                 let s = player.school;
-                // Если в названии нет слова "школа", добавляем "Школа - "
                 if(!s.toLowerCase().includes('школа') && !s.toLowerCase().includes('school')) {
                     s = `Школа - ${s}`;
                 }
                 parts.push(`<span class="meta-row"><i class="fa-solid fa-school"></i> ${s}</span>`);
             }
-
-            // 4. Класс (ОТДЕЛЬНОЙ СТРОКОЙ)
             parts.push(`<span class="meta-row"><i class="fa-solid fa-user-graduate"></i> ${player.classVal} класс</span>`);
-            
             return parts.join(''); 
         };
 
@@ -506,6 +494,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function handleStartClick() {
         const btn = document.getElementById('main-action-btn');
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Загрузка...';
+        // ВАЖНО: Убираем из запроса correct_answer, так как он запрещен
         const { data } = await supabaseClient.from('questions').select('time_limit_seconds').eq('tour_id', currentTourId).limit(50);
         let totalSeconds = 0;
         let count = 0;
@@ -554,7 +543,13 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     async function startTour() {
       if (!currentTourId) return;
-      const { data, error } = await supabaseClient.from('questions').select('*').eq('tour_id', currentTourId).limit(50);
+      // ВАЖНО: Запрашиваем только то, что нужно. НЕ ИСПОЛЬЗУЕМ *
+      const { data, error } = await supabaseClient
+          .from('questions')
+          .select('id, subject, question_text, options_text, time_limit_seconds')
+          .eq('tour_id', currentTourId)
+          .limit(50);
+
       if (error || !data || data.length === 0) { alert('Ошибка вопросов'); return; }
       questions = data.sort(() => Math.random() - 0.5).slice(0, 15);
       let totalSeconds = 0;
@@ -627,29 +622,38 @@ document.addEventListener('DOMContentLoaded', function() {
         container.appendChild(textarea);
       }
     }
+    
+    // === ОБНОВЛЕННАЯ БЕЗОПАСНАЯ ЛОГИКА ПРОВЕРКИ ===
     safeAddListener('next-button', 'click', async () => {
       const nextBtn = document.getElementById('next-button');
       nextBtn.disabled = true;
       nextBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Сохранение...';
+      
       if (!internalDbId) {
           const { data } = await supabaseClient.from('users').select('id').eq('telegram_id', telegramUserId).maybeSingle();
           if(data) internalDbId = data.id;
       }
+      
       const q = questions[currentQuestionIndex];
-      let isCorrect = false;
-      const correctDB = (q.correct_answer || '').trim();
-      if ((q.options_text || '').trim() !== '') isCorrect = selectedAnswer.toLowerCase() === correctDB.toLowerCase();
-      else {
-        const userAns = selectedAnswer.toLowerCase().replace(',', '.');
-        const correctOptions = correctDB.toLowerCase().split(',').map(s => s.trim().replace(',', '.'));
-        isCorrect = correctOptions.some(a => a === userAns);
-      }
-      if (isCorrect) correctCount++;
+
+      // ШАГ БЕЗОПАСНОСТИ: Спрашиваем у сервера, верен ли ответ
+      // Больше не проверяем это в браузере (там нет правильного ответа)
+      const { data: isCorrect, error: rpcError } = await supabaseClient.rpc('check_user_answer', {
+          p_question_id: q.id,
+          p_user_answer: selectedAnswer
+      });
+      
+      // Если isCorrect null или ошибка - считаем неверным (на всякий случай)
+      const finalIsCorrect = (isCorrect === true);
+
+      if (finalIsCorrect) correctCount++;
+      
       try {
           const { error } = await supabaseClient.from('user_answers').upsert({
-              user_id: internalDbId, question_id: q.id, answer: selectedAnswer, is_correct: isCorrect
+              user_id: internalDbId, question_id: q.id, answer: selectedAnswer, is_correct: finalIsCorrect
             }, { onConflict: 'user_id,question_id' });
           if (error) throw error;
+          
           currentQuestionIndex++;
           if (currentQuestionIndex < questions.length) showQuestion();
           else finishTour();
@@ -659,6 +663,8 @@ document.addEventListener('DOMContentLoaded', function() {
           nextBtn.innerHTML = 'Повторить';
       }
     });
+    // ============================================
+
     async function finishTour() {
       clearInterval(timerInterval);
       if (internalDbId && currentTourId) {
