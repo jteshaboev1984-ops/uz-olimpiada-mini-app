@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v49.0 (Auto-Height Cards)');
+    console.log('App Started: v50.0 (Vertical Stack + Definitions)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const { createClient } = supabase;
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
   
-    // === ИНИЦИАЛИЗАЦИЯ ===
+    // === ИНИЦИАЛИЗАЦИЯ TELEGRAM ===
     if (window.Telegram && window.Telegram.WebApp) {
       Telegram.WebApp.ready();
       Telegram.WebApp.expand();
@@ -26,12 +26,14 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('profile-user-name').textContent = user.first_name + ' ' + (user.last_name || '');
         document.getElementById('home-user-name').textContent = user.first_name || 'Участник';
         telegramUserId = Number(user.id);
+        
         telegramData.firstName = user.first_name;
         telegramData.lastName = user.last_name;
         if (user.photo_url) telegramData.photoUrl = user.photo_url;
       }
     }
   
+    // ТЕСТОВЫЙ РЕЖИМ
     if (!telegramUserId) {
       let storedId = localStorage.getItem('test_user_id');
       if (!storedId) {
@@ -44,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function() {
       telegramData.lastName = 'Участник';
     }
   
-    // === ПЕРЕМЕННЫЕ ТЕСТА И РЕГИОНЫ ===
+    // === ПЕРЕМЕННЫЕ ТЕСТА ===
     let questions = [];
     let currentQuestionIndex = 0;
     let correctCount = 0;
@@ -52,6 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let timerInterval = null;
     let tourCompleted = false;
   
+    // === ДАННЫЕ РЕГИОНОВ ===
     const regions = {
         "Город Ташкент": ["Алмазарский", "Бектемирский", "Мирабадский", "Мирзо-Улугбекский", "Сергелийский", "Учтепинский", "Чиланзарский", "Шайхантахурский", "Юнусабадский", "Яккасарайский", "Яшнабадский", "Янгихаётский"],
         "Андижанская область": ["город Андижан", "Андижанский район", "Асакинский", "Балыкчинский", "Бозский", "Булакбашинский", "Джалакудукский", "Избасканский", "Кургантепинский", "Мархаматский", "Пахтаабадский", "Улугнарский", "Ходжаабадский", "Шахриханский"],
@@ -303,30 +306,42 @@ document.addEventListener('DOMContentLoaded', function() {
         const rkClasses = ['rk-2', 'rk-1', 'rk-3'];
         const realRanks = [2, 1, 3];
 
-        // === ФОРМИРОВАНИЕ ПОДПИСИ (ТВОЯ ЛОГИКА) ===
-        const getSubText = (player) => {
+        // === ГЛАВНАЯ ФИШКА: HTML СТОЛБИК + ДОБАВЛЕНИЕ СЛОВ ===
+        const getSubHtml = (player) => {
             let parts = [];
             
-            // 1. Сначала добавляем данные о локации
-            if (currentLbFilter === 'republic') {
-                // Республика -> Регион, Район, Школа
-                if(player.region) parts.push(player.region);
-                if(player.district) parts.push(player.district);
-                if(player.school) parts.push(`Школа ${player.school}`);
-            } else if (currentLbFilter === 'region') {
-                // Регион -> Район, Школа
-                if(player.district) parts.push(player.district);
-                if(player.school) parts.push(`Школа ${player.school}`);
-            } else if (currentLbFilter === 'district') {
-                // Район -> Школа
-                if(player.school) parts.push(`Школа ${player.school}`);
+            // 1. Обработка Региона
+            if (currentLbFilter === 'republic' && player.region) {
+                let r = player.region;
+                // Добавляем "г." если это Ташкент
+                if(r === 'Ташкент' || r === 'Город Ташкент') r = 'г. Ташкент';
+                parts.push(r);
             }
 
-            // 2. В конце всегда Класс
+            // 2. Обработка Района
+            if ((currentLbFilter === 'republic' || currentLbFilter === 'region') && player.district) {
+                let d = player.district;
+                // Добавляем "район", если его нет в названии
+                if(!d.toLowerCase().includes('район')) d += ' район';
+                parts.push(d);
+            }
+
+            // 3. Обработка Школы
+            if (player.school) {
+                // Если в названии нет слова "школа", добавляем
+                let s = player.school;
+                if(!s.toLowerCase().includes('школа') && !s.toLowerCase().includes('school')) {
+                    parts.push(`Школа ${s}`);
+                } else {
+                    parts.push(s);
+                }
+            }
+
+            // 4. Класс
             parts.push(`${player.classVal} класс`);
             
-            // Соединяем запятой
-            return parts.join(', '); 
+            // Соединяем через <br> для вертикального отображения
+            return parts.join('<br>'); 
         };
 
         top3.forEach((player, i) => {
@@ -342,8 +357,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="rank-circle ${rkClasses[i]}">${realRanks[i]}</div>
                         </div>
                         <div class="winner-name">${player.name}</div>
-                        <div class="winner-class" style="font-size:10px; opacity:0.8; max-width:100%; word-wrap:break-word;">
-                            ${getSubText(player)}
+                        <div class="winner-class" style="font-size:9px; line-height:1.2; opacity:0.8; margin-top:2px;">
+                            ${getSubHtml(player)}
                         </div>
                         <div class="winner-score">${player.score}</div>
                     </div>
@@ -370,7 +385,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="l-info">
                         <span class="l-name">${player.name}</span>
-                        <span class="l-sub">${getSubText(player)}</span>
+                        <span class="l-sub" style="font-size:11px; line-height:1.4;">${getSubHtml(player)}</span>
                     </div>
                     <div class="l-score">${player.score}</div>
                 </div>
