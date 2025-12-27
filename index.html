@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Smart Olympiad</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="supabase.min.js?v=1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=42">
+    <link rel="stylesheet" href="style.css?v=43">
 </head>
 <body>
 
@@ -240,26 +240,43 @@
     <div class="screen hidden" id="leaderboard-screen">
         <div class="lb-header-bg">
             <div class="lb-nav">
-                <div class="back-btn-white" id="lb-back"><i class="fa-solid fa-arrow-left"></i></div>
+                <div class="back-btn-simple" id="lb-back"><i class="fa-solid fa-arrow-left"></i></div>
                 <h3>Лидерборд</h3>
             </div>
-
-            <div class="lb-tabs-container">
-                <div class="lb-tabs">
-                    <div class="lb-tab active" id="tab-current">Текущий тур</div>
-                    <div class="lb-tab" id="tab-total">Общий зачет</div>
-                </div>
-            </div>
-
-            <div class="container" style="padding-top: 10px;">
-                <div id="lb-podium" class="top-three">
-                   <p style="color:rgba(0,0,0,0.5); text-align:center; width:100%; margin-top:20px;">Загрузка...</p>
+            <div class="lb-filter-container">
+                <div class="lb-segmented-control">
+                    <div class="lb-segment active" id="filter-republic" onclick="setLeaderboardFilter('republic')">Республика</div>
+                    <div class="lb-segment" id="filter-region" onclick="setLeaderboardFilter('region')">Область</div>
+                    <div class="lb-segment" id="filter-district" onclick="setLeaderboardFilter('district')">Район</div>
                 </div>
             </div>
         </div>
-        <div class="container lb-list-container">
-            <div class="list-header"><span>УЧАСТНИК</span><span>БАЛЛЫ</span></div>
-            <div id="lb-list" class="leader-list"></div>
+
+        <div class="lb-podium-container">
+            <div id="lb-podium" class="top-three">
+                </div>
+        </div>
+
+        <div class="container" style="padding:0;">
+            <div class="list-header" style="padding: 0 16px; margin-bottom: 10px;">
+                <span>УЧАСТНИК</span><span>БАЛЛЫ</span>
+            </div>
+            <div id="lb-list" class="lb-list-scroll">
+                </div>
+        </div>
+
+        <div id="lb-user-sticky" class="lb-sticky-footer hidden">
+            <div class="my-rank-badge" id="my-rank-val">#--</div>
+            <div class="my-info">
+                <span class="my-name">Вы</span>
+                <span class="my-sub" id="my-class-val">-- класс</span>
+            </div>
+            <div class="my-stats">
+                <div class="stat-group">
+                    <span class="stat-val" id="my-score-val">0</span>
+                    <span class="stat-lbl">БАЛЛЫ</span>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -367,6 +384,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=42"></script>
+    <script src="script.js?v=43"></script>
 </body>
 </html>
