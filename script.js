@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v50.0 (Vertical Stack + Definitions)');
+    console.log('App Started: v51.0 (Fixed Highlight & Stats)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -7,8 +7,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let internalDbId = null; 
     let currentTourId = null;
     let currentUserData = null;
-    let userAnswersCache = []; 
     let tourQuestionsCache = [];
+    let userAnswersCache = [];
     let currentLbFilter = 'republic'; 
 
     // === НАСТРОЙКИ SUPABASE ===
@@ -124,8 +124,11 @@ document.addEventListener('DOMContentLoaded', function() {
           updateMainButton('inactive');
       } else {
           currentTourId = tourData.id;
-          await fetchStatsData();
-          if (internalDbId) {
+          
+          // ЗАГРУЖАЕМ СТАТИСТИКУ СРАЗУ
+          if (internalDbId && currentTourId) {
+              await fetchStatsData(); // Ждем загрузки вопросов и ответов
+              
               const { data: progress } = await supabaseClient.from('tour_progress').select('*').eq('user_id', internalDbId).eq('tour_id', currentTourId).maybeSingle();
               if (progress) {
                   tourCompleted = true;
@@ -138,6 +141,7 @@ document.addEventListener('DOMContentLoaded', function() {
               }
           }
       }
+      
       const isProfileComplete = userData && userData.class && userData.region && userData.district && userData.school;
       if (!userData || !isProfileComplete) {
         showScreen('profile-screen');
@@ -150,10 +154,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function fetchStatsData() {
         if (!internalDbId || !currentTourId) return;
+        
+        // Загружаем ВСЕ вопросы тура, чтобы знать Total
         const { data: qData } = await supabaseClient.from('questions').select('id, subject').eq('tour_id', currentTourId);
         if (qData) tourQuestionsCache = qData;
+        
+        // Загружаем ответы пользователя
         const { data: aData } = await supabaseClient.from('user_answers').select('question_id, is_correct').eq('user_id', internalDbId);
         if (aData) userAnswersCache = aData;
+        
         updateDashboardStats();
     }
 
@@ -167,6 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const stats = calculateSubjectStats(subjName);
             let percent = 0;
             if (stats.total > 0) percent = Math.round((stats.correct / stats.total) * 100);
+            
             const percentEl = document.getElementById(`${prefix}-percent`);
             if (percentEl) percentEl.textContent = `${percent}%`;
             const barEl = document.getElementById(`${prefix}-bar`);
@@ -175,12 +185,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function calculateSubjectStats(subjectName) {
+        // Фильтруем вопросы по предмету
         const subjectQuestions = tourQuestionsCache.filter(q => q.subject && q.subject.toLowerCase().includes(subjectName.toLowerCase()));
         if (subjectQuestions.length === 0) return { total: 0, correct: 0 };
+        
         let correct = 0;
-        let total = 0;
+        let total = subjectQuestions.length;
+        
         subjectQuestions.forEach(q => {
-            total++; 
             const answer = userAnswersCache.find(a => a.question_id === q.id);
             if (answer && answer.is_correct) correct++;
         });
@@ -275,6 +287,7 @@ document.addEventListener('DOMContentLoaded', function() {
             let fullList = progressData.map(p => {
                 const u = usersData.find(user => user.id === p.user_id);
                 if (!u) return null;
+                // СТРОГОЕ СРАВНЕНИЕ ID ДЛЯ ПОДСВЕТКИ
                 return {
                     id: u.id,
                     name: u.name || 'Аноним', 
@@ -284,7 +297,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     school: u.school,
                     avatarUrl: u.avatar_url || null,
                     score: p.score,
-                    isMe: u.id === internalDbId
+                    isMe: String(u.id) === String(internalDbId) 
                 };
             }).filter(item => item !== null);
 
@@ -306,42 +319,25 @@ document.addEventListener('DOMContentLoaded', function() {
         const rkClasses = ['rk-2', 'rk-1', 'rk-3'];
         const realRanks = [2, 1, 3];
 
-        // === ГЛАВНАЯ ФИШКА: HTML СТОЛБИК + ДОБАВЛЕНИЕ СЛОВ ===
+        // === ИСПРАВЛЕННЫЙ ВЕРТИКАЛЬНЫЙ ТЕКСТ ===
         const getSubHtml = (player) => {
             let parts = [];
             
-            // 1. Обработка Региона
-            if (currentLbFilter === 'republic' && player.region) {
-                let r = player.region;
-                // Добавляем "г." если это Ташкент
-                if(r === 'Ташкент' || r === 'Город Ташкент') r = 'г. Ташкент';
-                parts.push(r);
+            // Если Республика -> Имя (уже есть), Регион, Район, Школа, Класс
+            if (currentLbFilter === 'republic') {
+                if(player.region) parts.push(`<span class="meta-row"><i class="fa-solid fa-location-dot"></i> ${player.region}</span>`);
+                if(player.district) parts.push(`<span class="meta-row"><i class="fa-solid fa-map-pin"></i> ${player.district}</span>`);
+            } 
+            // Если Регион -> Имя, Район, Школа, Класс
+            else if (currentLbFilter === 'region') {
+                if(player.district) parts.push(`<span class="meta-row"><i class="fa-solid fa-map-pin"></i> ${player.district}</span>`);
             }
-
-            // 2. Обработка Района
-            if ((currentLbFilter === 'republic' || currentLbFilter === 'region') && player.district) {
-                let d = player.district;
-                // Добавляем "район", если его нет в названии
-                if(!d.toLowerCase().includes('район')) d += ' район';
-                parts.push(d);
-            }
-
-            // 3. Обработка Школы
-            if (player.school) {
-                // Если в названии нет слова "школа", добавляем
-                let s = player.school;
-                if(!s.toLowerCase().includes('школа') && !s.toLowerCase().includes('school')) {
-                    parts.push(`Школа ${s}`);
-                } else {
-                    parts.push(s);
-                }
-            }
-
-            // 4. Класс
-            parts.push(`${player.classVal} класс`);
+            // Если Район -> Имя, Школа, Класс (район уже выбран)
             
-            // Соединяем через <br> для вертикального отображения
-            return parts.join('<br>'); 
+            if(player.school) parts.push(`<span class="meta-row"><i class="fa-solid fa-school"></i> Школа ${player.school}</span>`);
+            parts.push(`<span class="meta-row"><i class="fa-solid fa-user-graduate"></i> ${player.classVal} класс</span>`);
+            
+            return parts.join(''); 
         };
 
         top3.forEach((player, i) => {
@@ -357,8 +353,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="rank-circle ${rkClasses[i]}">${realRanks[i]}</div>
                         </div>
                         <div class="winner-name">${player.name}</div>
-                        <div class="winner-class" style="font-size:9px; line-height:1.2; opacity:0.8; margin-top:2px;">
-                            ${getSubHtml(player)}
+                        <div class="winner-class" style="display:flex; flex-direction:column; align-items:center;">
+                            <span style="font-size:10px; opacity:0.7;">${player.classVal} класс</span>
                         </div>
                         <div class="winner-score">${player.score}</div>
                     </div>
@@ -376,8 +372,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 : '';
             const fallbackAvatar = `<div class="no-img">${player.name[0]}</div>`;
 
+            // СТРОГОЕ УСЛОВИЕ ДЛЯ ПОДСВЕТКИ (Border only if isMe is true)
+            let cardStyle = player.isMe ? 'background:#F0F8FF; border:1px solid var(--primary);' : '';
+
             let html = `
-                <div class="leader-card" style="${player.isMe ? 'background:#F0F8FF; border:1px solid var(--primary);' : ''}">
+                <div class="leader-card" style="${cardStyle}">
                     <div class="l-rank">${realRank}</div>
                     <div class="l-avatar">
                         ${avatarHtml}
@@ -385,7 +384,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="l-info">
                         <span class="l-name">${player.name}</span>
-                        <span class="l-sub" style="font-size:11px; line-height:1.4;">${getSubHtml(player)}</span>
+                        <div class="l-sub">${getSubHtml(player)}</div>
                     </div>
                     <div class="l-score">${player.score}</div>
                 </div>
