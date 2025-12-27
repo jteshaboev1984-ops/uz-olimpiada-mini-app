@@ -73,7 +73,14 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
 .section-header h2 { font-size: 19px; font-weight: 700; }
 .subjects-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-.subject-card { background: white; border-radius: 18px; padding: 16px; position: relative; box-shadow: 0 2px 6px rgba(0,0,0,0.04); transition: transform 0.1s; cursor: pointer; border: 1px solid transparent; }
+
+/* КАРТОЧКА ПРЕДМЕТА - ИСПРАВЛЕНО (v53) */
+.subject-card { 
+    background: white; border-radius: 18px; padding: 16px; 
+    position: relative; /* ВАЖНО для процента */
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04); 
+    transition: transform 0.1s; cursor: pointer; border: 1px solid transparent; 
+}
 .subject-card:active { transform: scale(0.97); }
 .subject-top { display: flex; justify-content: space-between; margin-bottom: 12px; }
 .sub-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
@@ -86,7 +93,20 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .sub-icon.brown { background: #EFEBE9; color: #795548; }
 .sub-icon.red { background: #FFEBEE; color: #D32F2F; }
 .sub-icon.gold { background: #FFF8E1; color: #FFC107; }
-.percent-badge { font-size: 12px; font-weight: 700; background: #F2F2F7; padding: 4px 8px; border-radius: 6px; color: var(--text-sec); }
+
+/* ПРОЦЕНТ В УГЛУ - ИСПРАВЛЕНО (v53) */
+.percent-badge { 
+    position: absolute; 
+    top: 12px; 
+    right: 12px; 
+    font-size: 12px; 
+    font-weight: 700; 
+    background: #F2F2F7; 
+    padding: 4px 8px; 
+    border-radius: 8px; 
+    color: var(--text-sec); 
+}
+
 .subject-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
 .progress-line { height: 4px; background: #F2F2F7; border-radius: 2px; overflow: hidden; }
 .progress-line div { height: 100%; background: var(--primary); border-radius: 2px; transition: width 0.5s; }
@@ -140,7 +160,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .error-review-card { text-align: left; background: white; padding: 20px; border-radius: 16px; border: 1px solid #E5E5EA; }
 .review-header { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; margin-bottom: 5px; }
 
-/* LEADERBOARD & V52 FIXES */
+/* LEADERBOARD */
 .lb-header-bg { background: white; padding-bottom: 10px; border-radius: 0 0 24px 24px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
 .lb-nav { display: flex; align-items: center; padding: 16px 20px; justify-content: center; position: relative; margin-bottom: 10px; }
 .back-btn-simple { position: absolute; left: 20px; color: var(--primary); font-size: 24px; cursor: pointer; padding: 5px; }
@@ -170,7 +190,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .lb-list-scroll { padding: 10px 16px 100px; background: #fff; min-height: 50vh; }
 .list-header { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: #8E8E93; margin-bottom: 8px; }
 
-/* === LEADERBOARD CARD STYLES === */
+/* LEADERBOARD CARD */
 .leader-card { 
     background: white; border-radius: 16px; padding: 12px 16px; 
     display: flex; align-items: flex-start; 
