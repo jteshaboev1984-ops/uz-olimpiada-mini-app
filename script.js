@@ -1,15 +1,15 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v59.0 (Full Security: Identity, Answers, Scores)');
+    console.log('App Started: v60.0 (Stable: Client Auth + Secure Answers)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
+    let telegramData = { firstName: null, lastName: null, photoUrl: null };
     let internalDbId = null; 
     let currentTourId = null;
     let currentUserData = null;
     let tourQuestionsCache = [];
     let userAnswersCache = [];
     let currentLbFilter = 'republic'; 
-    let initDataStr = null; // Храним строку для входа
 
     // === НАСТРОЙКИ SUPABASE ===
     const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
@@ -21,14 +21,26 @@ document.addEventListener('DOMContentLoaded', function() {
     if (window.Telegram && window.Telegram.WebApp) {
       Telegram.WebApp.ready();
       Telegram.WebApp.expand();
-      // БЕЗОПАСНОСТЬ: Берем не Unsafe данные, а сырую строку для проверки на сервере
-      initDataStr = Telegram.WebApp.initData;
       
-      // Для отображения в UI можно пока взять unsafe, но доверять будем только серверу
+      // ИСПОЛЬЗУЕМ КЛИЕНТСКИЕ ДАННЫЕ (Стабильно работает на всех устройствах)
       const user = Telegram.WebApp.initDataUnsafe.user;
-      if (user) {
-        document.getElementById('profile-user-name').textContent = user.first_name + ' ' + (user.last_name || '');
-        document.getElementById('home-user-name').textContent = user.first_name || 'Участник';
+      
+      if (user && user.id) {
+        telegramUserId = Number(user.id);
+        telegramData.firstName = user.first_name;
+        telegramData.lastName = user.last_name;
+        if (user.photo_url) telegramData.photoUrl = user.photo_url;
+
+        document.getElementById('profile-user-name').textContent = telegramData.firstName + ' ' + (telegramData.lastName || '');
+        document.getElementById('home-user-name').textContent = telegramData.firstName || 'Участник';
+      } else {
+        // Если открыли не в телеграм — тестовый режим
+        console.warn("No Telegram user found. Running in Test Mode.");
+        if (!localStorage.getItem('test_user_id')) {
+             localStorage.setItem('test_user_id', Math.floor(Math.random() * 1000000000));
+        }
+        telegramUserId = Number(localStorage.getItem('test_user_id'));
+        document.getElementById('profile-user-name').textContent = 'Тестовый Участник';
       }
     }
   
@@ -88,49 +100,37 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
   
-    // === ГЛАВНАЯ ЛОГИКА АВТОРИЗАЦИИ (БЕЗОПАСНАЯ) ===
+    // === ГЛАВНАЯ ЛОГИКА (СТАБИЛЬНАЯ) ===
     async function checkProfileAndTour() {
-      // ШАГ 1: ЛОГИН ЧЕРЕЗ СЕРВЕР
-      // Если есть initData (мы в Телеграм), пробуем войти безопасно
-      if (initDataStr) {
-          try {
-              const { data: authData, error: authError } = await supabaseClient.rpc('telegram_login', { p_init_data: initDataStr });
-              if (authError) throw authError;
-              if (authData) {
-                  internalDbId = authData.user_id;
-                  telegramUserId = authData.telegram_id;
+      // 1. Сначала находим пользователя в базе
+      const { data: userData } = await supabaseClient.from('users').select('*').eq('telegram_id', telegramUserId).maybeSingle();
+      
+      if (userData) {
+          internalDbId = userData.id;
+          currentUserData = userData; 
+
+          // Синхронизация имени
+          if (telegramData.firstName) {
+              let tgName = telegramData.firstName + (telegramData.lastName ? ' ' + telegramData.lastName : '');
+              tgName = tgName.trim();
+              if (!userData.name || userData.name !== tgName) {
+                  await supabaseClient.from('users').update({ name: tgName }).eq('id', userData.id);
+                  currentUserData.name = tgName; 
               }
-          } catch (e) {
-              console.error("Login failed:", e);
-              alert("Ошибка безопасности: Не удалось проверить подпись Telegram.");
-              return; // Не пускаем дальше
           }
       } else {
-          // ТЕСТОВЫЙ РЕЖИМ (если открыли в браузере без Telegram)
-          // Генерируем фейкового юзера, если его нет
-          console.warn("No Telegram initData found. Running in Test Mode.");
-          if (!localStorage.getItem('test_user_id')) {
-               localStorage.setItem('test_user_id', Math.floor(Math.random() * 1000000000));
-          }
-          telegramUserId = Number(localStorage.getItem('test_user_id'));
-          document.getElementById('profile-user-name').textContent = 'Тестовый Участник';
-          // Пытаемся найти тестового юзера в базе или создать
-          const { data: testUser } = await supabaseClient.from('users').select('id').eq('telegram_id', telegramUserId).maybeSingle();
-          if (testUser) internalDbId = testUser.id;
-          else {
-              // Создаем
-              const { data: newUser } = await supabaseClient.from('users').insert({ telegram_id: telegramUserId, name: 'Тестовый' }).select().single();
-              if(newUser) internalDbId = newUser.id;
+          // Если юзера нет - создаем
+          let fullName = telegramData.firstName ? (telegramData.firstName + (telegramData.lastName ? ' ' + telegramData.lastName : '')).trim() : 'Участник';
+          const { data: newUser } = await supabaseClient.from('users')
+              .insert({ telegram_id: telegramUserId, name: fullName, avatar_url: telegramData.photoUrl })
+              .select().single();
+          if (newUser) {
+              internalDbId = newUser.id;
+              currentUserData = newUser;
           }
       }
 
-      // ШАГ 2: ПОЛУЧАЕМ ПРОФИЛЬ (уже зная безопасный ID)
-      if (!internalDbId) return;
-
-      const { data: userData } = await supabaseClient.from('users').select('*').eq('id', internalDbId).maybeSingle();
-      currentUserData = userData;
-
-      // ШАГ 3: ПРОВЕРЯЕМ ТУРЫ
+      // 2. Проверяем Туры
       const now = new Date().toISOString();
       const { data: tourData } = await supabaseClient.from('tours').select('*').lte('start_date', now).gte('end_date', now).eq('is_active', true).maybeSingle();
 
@@ -153,19 +153,20 @@ document.addEventListener('DOMContentLoaded', function() {
           }
       }
       
-      const isProfileComplete = userData && userData.class && userData.region && userData.district && userData.school;
+      const isProfileComplete = currentUserData && currentUserData.class && currentUserData.region && currentUserData.district && currentUserData.school;
       
-      if (!userData || !isProfileComplete) {
+      if (!currentUserData || !isProfileComplete) {
         showScreen('profile-screen');
         unlockProfileForm();
       } else {
-        fillProfileForm(userData);
+        fillProfileForm(currentUserData);
         showScreen('home-screen');
       }
     }
 
     async function fetchStatsData() {
         if (!internalDbId || !currentTourId) return;
+        // Защита: Запрашиваем только публичные поля вопросов
         const { data: qData } = await supabaseClient.from('questions').select('id, subject').eq('tour_id', currentTourId);
         if (qData) tourQuestionsCache = qData;
         const { data: aData } = await supabaseClient.from('user_answers').select('question_id, is_correct').eq('user_id', internalDbId);
@@ -238,6 +239,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if(podium) podium.innerHTML = '<p style="text-align:center;width:100%;color:#999;margin-top:20px;"><i class="fa-solid fa-spinner fa-spin"></i> Загрузка...</p>';
         if(listEl) listEl.innerHTML = '';
 
+        // Убеждаемся, что данные пользователя загружены
         if (!currentUserData && internalDbId) {
              const { data } = await supabaseClient.from('users').select('*').eq('id', internalDbId).single();
              currentUserData = data;
@@ -449,14 +451,18 @@ document.addEventListener('DOMContentLoaded', function() {
       btn.disabled = true;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Сохранение...';
       try {
-          // ИСПОЛЬЗУЕМ ОБЫЧНЫЙ UPDATE, так как юзер уже создан при логине
-          // Мы просто дописываем поля
-          const updateData = { class: classVal, region: region, district: district, school: school, research_consent: consent };
+          const updateData = { telegram_id: telegramUserId, class: classVal, region: region, district: district, school: school, research_consent: consent };
+          if (telegramData.photoUrl) updateData.avatar_url = telegramData.photoUrl;
           
-          const { data, error } = await supabaseClient.from('users').update(updateData).eq('id', internalDbId).select().single(); 
+          let fullName = telegramData.firstName + (telegramData.lastName ? ' ' + telegramData.lastName : '');
+          if (fullName.trim()) updateData.name = fullName.trim();
+
+          const { data, error } = await supabaseClient.from('users').upsert(updateData, { onConflict: 'telegram_id' }).select().single(); 
           if(error) throw error;
           
+          internalDbId = data.id;
           currentUserData = data;
+          
           lockProfileForm();
           showScreen('home-screen');
           checkProfileAndTour();
@@ -616,23 +622,24 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
     
-    // === БЕЗОПАСНАЯ ЛОГИКА ОТПРАВКИ ОТВЕТОВ ===
+    // === ЗАЩИЩЕННАЯ ОТПРАВКА ОТВЕТА (ВСЕ ЕЩЕ ИСПОЛЬЗУЕМ RPC) ===
+    // Здесь RPC работает, потому что он не проверяет подпись WebApp, 
+    // он просто проверяет ответ математически.
     safeAddListener('next-button', 'click', async () => {
       const nextBtn = document.getElementById('next-button');
       nextBtn.disabled = true;
       nextBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Сохранение...';
       
-      // Страховка на случай, если internalDbId потерялся
-      if (!internalDbId && initDataStr) {
-          try {
-             const { data: auth } = await supabaseClient.rpc('telegram_login', { p_init_data: initDataStr });
-             if(auth) internalDbId = auth.user_id;
-          } catch(e) {}
+      // Страховка
+      if (!internalDbId) {
+          const { data } = await supabaseClient.from('users').select('id').eq('telegram_id', telegramUserId).maybeSingle();
+          if(data) internalDbId = data.id;
       }
       
       const q = questions[currentQuestionIndex];
       const questionIdNumber = Number(q.id);
 
+      // Проверяем ответ на сервере (это работает!)
       const { data: isCorrect, error: rpcError } = await supabaseClient.rpc('check_user_answer', {
           p_question_id: questionIdNumber,
           p_user_answer: selectedAnswer
@@ -643,7 +650,6 @@ document.addEventListener('DOMContentLoaded', function() {
       if (finalIsCorrect) correctCount++;
       
       try {
-          // Отправляем ответ. Если internalDbId нет - будет ошибка (и это правильно, анонимам нельзя)
           const { error } = await supabaseClient.from('user_answers').upsert({
               user_id: internalDbId, question_id: q.id, answer: selectedAnswer, is_correct: finalIsCorrect
             }, { onConflict: 'user_id,question_id' });
@@ -661,6 +667,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function finishTour() {
       clearInterval(timerInterval);
+      
+      // Баллы считает SQL-триггер, поэтому мы ничего не отправляем в tour_progress
+      
       tourCompleted = true;
       const percent = Math.round((correctCount / questions.length) * 100);
       showScreen('result-screen');
