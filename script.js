@@ -1,24 +1,16 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v96.0 (Final: Correct Declarations + Fixes)');
+    console.log('App Started: v100.0 (Original Base + New Features)');
   
-    // === 1. ГЛОБАЛЬНЫЕ ФУНКЦИИ-ПОМОЩНИКИ (САМОЕ ВАЖНОЕ: В НАЧАЛЕ!) ===
-    
+    // === 1. ГЛОБАЛЬНЫЕ ФУНКЦИИ (ОБЯЗАТЕЛЬНО В НАЧАЛЕ) ===
     function showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-        const screen = document.getElementById(screenId);
-        if (screen) {
-            screen.classList.remove('hidden');
-            window.scrollTo(0, 0);
-        } else {
-            console.error(`Screen not found: ${screenId}`);
-        }
+        document.getElementById(screenId).classList.remove('hidden');
+        window.scrollTo(0, 0);
     }
 
     function safeAddListener(id, event, handler) {
         const el = document.getElementById(id);
-        if (el) {
-            el.addEventListener(event, handler);
-        }
+        if (el) el.addEventListener(event, handler);
     }
 
     window.openExternalLink = function(url) {
@@ -26,12 +18,12 @@ document.addEventListener('DOMContentLoaded', function() {
         else window.open(url, '_blank');
     }
 
-    // === 2. ПЕРЕМЕННЫЕ И НАСТРОЙКИ ===
+    // === 2. ПЕРЕМЕННЫЕ И КОНФИГУРАЦИЯ ===
     let telegramUserId; 
     let telegramData = { firstName: null, lastName: null, photoUrl: null };
     let internalDbId = null; 
     let currentTourId = null;
-    let tourEndDate = null; 
+    let tourEndDate = null;
     let currentUserData = null;
     let tourQuestionsCache = [];
     let userAnswersCache = [];
@@ -44,22 +36,18 @@ document.addEventListener('DOMContentLoaded', function() {
     let selectedAnswer = null;
     let questionStartTime = 0;
 
-    // ВАШИ КЛЮЧИ (УЖЕ ВСТАВЛЕНЫ)
+    // === НАСТРОЙКИ SUPABASE (ВАШИ КЛЮЧИ) ===
     const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
     const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI';
     const { createClient } = supabase;
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
 
-    // === 3. ПЕРЕВОДЫ ===
+    // === 3. ПЕРЕВОДЫ И ЯЗЫКИ ===
     let currentLang = localStorage.getItem('app_lang') || 'uz';
-    
     const translations = {
         ru: {
-            reg_welcome: "Добро пожаловать",
-            greeting_prefix: "Здравствуйте",
             profile_title: "Профиль",
             profile_subtitle: "Данные участника",
-            label_lang: "Язык / Til",
             label_fullname: "Фамилия и Имя",
             warn_real_name: "Внимание: Введите реальное имя для Сертификата.",
             label_class: "Класс",
@@ -68,76 +56,56 @@ document.addEventListener('DOMContentLoaded', function() {
             label_school: "Школа",
             agree_main: "Участвую в рейтинге и научном исследовании",
             agree_sub: "Принимаю правила и получение результатов",
-            btn_start: "Начать",
             btn_save: "Сохранить",
-            status_locked: "Профиль заполнен",
-            desc_locked: "Редактирование отключено для корректности рейтинга.",
             btn_home: "На главную",
+            status_locked: "Профиль заполнен",
             home_subtitle: "Добро пожаловать на олимпиаду.",
+            greeting_prefix: "Здравствуйте",
             btn_leaderboard: "Лидерборд",
             btn_about: "О проекте",
             title_subjects: "Предметы",
             title_resources: "Ресурсы",
             cert_title: "Сертификат",
             cert_desc: "Скачать PDF",
+            res_video: "Видеоуроки", res_video_sub: "Разборы задач",
+            res_channel: "Канал", res_channel_sub: "Новости",
+            res_chat: "Чат", res_chat_sub: "Обсуждение",
+            btn_exit: "Выход",
+            menu_errors: "Работа над ошибками",
+            menu_errors_sub: "Посмотреть ответы",
             alert_fill_all: "Пожалуйста, заполните все поля!",
             alert_short_name: "Имя слишком короткое.",
-            alert_agree: "Необходимо согласие.",
-            alert_soon: "Скоро будет доступно",
-            alert_review_locked: "Разбор ошибок откроется после завершения тура.",
             btn_loading: "Загрузка...",
-            btn_start_tour: "Начать тур",
+            btn_start: "Начать тур",
             btn_completed: "Тур завершён",
             btn_no_tours: "Нет активных туров",
-            quiz_next: "Далее",
-            res_verdict: "Результат тура",
-            res_completed: "Тур завершён!",
-            res_saved: "Результат сохранен",
-            res_correct: "ВЕРНО",
-            title_review: "Работа над ошибками",
-            status_saved: "Данные сохранены",
-            desc_review: "Детальный разбор будет доступен после подведения итогов.",
-            back_home: "На главную",
-            filter_rep: "Республика",
-            filter_reg: "Регион",
-            filter_dist: "Район",
-            col_student: "УЧАСТНИК",
-            col_score: "БАЛЛЫ",
-            me_label: "Вы",
             warn_title: "Предупреждение",
             warn_full: "На выполнение заданий отводится <b>{time}</b>. Всего вопросов: <b>{count}</b>.",
             warn_cant_repeat: "Повтор тура невозможен.",
             btn_cancel: "Отмена",
-            btn_close: "Закрыть",
-            res_video: "Видеоуроки",
-            res_video_sub: "Разборы задач",
-            res_channel: "Канал",
-            res_channel_sub: "Новости",
+            quiz_next: "Далее",
+            res_verdict: "Результат тура",
+            res_completed: "Тур завершён!",
+            res_saved: "Результат сохранен",
+            stat_tour: "ТУР", stat_total: "ВСЕГО", stat_correct: "ВЕРНО",
+            title_review: "Работа над ошибками",
+            status_saved: "Данные сохранены",
+            desc_review: "Детальный разбор будет доступен после подведения итогов.",
+            alert_review_locked: "Разбор ошибок откроется после завершения тура.",
+            alert_soon: "Скоро",
             about_platform: "О платформе",
             about_desc: "Уникальная платформа для школьников Узбекистана.",
+            cert_modal_title: "Мои сертификаты",
             subj_math: "Математика", subj_eng: "Английский", subj_phys: "Физика", subj_chem: "Химия", 
             subj_bio: "Биология", subj_it: "Информатика", subj_eco: "Экономика",
-            cert_modal_title: "Мои сертификаты",
-            ph_name: "Например: Азизов Сардор",
-            ph_school: "№ школы",
-            btn_exit: "Выход",
-            cabinet_title: "Личный кабинет",
-            menu_data: "Мои данные",
-            menu_lang: "Язык / Til",
-            menu_errors: "Работа над ошибками",
-            menu_errors_sub: "Посмотреть ответы",
-            menu_notif: "Уведомления",
-            menu_notif_sub: "Подключить бота",
-            stat_tour: "ТУР",
-            stat_total: "ВСЕГО",
-            stat_correct: "ВЕРНО"
+            filter_rep: "Республика", filter_reg: "Регион", filter_dist: "Район",
+            col_student: "УЧАСТНИК", col_score: "БАЛЛЫ", me_label: "Вы",
+            ph_name: "Например: Азизов Сардор", ph_school: "№ школы",
+            btn_close: "Закрыть"
         },
         uz: {
-            reg_welcome: "Xush kelibsiz",
-            greeting_prefix: "Assalomu alaykum",
             profile_title: "Profil",
             profile_subtitle: "Ishtirokchi ma'lumotlari",
-            label_lang: "Til / Язык",
             label_fullname: "Familiya va Ism",
             warn_real_name: "Diqqat: Sertifikat uchun haqiqiy ismingizni yozing.",
             label_class: "Sinf",
@@ -146,147 +114,110 @@ document.addEventListener('DOMContentLoaded', function() {
             label_school: "Maktab",
             agree_main: "Reyting va tadqiqotda qatnashaman",
             agree_sub: "Qoidalar va natijalarni olishga roziman",
-            btn_start: "Boshlash",
             btn_save: "Saqlash",
-            status_locked: "Profil to'ldirilgan",
-            desc_locked: "Tahrirlash o'chirildi.",
             btn_home: "Bosh sahifa",
+            status_locked: "Profil to'ldirilgan",
             home_subtitle: "Olimpiadaga xush kelibsiz.",
+            greeting_prefix: "Assalomu alaykum",
             btn_leaderboard: "Reyting",
             btn_about: "Loyiha haqida",
             title_subjects: "Fanlar",
             title_resources: "Resurslar",
             cert_title: "Sertifikat",
             cert_desc: "PDF yuklab olish",
+            res_video: "Videodarslar", res_video_sub: "Masalalar tahlili",
+            res_channel: "Kanal", res_channel_sub: "Yangiliklar",
+            res_chat: "Chat", res_chat_sub: "Muhokama",
+            btn_exit: "Chiqish",
+            menu_errors: "Xatolar tahlili",
+            menu_errors_sub: "Javoblarni ko'rish",
             alert_fill_all: "Iltimos, barcha maydonlarni to'ldiring!",
             alert_short_name: "Ism juda qisqa.",
-            alert_agree: "Rozilik bildirish kerak.",
-            alert_soon: "Tez orada",
-            alert_review_locked: "Xatolar tahlili tur yakunlanganidan so'ng ochiladi.",
             btn_loading: "Yuklanmoqda...",
-            btn_start_tour: "Turni boshlash",
+            btn_start: "Turni boshlash",
             btn_completed: "Tur yakunlandi",
             btn_no_tours: "Faol turlar yo'q",
-            quiz_next: "Keyingisi",
-            res_verdict: "Tur natijasi",
-            res_completed: "Tur yakunlandi!",
-            res_saved: "Natija saqlandi",
-            res_correct: "TO'G'RI",
-            title_review: "Xatolar ustida ishlash",
-            status_saved: "Ma'lumot saqlandi",
-            desc_review: "Batafsil tahlil natijalar e'lon qilingandan so'ng ochiladi.",
-            back_home: "Bosh sahifa",
-            filter_rep: "Respublika",
-            filter_reg: "Viloyat",
-            filter_dist: "Tuman",
-            col_student: "ISHTIROKCHI",
-            col_score: "BALL",
-            me_label: "Siz",
             warn_title: "Diqqat",
             warn_full: "Imtihon uchun ajratilgan vaqt: <b>{time}</b>. Jami savollar soni: <b>{count}</b>.",
             warn_cant_repeat: "Turni qayta ishlash mumkin emas.",
             btn_cancel: "Bekor qilish",
-            btn_close: "Yopish",
-            res_video: "Videodarslar",
-            res_video_sub: "Masalalar tahlili",
-            res_channel: "Kanal",
-            res_channel_sub: "Yangiliklar",
+            quiz_next: "Keyingisi",
+            res_verdict: "Tur natijasi",
+            res_completed: "Tur yakunlandi!",
+            res_saved: "Natija saqlandi",
+            stat_tour: "TUR", stat_total: "JAMI", stat_correct: "TO'G'RI",
+            title_review: "Xatolar ustida ishlash",
+            status_saved: "Ma'lumot saqlandi",
+            desc_review: "Batafsil tahlil natijalar e'lon qilingandan so'ng ochiladi.",
+            alert_review_locked: "Xatolar tahlili tur yakunlanganidan so'ng ochiladi.",
+            alert_soon: "Tez orada",
             about_platform: "Platforma haqida",
             about_desc: "O'zbekiston o'quvchilari uchun maxsus.",
+            cert_modal_title: "Mening sertifikatlarim",
             subj_math: "Matematika", subj_eng: "Ingliz tili", subj_phys: "Fizika", subj_chem: "Kimyo", 
             subj_bio: "Biologiya", subj_it: "Informatika", subj_eco: "Iqtisodiyot",
-            cert_modal_title: "Mening sertifikatlarim",
-            ph_name: "Masalan: Azizov Sardor",
-            ph_school: "Maktab №",
-            btn_exit: "Chiqish",
-            cabinet_title: "Shaxsiy kabinet",
-            menu_data: "Mening ma'lumotlarim",
-            menu_lang: "Til / Язык",
-            menu_errors: "Xatolar tahlili",
-            menu_errors_sub: "Javoblarni ko'rish",
-            menu_notif: "Xabarlar",
-            menu_notif_sub: "Botni ulash",
-            stat_tour: "TUR",
-            stat_total: "JAMI",
-            stat_correct: "TO'G'RI"
+            filter_rep: "Respublika", filter_reg: "Viloyat", filter_dist: "Tuman",
+            col_student: "ISHTIROKCHI", col_score: "BALL", me_label: "Siz",
+            ph_name: "Masalan: Azizov Sardor", ph_school: "Maktab №",
+            btn_close: "Yopish"
         },
         en: {
-            reg_welcome: "Welcome",
-            greeting_prefix: "Hello",
             profile_title: "Profile",
             profile_subtitle: "Data",
-            label_lang: "Language",
             label_fullname: "Full Name",
             warn_real_name: "Note: Enter real name for Certificate.",
             label_class: "Grade",
             label_region: "Region",
             label_district: "District / City",
             label_school: "School",
-            agree_main: "Join Ranking & Research Program",
+            agree_main: "Join Ranking & Research",
             agree_sub: "Agree to rules and notifications",
-            btn_start: "Start",
             btn_save: "Save",
-            status_locked: "Completed",
-            desc_locked: "Editing disabled.",
             btn_home: "Home",
+            status_locked: "Profile Locked",
             home_subtitle: "Welcome to the Olympiad.",
+            greeting_prefix: "Hello",
             btn_leaderboard: "Leaderboard",
             btn_about: "About",
             title_subjects: "Subjects",
             title_resources: "Resources",
             cert_title: "Certificate",
             cert_desc: "Download PDF",
+            res_video: "Video Lessons", res_video_sub: "Analysis",
+            res_channel: "Channel", res_channel_sub: "News",
+            res_chat: "Chat", res_chat_sub: "Discussion",
+            btn_exit: "Exit",
+            menu_errors: "Error Review",
+            menu_errors_sub: "View answers",
             alert_fill_all: "Please fill in all fields!",
             alert_short_name: "Name is too short.",
-            alert_agree: "Agreement required.",
-            alert_soon: "Coming soon",
-            alert_review_locked: "Error review will be available after the tour ends.",
             btn_loading: "Loading...",
-            btn_start_tour: "Start Tour",
+            btn_start: "Start Tour",
             btn_completed: "Tour Completed",
             btn_no_tours: "No active tours",
-            quiz_next: "Next",
-            res_verdict: "Result",
-            res_completed: "Completed!",
-            res_saved: "Saved",
-            res_correct: "CORRECT",
-            title_review: "Review",
-            status_saved: "Data saved",
-            desc_review: "Detailed review available later.",
-            back_home: "Home",
-            filter_rep: "Republic",
-            filter_reg: "Region",
-            filter_dist: "District",
-            col_student: "STUDENT",
-            col_score: "SCORE",
-            me_label: "You",
             warn_title: "Warning",
             warn_full: "You will have <b>{time}</b> for <b>{count}</b> questions.",
             warn_cant_repeat: "No retakes.",
             btn_cancel: "Cancel",
-            btn_close: "Close",
-            res_video: "Video Lessons",
-            res_video_sub: "Analysis",
-            res_channel: "Channel",
-            res_channel_sub: "News",
+            quiz_next: "Next",
+            res_verdict: "Result",
+            res_completed: "Completed!",
+            res_saved: "Saved",
+            stat_tour: "TOUR", stat_total: "TOTAL", stat_correct: "CORRECT",
+            title_review: "Review",
+            status_saved: "Data saved",
+            desc_review: "Detailed review available later.",
+            alert_review_locked: "Review available after tour ends.",
+            alert_soon: "Soon",
             about_platform: "About",
             about_desc: "Unique platform for Uzbekistan.",
+            cert_modal_title: "My Certificates",
             subj_math: "Math", subj_eng: "English", subj_phys: "Physics", subj_chem: "Chemistry", 
             subj_bio: "Biology", subj_it: "IT", subj_eco: "Economics",
-            cert_modal_title: "My Certificates",
-            ph_name: "Ex: Azizov Sardor",
-            ph_school: "School #",
-            btn_exit: "Exit",
-            cabinet_title: "Personal Cabinet",
-            menu_data: "My Data",
-            menu_lang: "Language",
-            menu_errors: "Error Review",
-            menu_errors_sub: "View answers",
-            menu_notif: "Notifications",
-            menu_notif_sub: "Connect Bot",
-            stat_tour: "TOUR",
-            stat_total: "TOTAL",
-            stat_correct: "CORRECT"
+            filter_rep: "Republic", filter_reg: "Region", filter_dist: "District",
+            col_student: "STUDENT", col_score: "SCORE", me_label: "You",
+            ph_name: "Ex: Azizov Sardor", ph_school: "School #",
+            btn_close: "Close"
         }
     };
 
@@ -301,59 +232,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 el.textContent = translations[currentLang][key];
             }
         });
-        const phs = ['#full-name-input', '#reg-full-name', '#edit-full-name'];
-        phs.forEach(id => {
-            const el = document.querySelector(id);
-            if(el) el.placeholder = t('ph_name');
+        // Placeholders
+        const nameInput = document.getElementById('full-name-input');
+        if(nameInput) nameInput.placeholder = t('ph_name');
+        const schoolInput = document.getElementById('school-input');
+        if(schoolInput) schoolInput.placeholder = t('ph_school');
+        
+        // Active Lang Button
+        document.querySelectorAll('.lang-opt').forEach(el => el.classList.remove('active'));
+        // Find button with text matching current lang code and activate it
+        const buttons = document.querySelectorAll('.lang-opt');
+        buttons.forEach(btn => {
+            if(btn.textContent.toLowerCase() === currentLang || (currentLang==='en' && btn.textContent==='EN')) {
+                btn.classList.add('active');
+            }
         });
-        const schs = ['#school-input', '#reg-school-input', '#edit-school-input'];
-        schs.forEach(id => {
-            const el = document.querySelector(id);
-            if(el) el.placeholder = t('ph_school');
-        });
-        const displayLang = currentLang === 'uz' ? "O'zbekcha" : currentLang === 'ru' ? "Русский" : "English";
-        const langDisplayEl = document.getElementById('current-lang-display');
-        if(langDisplayEl) langDisplayEl.textContent = displayLang;
     }
 
-    window.setRegLang = function(lang, el) {
-        currentLang = lang;
-        localStorage.setItem('app_lang', lang);
-        document.querySelectorAll('.lang-opt').forEach(d => d.classList.remove('active'));
-        el.classList.add('active');
-        applyTranslations();
-    }
-
-    window.changeAppLang = function(lang) {
+    window.setLang = function(lang, el) {
         currentLang = lang;
         localStorage.setItem('app_lang', lang);
         applyTranslations();
-        document.querySelectorAll('.lang-item i').forEach(i => i.classList.add('hidden'));
-        document.querySelector(`.check-${lang}`).classList.remove('hidden');
-        document.getElementById('lang-screen').classList.add('hidden'); 
+        checkProfileAndTour(); // Обновить интерфейс (приветствие и т.д.)
     }
-  
-    // === 4. ИНИЦИАЛИЗАЦИЯ TELEGRAM ===
-    if (window.Telegram && window.Telegram.WebApp) {
-      Telegram.WebApp.ready();
-      Telegram.WebApp.expand();
-      const user = Telegram.WebApp.initDataUnsafe.user;
-      if (user && user.id) {
-        telegramUserId = Number(user.id);
-        telegramData.firstName = user.first_name;
-        telegramData.lastName = user.last_name;
-        if (user.photo_url) telegramData.photoUrl = user.photo_url;
-        document.getElementById('home-user-name').textContent = telegramData.firstName || 'User';
-      } else {
-        console.warn("No Telegram user found. Running in Test Mode.");
-        if (!localStorage.getItem('test_user_id')) {
-             localStorage.setItem('test_user_id', Math.floor(Math.random() * 1000000000));
-        }
-        telegramUserId = Number(localStorage.getItem('test_user_id'));
-      }
-    }
-  
-    // === 5. ДАННЫЕ РЕГИОНОВ ===
+
+    // === 4. РЕГИОНЫ (UZBEK LATIN) ===
     const regions = {
         "Toshkent shahri": ["Olmazor", "Bektemir", "Mirobod", "Mirzo Ulug'bek", "Sergeli", "Uchtepa", "Chilonzor", "Shayxontohur", "Yunusobod", "Yakkasaroy", "Yashnobod", "Yangihayot"],
         "Andijon viloyati": ["Andijon shahri", "Xonobod shahri", "Andijon tumani", "Asaka", "Baliqchi", "Bo'ston (Bo'z)", "Buloqboshi", "Jalaquduq", "Izboskan", "Qo'rg'ontepa", "Marhamat", "Paxtaobod", "Ulug'nor", "Xo'jaobod", "Shahrixon"],
@@ -370,11 +273,11 @@ document.addEventListener('DOMContentLoaded', function() {
         "Xorazm viloyati": ["Urganch shahri", "Xiva shahri", "Bog'ot", "Gurlan", "Qo'shko'pir", "Urganch tumani", "Hazorasp", "Xonqa", "Xiva tumani", "Shovot", "Yangioriq", "Yangibozor", "Tuproqqal'a"],
         "Qoraqalpog'iston Respublikasi": ["Nukus shahri", "Amudaryo", "Beruniy", "Qanliko'l", "Qorao'zak", "Kegeyli", "Qo'ng'irot", "Mo'ynoq", "Nukus tumani", "Taxtako'pir", "To'rtko'l", "Xo'jayli", "Chimboy", "Shumanay", "Ellikqal'a", "Taxiatosh", "Bo'zatov"]
     };
-  
-    function setupRegionSelects(prefix) {
-        const regionSelect = document.getElementById(`${prefix}-region-select`);
-        const districtSelect = document.getElementById(`${prefix}-district-select`);
-        if(!regionSelect) return;
+
+    const regionSelect = document.getElementById('region-select');
+    const classSelect = document.getElementById('class-select');
+
+    if (regionSelect) {
         regionSelect.innerHTML = `<option value="" disabled selected>${t('filter_reg')}</option>`;
         Object.keys(regions).sort().forEach(region => {
             const option = document.createElement('option');
@@ -383,6 +286,7 @@ document.addEventListener('DOMContentLoaded', function() {
             regionSelect.appendChild(option);
         });
         regionSelect.addEventListener('change', () => {
+            const districtSelect = document.getElementById('district-select');
             districtSelect.innerHTML = `<option value="" disabled selected>${t('filter_dist')}</option>`;
             districtSelect.disabled = false;
             const selected = regionSelect.value;
@@ -395,22 +299,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
         });
-        const classSelect = document.getElementById(`${prefix}-class-select`);
-        if(classSelect) {
-            classSelect.innerHTML = `<option value="" disabled selected>${t('label_class')}</option>`;
-            for (let i = 8; i <= 11; i++) {
-                const option = document.createElement('option');
-                option.value = i;
-                option.textContent = i + '-sinf';
-                classSelect.appendChild(option);
-            }
+    }
+    if (classSelect) {
+        classSelect.innerHTML = `<option value="" disabled selected>${t('label_class')}</option>`;
+        for (let i = 8; i <= 11; i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = i + '-sinf';
+            classSelect.appendChild(option);
         }
     }
-    setupRegionSelects('reg');
-    setupRegionSelects('edit');
-    setupRegionSelects('');
 
-    // === 6. ЛОГИКА ТУРА И ПРОФИЛЯ ===
+    // === 5. ЛОГИКА ТУРА И ПРОФИЛЯ ===
     async function checkProfileAndTour() {
       // 1. Проверяем пользователя
       const { data: userData } = await supabaseClient.from('users').select('*').eq('telegram_id', telegramUserId).maybeSingle();
@@ -420,14 +320,16 @@ document.addEventListener('DOMContentLoaded', function() {
           currentUserData = userData; 
           if (userData.name) {
              document.getElementById('home-user-name').textContent = userData.name.split(' ')[0];
-             document.getElementById('cabinet-user-name').textContent = userData.name;
-             document.getElementById('user-db-id').textContent = userData.id;
           }
-          if (userData.avatar_url) document.getElementById('header-avatar').src = userData.avatar_url;
-          showScreen('home-screen'); // Сразу на главную
+          // Если данные есть - профиль только для чтения (Кабинет)
+          // Блокируем поля
+          lockProfileForm();
+          
+          showScreen('home-screen');
       } else {
-          // Если нет - на регистрацию
-          showScreen('register-screen');
+          // Если юзера нет - профиль открыт для редактирования (Регистрация)
+          unlockProfileForm();
+          showScreen('profile-screen');
       }
 
       // 2. Проверяем Туры
@@ -453,171 +355,105 @@ document.addEventListener('DOMContentLoaded', function() {
               }
           }
       }
-      
-      const isProfileComplete = currentUserData && currentUserData.name && currentUserData.name.length > 2;
-      if (internalDbId && !isProfileComplete) {
-        showScreen('register-screen');
-      }
     }
 
-    async function fetchStatsData() {
-        if (!internalDbId || !currentTourId) return;
-        const { data: qData } = await supabaseClient.from('questions').select('id, subject').eq('tour_id', currentTourId);
-        if (qData) tourQuestionsCache = qData;
-        const { data: aData } = await supabaseClient.from('user_answers').select('question_id, is_correct').eq('user_id', internalDbId);
-        if (aData) userAnswersCache = aData;
-        updateDashboardStats();
+    function lockProfileForm() {
+        // Блокируем все инпуты
+        document.querySelectorAll('#profile-screen input, #profile-screen select').forEach(el => el.disabled = true);
+        // Скрываем кнопку Сохранить
+        document.getElementById('save-profile').classList.add('hidden');
+        // Показываем кнопку Назад (чтобы вернуться из кабинета на главную)
+        document.getElementById('profile-back-btn').classList.remove('hidden');
+        // Показываем статус "Заполнен"
+        document.getElementById('profile-locked-msg').classList.remove('hidden');
+        // Показываем кнопку Ошибки
+        document.getElementById('error-review-btn-container').classList.remove('hidden');
+        // Скрываем галочку согласия (уже согласился)
+        document.getElementById('consent-block').style.display = 'none';
     }
 
-    function updateDashboardStats() {
-        const subjectMap = {
-            'Математика': 'math', 'Английский': 'eng', 'Физика': 'phys',
-            'Химия': 'chem', 'Биология': 'bio', 'Информатика': 'it',
-            'Экономика': 'eco', 'SAT': 'sat', 'IELTS': 'ielts'
-        };
-        for (const [subjName, prefix] of Object.entries(subjectMap)) {
-            const stats = calculateSubjectStats(subjName);
-            let percent = 0;
-            if (stats.total > 0) percent = Math.round((stats.correct / stats.total) * 100);
-            const percentEl = document.getElementById(`${prefix}-percent`);
-            if (percentEl) percentEl.textContent = `${percent}%`;
-            const barEl = document.getElementById(`${prefix}-bar`);
-            if (barEl) barEl.style.width = `${percent}%`;
-        }
+    function unlockProfileForm() {
+        // Разблокируем
+        document.querySelectorAll('#profile-screen input, #profile-screen select').forEach(el => el.disabled = false);
+        document.getElementById('district-select').disabled = true; // Сначала ждем регион
+        // Показываем Сохранить
+        document.getElementById('save-profile').classList.remove('hidden');
+        // Скрываем Назад (так как еще некуда идти)
+        document.getElementById('profile-back-btn').classList.add('hidden');
+        document.getElementById('profile-locked-msg').classList.add('hidden');
+        document.getElementById('error-review-btn-container').classList.add('hidden');
+        document.getElementById('consent-block').style.display = 'flex';
     }
 
-    function calculateSubjectStats(subjectName) {
-        const subjectQuestions = tourQuestionsCache.filter(q => q.subject && q.subject.toLowerCase().includes(subjectName.toLowerCase()));
-        if (subjectQuestions.length === 0) return { total: 0, correct: 0 };
-        let correct = 0;
-        let total = 0;
-        subjectQuestions.forEach(q => {
-            total++; 
-            const answer = userAnswersCache.find(a => a.question_id === q.id);
-            if (answer && answer.is_correct) correct++;
-        });
-        return { total, correct };
-    }
-
-    window.openSubjectStats = function(subject) {
-        const modal = document.getElementById('subject-details-modal');
-        const content = document.getElementById('sd-content');
-        const title = document.getElementById('sd-title');
-        if (modal && content) {
-            // Перевод названия предмета
-            let displaySubj = subject;
-            if(subject === 'Математика') displaySubj = t('subj_math');
-            if(subject === 'Английский') displaySubj = t('subj_eng');
-            // ... (остальные)
-            title.textContent = displaySubj;
-            const stats = calculateSubjectStats(subject);
-            
-            // ИСПРАВЛЕННЫЙ ВЫВОД ПЕРЕВОДА
-            const html = `
-                <div class="stat-list-item">
-                    <div class="stat-list-info"><h4>${t('stat_tour')}</h4><p>${t('stat_total')}: ${stats.total}</p></div>
-                    <div class="stat-list-value" style="color:${stats.correct > 0 ? 'var(--success)' : 'var(--text-sec)'}">
-                        ${stats.correct} ${t('stat_correct')}
-                    </div>
-                </div>`;
-            content.innerHTML = stats.total === 0 ? `<p style="color:#8E8E93;text-align:center;padding:20px;">...</p>` : html;
-            modal.classList.remove('hidden');
-        }
-    }
-
-    // === 7. РЕГИСТРАЦИЯ ===
-    const regAgreementBox = document.getElementById('reg-agreement-box');
-    let isRegAgreed = false;
-    if(regAgreementBox){
-        regAgreementBox.addEventListener('click', () => {
-            isRegAgreed = !isRegAgreed;
-            regAgreementBox.classList.toggle('checked', isRegAgreed);
-            validateRegForm();
-        });
-    }
-
-    const regInputs = document.querySelectorAll('#reg-full-name, #reg-class-select, #reg-region-select, #reg-district-select, #reg-school-input');
-    regInputs.forEach(el => el.addEventListener('input', validateRegForm));
-
-    function validateRegForm() {
-        const allFilled = Array.from(regInputs).every(el => el.value.trim() !== '');
-        const nameValid = document.getElementById('reg-full-name').value.trim().length >= 3;
-        const btn = document.getElementById('finish-reg-btn');
-        if(btn) btn.disabled = !(allFilled && nameValid && isRegAgreed);
-    }
-
-    const finishRegBtn = document.getElementById('finish-reg-btn');
-    if(finishRegBtn){
-        finishRegBtn.addEventListener('click', async () => {
-            const btn = document.getElementById('finish-reg-btn');
-            btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ...`;
-            
-            try {
-                const updateData = { 
-                  telegram_id: telegramUserId, 
-                  name: document.getElementById('reg-full-name').value.trim(),
-                  class: document.getElementById('reg-class-select').value,
-                  region: document.getElementById('reg-region-select').value,
-                  district: document.getElementById('reg-district-select').value,
-                  school: document.getElementById('reg-school-input').value.trim(),
-                  research_consent: true 
-                };
-                if (telegramData.photoUrl) updateData.avatar_url = telegramData.photoUrl;
-
-                const { data, error } = await supabaseClient.from('users').upsert(updateData, { onConflict: 'telegram_id' }).select().single(); 
-                if(error) throw error;
-                
-                internalDbId = data.id;
-                currentUserData = data;
-                
-                document.getElementById('home-user-name').textContent = data.name.split(' ')[0];
-                showScreen('home-screen');
-                checkProfileAndTour();
-            } catch (e) {
-                alert('Error: ' + e.message);
-                btn.disabled = false;
-                btn.innerHTML = t('btn_start');
-            }
-        });
-    }
-
-    // === 8. ЛИЧНЫЙ КАБИНЕТ (С БЛОКИРОВКОЙ) ===
-    safeAddListener('open-cabinet-btn', 'click', () => document.getElementById('cabinet-modal').classList.remove('hidden'));
-    
-    safeAddListener('btn-edit-profile', 'click', () => {
-        if(!currentUserData) return;
-        
-        // ВАЖНО: ЗАПОЛНЯЕМ И БЛОКИРУЕМ
-        document.getElementById('edit-full-name').value = currentUserData.name;
-        document.getElementById('edit-class-select').value = currentUserData.class;
-        document.getElementById('edit-region-select').value = currentUserData.region;
+    function fillProfileForm(data) {
+        document.getElementById('full-name-input').value = data.name;
+        document.getElementById('class-select').value = data.class;
+        document.getElementById('region-select').value = data.region;
         const event = new Event('change');
-        document.getElementById('edit-region-select').dispatchEvent(event);
+        document.getElementById('region-select').dispatchEvent(event);
         setTimeout(() => {
-             document.getElementById('edit-district-select').value = currentUserData.district;
+             document.getElementById('district-select').value = data.district;
         }, 100);
-        document.getElementById('edit-school-input').value = currentUserData.school;
-        
-        // БЛОКИРУЕМ ПОЛЯ
-        document.querySelectorAll('#edit-profile-screen input, #edit-profile-screen select').forEach(el => el.disabled = true);
-        
-        document.getElementById('cabinet-modal').classList.add('hidden');
-        showScreen('edit-profile-screen');
-        
-        // Показываем пояснение
-        alert(t('desc_locked')); 
+        document.getElementById('school-input').value = data.school;
+    }
+
+    document.getElementById('save-profile').addEventListener('click', async () => {
+      const fullNameInput = document.getElementById('full-name-input').value.trim();
+      const classVal = document.getElementById('class-select').value;
+      const region = document.getElementById('region-select').value;
+      const district = document.getElementById('district-select').value;
+      const school = document.getElementById('school-input').value.trim();
+      const consent = document.getElementById('research-consent').checked;
+
+      if (!fullNameInput || !classVal || !region || !district || !school) { 
+          alert(t('alert_fill_all')); 
+          return; 
+      }
+      if (fullNameInput.length < 3) {
+          alert(t('alert_short_name'));
+          return;
+      }
+      if (!consent) {
+          alert(t('alert_agree'));
+          return;
+      }
+
+      const btn = document.getElementById('save-profile');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('btn_loading')}`;
+      try {
+          const updateData = { 
+              telegram_id: telegramUserId, 
+              name: fullNameInput, 
+              class: classVal, 
+              region: region, 
+              district: district, 
+              school: school, 
+              research_consent: consent 
+          };
+          if (telegramData.photoUrl) updateData.avatar_url = telegramData.photoUrl;
+          
+          const { data, error } = await supabaseClient.from('users').upsert(updateData, { onConflict: 'telegram_id' }).select().single(); 
+          if(error) throw error;
+          
+          internalDbId = data.id;
+          currentUserData = data;
+          
+          document.getElementById('home-user-name').textContent = data.name.split(' ')[0];
+          
+          // Блокируем после сохранения
+          lockProfileForm();
+          showScreen('home-screen');
+          checkProfileAndTour();
+      } catch (e) {
+          alert('Error: ' + e.message);
+          btn.disabled = false;
+          btn.innerHTML = t('btn_save');
+      } 
     });
 
-    safeAddListener('btn-lang-switch', 'click', () => {
-        document.getElementById('cabinet-modal').classList.add('hidden');
-        showScreen('lang-screen');
-        document.querySelectorAll('.lang-item i').forEach(i => i.classList.add('hidden'));
-        document.querySelector(`.check-${currentLang}`).classList.remove('hidden');
-    });
-
-    // Работа над ошибками (С ЗАЩИТОЙ)
-    safeAddListener('btn-error-review', 'click', async () => {
+    // Работа над ошибками
+    window.openErrorReview = async function() {
         if(!tourCompleted) {
             alert(t('alert_soon')); 
             return;
@@ -628,7 +464,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        document.getElementById('cabinet-modal').classList.add('hidden');
         showScreen('error-review-full-screen');
         const container = document.getElementById('error-list-container');
         container.innerHTML = `<p style="text-align:center; margin-top:20px;">${t('btn_loading')}</p>`;
@@ -667,9 +502,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if(wrongCount === 0) {
             container.innerHTML = `<div style="text-align:center; padding:40px;"><h3>100% ${t('stat_correct')}!</h3></div>`;
         }
-    });
+    }
 
-    // === 9. ТУР И ВОПРОСЫ ===
+    // === ТУР И ВОПРОСЫ ===
     async function handleStartClick() {
         const btn = document.getElementById('main-action-btn');
         btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('btn_loading')}`;
@@ -863,7 +698,17 @@ document.addEventListener('DOMContentLoaded', function() {
       fetchStatsData(); 
     }
 
-    // === 10. PDF GENERATION ===
+    async function fetchStatsData() {
+        if (!internalDbId || !currentTourId) return;
+        const { data: qData } = await supabaseClient.from('questions').select('id, subject').eq('tour_id', currentTourId);
+        if (qData) tourQuestionsCache = qData;
+        const { data: aData } = await supabaseClient.from('user_answers').select('question_id, is_correct').eq('user_id', internalDbId);
+        if (aData) userAnswersCache = aData;
+        updateDashboardStats();
+    }
+
+    // === PDF GENERATION ===
+    // Замените эти ссылки на свои!
     const CERT_TEMPLATE_URL = 'https://fgwnqxumukkgtzentlxr.supabase.co/storage/v1/object/public/assets/certificate_template.pdf'; 
     const FONT_URL = 'https://fgwnqxumukkgtzentlxr.supabase.co/storage/v1/object/public/assets/Roboto-Bold.ttf';
 
@@ -966,7 +811,198 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('certs-modal').classList.remove('hidden');
     }
 
+    // === ЛИДЕРБОРД ===
+    window.setLeaderboardFilter = function(filter) {
+        currentLbFilter = filter;
+        document.querySelectorAll('.lb-segment').forEach(el => el.classList.remove('active'));
+        document.getElementById(`filter-${filter}`).classList.add('active');
+        loadLeaderboard();
+    }
+
+    async function loadLeaderboard() {
+        const podium = document.getElementById('lb-podium');
+        const listEl = document.getElementById('lb-list');
+        const stickyBar = document.getElementById('lb-user-sticky');
+        
+        if(podium) podium.innerHTML = `<p style="text-align:center;width:100%;color:#999;margin-top:20px;"><i class="fa-solid fa-spinner fa-spin"></i> ${t('btn_loading')}</p>`;
+        if(listEl) listEl.innerHTML = '';
+
+        if (!currentUserData && internalDbId) {
+             const { data } = await supabaseClient.from('users').select('*').eq('id', internalDbId).single();
+             currentUserData = data;
+        }
+
+        let progressData = [];
+
+        try {
+            if (currentLbFilter === 'republic') {
+                let query = supabaseClient.from('tour_progress').select('user_id, score').order('score', { ascending: false }).limit(50);
+                if (currentTourId) query = query.eq('tour_id', currentTourId);
+                const { data, error } = await query;
+                if(error) throw error;
+                progressData = data;
+            } else {
+                if (!currentUserData) {
+                    podium.innerHTML = '<p style="text-align:center;width:100%;color:#999;">Profilni to\'ldiring</p>';
+                    return;
+                }
+                let userQuery = supabaseClient.from('users').select('id');
+                if (currentLbFilter === 'region') userQuery = userQuery.eq('region', currentUserData.region);
+                else if (currentLbFilter === 'district') userQuery = userQuery.eq('district', currentUserData.district);
+
+                let pQuery = supabaseClient.from('tour_progress').select('user_id, score').order('score', { ascending: false }).limit(300);
+                if (currentTourId) pQuery = pQuery.eq('tour_id', currentTourId);
+                const { data: pData } = await pQuery;
+                if (pData && pData.length > 0) {
+                    const pUserIds = pData.map(p => p.user_id);
+                    const { data: localUsers } = await userQuery.in('id', pUserIds);
+                    if (localUsers) {
+                        const localIds = localUsers.map(u => u.id);
+                        progressData = pData.filter(p => localIds.includes(p.user_id));
+                    }
+                }
+            }
+
+            if (!progressData || progressData.length === 0) {
+                 podium.innerHTML = '<p style="text-align:center;width:100%;color:#999;margin-top:20px;">Natijalar yo\'q</p>';
+                 return;
+            }
+
+            const userIdsToFetch = [...new Set(progressData.map(p => p.user_id))];
+            let usersData = [];
+            const { data, error } = await supabaseClient
+                .from('users')
+                .select('id, name, class, avatar_url, region, district, school') 
+                .in('id', userIdsToFetch);
+            if (error) throw error;
+            usersData = data;
+
+            let fullList = progressData.map(p => {
+                const u = usersData.find(user => user.id === p.user_id);
+                if (!u) return null;
+                return {
+                    id: u.id,
+                    name: u.name || 'Anonim', 
+                    classVal: u.class || '?',
+                    region: u.region,
+                    district: u.district,
+                    school: u.school,
+                    avatarUrl: u.avatar_url || null,
+                    score: p.score,
+                    isMe: String(u.id) === String(internalDbId) 
+                };
+            }).filter(item => item !== null);
+
+            fullList.sort((a, b) => b.score - a.score);
+            renderLeaderboardUI(fullList, podium, listEl);
+            updateMyStickyBar(fullList, stickyBar);
+
+        } catch (e) {
+            console.error(e);
+            podium.innerHTML = '<p style="text-align:center;color:red;">Error</p>';
+        }
+    }
+
+    function renderLeaderboardUI(list, podiumEl, listEl) {
+        podiumEl.innerHTML = '';
+        listEl.innerHTML = '';
+        const top3 = [list[1], list[0], list[2]]; 
+        const ranks = ['second', 'first', 'third'];
+        const rkClasses = ['rk-2', 'rk-1', 'rk-3'];
+        const realRanks = [2, 1, 3];
+
+        const getSubHtml = (player) => {
+            let parts = [];
+            if (currentLbFilter === 'republic' && player.region) {
+                parts.push(`<span class="meta-row"><i class="fa-solid fa-location-dot"></i> ${player.region}</span>`);
+            }
+            if ((currentLbFilter === 'republic' || currentLbFilter === 'region') && player.district) {
+                parts.push(`<span class="meta-row"><i class="fa-solid fa-map-pin"></i> ${player.district}</span>`);
+            }
+            if(player.school) {
+                parts.push(`<span class="meta-row"><i class="fa-solid fa-school"></i> ${player.school}</span>`);
+            }
+            parts.push(`<span class="meta-row"><i class="fa-solid fa-user-graduate"></i> ${player.classVal}-sinf</span>`);
+            return parts.join(''); 
+        };
+
+        top3.forEach((player, i) => {
+            if (player) {
+                const avatarHtml = player.avatarUrl 
+                    ? `<img src="${player.avatarUrl}" class="winner-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1077/1077114.png'">`
+                    : `<div class="winner-img" style="background:#E1E1E6; display:flex; align-items:center; justify-content:center; font-size:24px; color:#666;">${player.name[0]}</div>`;
+
+                // Имя (2 слова)
+                const displayName = player.name.split(' ').slice(0, 2).join(' ');
+
+                let html = `
+                    <div class="winner ${ranks[i]}">
+                        <div class="avatar-wrapper">
+                            ${avatarHtml}
+                            <div class="rank-circle ${rkClasses[i]}">${realRanks[i]}</div>
+                        </div>
+                        <div class="winner-name">${displayName}</div>
+                        <div class="winner-class">
+                            ${getSubHtml(player)}
+                        </div>
+                        <div class="winner-score">${player.score}</div>
+                    </div>
+                `;
+                podiumEl.insertAdjacentHTML('beforeend', html);
+            } else {
+                 podiumEl.insertAdjacentHTML('beforeend', `<div class="winner ${ranks[i]}" style="opacity:0"></div>`);
+            }
+        });
+
+        list.slice(3).forEach((player, index) => {
+            const realRank = index + 4;
+            const avatarHtml = player.avatarUrl 
+                ? `<img src="${player.avatarUrl}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+                : '';
+            const fallbackAvatar = `<div class="no-img">${player.name[0]}</div>`;
+            
+            const displayName = player.name.split(' ').slice(0, 2).join(' ');
+
+            let cardStyle = player.isMe ? 'background:#F0F8FF; border:1px solid var(--primary);' : '';
+
+            let html = `
+                <div class="leader-card" style="${cardStyle}">
+                    <div class="l-rank">${realRank}</div>
+                    <div class="l-avatar">
+                        ${avatarHtml}
+                        ${player.avatarUrl ? fallbackAvatar.replace('class="no-img"', 'class="no-img" style="display:none"') : fallbackAvatar}
+                    </div>
+                    <div class="l-info">
+                        <span class="l-name">${displayName}</span>
+                        <div class="l-sub">${getSubHtml(player)}</div>
+                    </div>
+                    <div class="l-score">${player.score}</div>
+                </div>
+            `;
+            listEl.insertAdjacentHTML('beforeend', html);
+        });
+    }
+
     // === LISTENERS ===
+    if (window.Telegram && window.Telegram.WebApp) {
+      Telegram.WebApp.ready();
+      Telegram.WebApp.expand();
+      const user = Telegram.WebApp.initDataUnsafe.user;
+      if (user && user.id) {
+        telegramUserId = Number(user.id);
+        telegramData.firstName = user.first_name;
+        telegramData.lastName = user.last_name;
+        if (user.photo_url) telegramData.photoUrl = user.photo_url;
+        document.getElementById('home-user-name').textContent = telegramData.firstName || 'User';
+      } else {
+        console.warn("No Telegram user found. Running in Test Mode.");
+        if (!localStorage.getItem('test_user_id')) {
+             localStorage.setItem('test_user_id', Math.floor(Math.random() * 1000000000));
+        }
+        telegramUserId = Number(localStorage.getItem('test_user_id'));
+      }
+    }
+
     safeAddListener('leaderboard-btn', 'click', () => {
         showScreen('leaderboard-screen');
         setLeaderboardFilter('republic');
@@ -983,8 +1019,19 @@ document.addEventListener('DOMContentLoaded', function() {
     safeAddListener('cancel-start', 'click', () => document.getElementById('warning-modal').classList.add('hidden'));
     safeAddListener('back-home', 'click', () => showScreen('home-screen'));
     safeAddListener('back-home-x', 'click', () => showScreen('home-screen'));
-    safeAddListener('profile-locked-btn', 'click', () => document.getElementById('profile-info-modal').classList.remove('hidden'));
     safeAddListener('profile-back-btn', 'click', () => showScreen('home-screen'));
+    
+    // Кнопка профиля (аватарка)
+    safeAddListener('open-profile-btn', 'click', () => {
+        if(currentUserData) {
+            // Если данные есть - просто показываем, но блокируем
+            fillProfileForm(currentUserData);
+            lockProfileForm();
+        } else {
+            unlockProfileForm();
+        }
+        showScreen('profile-screen');
+    });
 
     applyTranslations();
     checkProfileAndTour();
