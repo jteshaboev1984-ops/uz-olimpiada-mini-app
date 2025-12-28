@@ -82,7 +82,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .set-icon.blue { background: #E6F2FF; color: var(--primary); }
 .set-icon.green { background: #E8F5E9; color: var(--success); }
 .set-icon.gold { background: #FFF9E6; color: #FFD60A; }
-.set-icon.red { background: #FFF2F2; color: var(--danger); } /* NEW RED ICON */
+.set-icon.red { background: #FFF2F2; color: var(--danger); } 
 .set-icon.gray { background: #F2F2F7; color: #8E8E93; }
 .set-text { flex: 1; }
 .set-text h4 { font-size: 15px; font-weight: 600; color: #000; margin-bottom: 2px; }
