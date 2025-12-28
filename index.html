@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="uz">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -13,9 +13,17 @@
 
     <div class="screen hidden" id="profile-screen">
         <div class="header-profile">
+            <div style="position: absolute; top: 15px; right: 20px; z-index: 100;">
+                <select id="lang-switcher" style="padding: 6px 10px; border-radius: 8px; border: 1px solid #E5E5EA; background: white; font-size: 13px; font-weight: 600; color: #333;">
+                    <option value="uz">🇺🇿 O'zbek</option>
+                    <option value="ru">🇷🇺 Русский</option>
+                    <option value="en">🇬🇧 English</option>
+                </select>
+            </div>
+
             <div class="user-avatar-small"><i class="fa-solid fa-user"></i></div>
-            <h1>Профиль</h1>
-            <p>Данные участника</p>
+            <h1 data-i18n="profile_title">Profil</h1>
+            <p data-i18n="profile_subtitle">Ishtirokchi ma'lumotlari</p>
         </div>
         <div class="container pb-large">
             <div class="card profile-info-card">
@@ -24,52 +32,52 @@
                     <div class="verified-badge"><i class="fa-solid fa-check"></i></div>
                 </div>
                 <div class="profile-text">
-                    <span class="sub-label">Участник</span>
+                    <span class="sub-label" data-i18n="participant_label">Ishtirokchi</span>
                     <h3 id="profile-user-name">...</h3>
                 </div>
             </div>
             
             <div class="form-group">
-                <label>Класс</label>
+                <label data-i18n="label_class">Sinf</label>
                 <div class="input-wrapper">
                     <select id="class-select"></select>
                     <i class="fa-solid fa-chevron-down arrow-icon"></i>
                 </div>
             </div>
             <div class="form-group">
-                <label>Регион</label>
+                <label data-i18n="label_region">Viloyat</label>
                 <div class="input-wrapper">
                     <select id="region-select"></select>
                     <i class="fa-solid fa-location-dot icon-right"></i>
                 </div>
             </div>
             <div class="form-group">
-                <label>Район</label>
+                <label data-i18n="label_district">Tuman / Shahar</label>
                 <div class="input-wrapper">
                     <select id="district-select" disabled></select>
                     <i class="fa-solid fa-map icon-right"></i>
                 </div>
             </div>
             <div class="form-group">
-                <label>Школа</label>
+                <label data-i18n="label_school">Maktab</label>
                 <div class="input-wrapper">
-                    <input type="text" id="school-input" placeholder="№ школы">
+                    <input type="text" id="school-input" placeholder="№">
                     <i class="fa-solid fa-graduation-cap icon-right"></i>
                 </div>
             </div>
 
             <div class="card checkbox-card">
                 <input type="checkbox" id="research-consent">
-                <div class="checkbox-text"><strong>Согласие на обработку</strong><span>Для рейтинга.</span></div>
+                <div class="checkbox-text"><strong data-i18n="consent_title">Ma'lumotlarni qayta ishlashga rozilik</strong><span data-i18n="consent_desc">Reyting uchun.</span></div>
             </div>
         </div>
         
         <div class="bottom-fixed column">
-            <button id="save-profile" class="btn-primary">Сохранить</button>
+            <button id="save-profile" class="btn-primary" data-i18n="btn_save">Saqlash</button>
             <div id="profile-locked-btn" class="locked-status-btn hidden">
-                <i class="fa-solid fa-lock"></i> <span>Профиль заполнен</span>
+                <i class="fa-solid fa-lock"></i> <span data-i18n="profile_locked">Profil to'ldirilgan</span>
             </div>
-            <button id="profile-back-btn" class="btn-primary hidden">На главную</button>
+            <button id="profile-back-btn" class="btn-primary hidden" data-i18n="btn_to_main">Bosh sahifaga</button>
         </div>
     </div>
 
@@ -80,64 +88,64 @@
         </div>
 
         <div class="container pb-home">
-            <h1 class="greeting">Привет, <span id="home-user-name">Участник</span>! 👋</h1>
-            <p class="subtitle">Добро пожаловать на олимпиаду.</p>
+            <h1 class="greeting"><span data-i18n="greeting_hi">Salom</span>, <span id="home-user-name">Ishtirokchi</span>! 👋</h1>
+            <p class="subtitle" data-i18n="greeting_sub">Olimpiadaga xush kelibsiz.</p>
 
             <div class="action-grid">
                 <div class="action-card" id="leaderboard-btn">
                     <div class="icon-circle gold"><i class="fa-solid fa-trophy"></i></div>
-                    <span>Лидерборд</span>
+                    <span data-i18n="btn_leaderboard">Reyting</span>
                 </div>
                 <div class="action-card" id="about-btn">
                     <div class="icon-circle purple"><i class="fa-solid fa-info"></i></div>
-                    <span>О проекте</span>
+                    <span data-i18n="btn_about">Loyiha haqida</span>
                 </div>
             </div>
 
-            <div class="section-header"><h2 id="subjects-title">Предметы</h2></div>
+            <div class="section-header"><h2 id="subjects-title" data-i18n="subjects_title">Fanlar</h2></div>
 
             <div class="subjects-grid">
-                <div class="subject-card" onclick="openSubjectStats('Математика')">
+                <div class="subject-card" onclick="openSubjectStats('math')">
                     <span class="percent-badge" id="math-percent">0%</span>
                     <div class="subject-top"><div class="sub-icon blue"><i class="fa-solid fa-calculator"></i></div></div>
-                    <h3>Математика</h3><div class="progress-line"><div id="math-bar" style="width: 0%"></div></div>
+                    <h3 data-i18n="subj_math">Matematika</h3><div class="progress-line"><div id="math-bar" style="width: 0%"></div></div>
                 </div>
-                <div class="subject-card" onclick="openSubjectStats('Английский')">
+                <div class="subject-card" onclick="openSubjectStats('eng')">
                     <span class="percent-badge" id="eng-percent">0%</span>
                     <div class="subject-top"><div class="sub-icon violet"><i class="fa-solid fa-globe"></i></div></div>
-                    <h3>Английский</h3><div class="progress-line"><div id="eng-bar" style="width: 0%"></div></div>
+                    <h3 data-i18n="subj_eng">Ingliz tili</h3><div class="progress-line"><div id="eng-bar" style="width: 0%"></div></div>
                 </div>
-                 <div class="subject-card" onclick="openSubjectStats('Физика')">
+                 <div class="subject-card" onclick="openSubjectStats('phys')">
                     <span class="percent-badge" id="phys-percent">0%</span>
                     <div class="subject-top"><div class="sub-icon orange"><i class="fa-solid fa-bolt"></i></div></div>
-                    <h3>Физика</h3><div class="progress-line"><div id="phys-bar" style="width: 0%"></div></div>
+                    <h3 data-i18n="subj_phys">Fizika</h3><div class="progress-line"><div id="phys-bar" style="width: 0%"></div></div>
                 </div>
-                 <div class="subject-card" onclick="openSubjectStats('Химия')">
+                 <div class="subject-card" onclick="openSubjectStats('chem')">
                     <span class="percent-badge" id="chem-percent">0%</span>
                     <div class="subject-top"><div class="sub-icon teal"><i class="fa-solid fa-flask"></i></div></div>
-                    <h3>Химия</h3><div class="progress-line"><div id="chem-bar" style="width: 0%"></div></div>
+                    <h3 data-i18n="subj_chem">Kimyo</h3><div class="progress-line"><div id="chem-bar" style="width: 0%"></div></div>
                 </div>
-                <div class="subject-card" onclick="openSubjectStats('Биология')">
+                <div class="subject-card" onclick="openSubjectStats('bio')">
                     <span class="percent-badge" id="bio-percent">0%</span>
                     <div class="subject-top"><div class="sub-icon green"><i class="fa-solid fa-leaf"></i></div></div>
-                    <h3>Биология</h3><div class="progress-line"><div id="bio-bar" style="width: 0%"></div></div>
+                    <h3 data-i18n="subj_bio">Biologiya</h3><div class="progress-line"><div id="bio-bar" style="width: 0%"></div></div>
                 </div>
-                <div class="subject-card" onclick="openSubjectStats('Информатика')">
+                <div class="subject-card" onclick="openSubjectStats('it')">
                     <span class="percent-badge" id="it-percent">0%</span>
                     <div class="subject-top"><div class="sub-icon cyan"><i class="fa-solid fa-laptop-code"></i></div></div>
-                    <h3>Информатика</h3><div class="progress-line"><div id="it-bar" style="width: 0%"></div></div>
+                    <h3 data-i18n="subj_it">Informatika</h3><div class="progress-line"><div id="it-bar" style="width: 0%"></div></div>
                 </div>
-                 <div class="subject-card" onclick="openSubjectStats('Экономика')">
+                 <div class="subject-card" onclick="openSubjectStats('eco')">
                     <span class="percent-badge" id="eco-percent">0%</span>
                     <div class="subject-top"><div class="sub-icon brown"><i class="fa-solid fa-chart-line"></i></div></div>
-                    <h3>Экономика</h3><div class="progress-line"><div id="eco-bar" style="width: 0%"></div></div>
+                    <h3 data-i18n="subj_eco">Iqtisodiyot</h3><div class="progress-line"><div id="eco-bar" style="width: 0%"></div></div>
                 </div>
-                <div class="subject-card" onclick="openSubjectStats('SAT')">
+                <div class="subject-card" onclick="openSubjectStats('sat')">
                     <span class="percent-badge" id="sat-percent">0%</span>
                     <div class="subject-top"><div class="sub-icon red"><i class="fa-solid fa-brain"></i></div></div>
                     <h3>SAT</h3><div class="progress-line"><div id="sat-bar" style="width: 0%"></div></div>
                 </div>
-                <div class="subject-card" onclick="openSubjectStats('IELTS')">
+                <div class="subject-card" onclick="openSubjectStats('ielts')">
                     <span class="percent-badge" id="ielts-percent">0%</span>
                     <div class="subject-top"><div class="sub-icon red"><i class="fa-solid fa-graduation-cap"></i></div></div>
                     <h3>IELTS</h3><div class="progress-line"><div id="ielts-bar" style="width: 0%"></div></div>
@@ -147,26 +155,26 @@
                     <div class="subject-top">
                         <div class="sub-icon gold"><i class="fa-solid fa-award"></i></div>
                     </div>
-                    <h3>Сертификат</h3>
-                    <div style="font-size: 12px; color: #8E8E93; margin-top: 5px;">Скачать PDF</div>
+                    <h3 data-i18n="cert_title">Sertifikat</h3>
+                    <div style="font-size: 12px; color: #8E8E93; margin-top: 5px;" data-i18n="cert_desc">PDF yuklab olish</div>
                 </div>
             </div>
 
-            <div class="section-header" style="margin-top: 30px;"><h2>Ресурсы</h2></div>
+            <div class="section-header" style="margin-top: 30px;"><h2 data-i18n="res_title">Resurslar</h2></div>
             <div class="resources-list">
                 <div class="resource-card" onclick="openExternalLink('https://youtube.com')">
                     <div class="res-icon youtube"><i class="fa-brands fa-youtube"></i></div>
-                    <div class="res-info"><h4>Видеоуроки</h4><p>Разборы задач</p></div>
+                    <div class="res-info"><h4 data-i18n="res_vid_title">Video darslar</h4><p data-i18n="res_vid_desc">Masalalar yechimi</p></div>
                     <i class="fa-solid fa-chevron-right arrow"></i>
                 </div>
                 <div class="resource-card" onclick="openExternalLink('https://t.me/your_channel')">
                     <div class="res-icon telegram"><i class="fa-solid fa-bullhorn"></i></div>
-                    <div class="res-info"><h4>Канал</h4><p>Новости</p></div>
+                    <div class="res-info"><h4 data-i18n="res_ch_title">Kanal</h4><p data-i18n="res_ch_desc">Yangiliklar</p></div>
                     <i class="fa-solid fa-chevron-right arrow"></i>
                 </div>
                 <div class="resource-card" onclick="openExternalLink('https://t.me/your_group')">
                     <div class="res-icon group"><i class="fa-solid fa-users"></i></div>
-                    <div class="res-info"><h4>Чат участников</h4><p>Обсуждение</p></div>
+                    <div class="res-info"><h4 data-i18n="res_grp_title">Ishtirokchilar chati</h4><p data-i18n="res_grp_desc">Muhokama</p></div>
                     <i class="fa-solid fa-chevron-right arrow"></i>
                 </div>
             </div>
@@ -174,9 +182,9 @@
 
         <div class="bottom-fixed column">
             <div id="main-btn-container" style="width: 100%;">
-                <button id="main-action-btn" class="btn-primary">Загрузка...</button>
+                <button id="main-action-btn" class="btn-primary" data-i18n="loading">Yuklanmoqda...</button>
             </div>
-            <button id="exit-app-btn" class="btn-danger-box">Выход</button>
+            <button id="exit-app-btn" class="btn-danger-box" data-i18n="btn_exit">Chiqish</button>
         </div>
     </div>
 
@@ -191,18 +199,18 @@
                 <div class="subject-badge" id="subject-tag">...</div>
                 <div class="time-hint" id="q-time-hint"></div>
             </div>
-            <h2 id="question-text" class="question-title">Загрузка...</h2>
+            <h2 id="question-text" class="question-title">...</h2>
             <div id="options-container" class="options-list"></div>
         </div>
         <div class="bottom-fixed">
-            <button id="next-button" class="btn-primary" disabled>Далее</button>
+            <button id="next-button" class="btn-primary" disabled data-i18n="btn_next">Keyingi</button>
         </div>
     </div>
 
     <div class="screen hidden" id="result-screen">
         <div class="header-simple sticky-header">
             <div class="close-icon" id="back-home-x"><i class="fa-solid fa-times"></i></div>
-            <h3>Результат тура</h3>
+            <h3 data-i18n="res_screen_title">Tur natijasi</h3>
         </div>
 
         <div class="container result-content pb-large">
@@ -212,28 +220,28 @@
                         <span class="percent-text" id="result-percent">0%</span>
                     </div>
                 </div>
-                <h2>Тур завершён!</h2>
-                <p style="color: #8E8E93; margin-top: 5px;">Ваш результат сохранен</p>
+                <h2 data-i18n="res_finished">Tur yakunlandi!</h2>
+                <p style="color: #8E8E93; margin-top: 5px;" data-i18n="res_saved">Natijangiz saqlandi</p>
             </div>
 
             <div class="stats-row-strict">
-                <div class="col-left"><span class="lbl">ТУР</span><span class="val" id="res-tour-title">Тур №1</span></div>
-                <div class="col-center"><span class="lbl">ВСЕГО</span><span class="val" id="res-total">15</span></div>
-                <div class="col-right"><span class="lbl">ВЕРНО</span><span class="val green-text" id="res-correct">0</span></div>
+                <div class="col-left"><span class="lbl" data-i18n="stat_tour">TUR</span><span class="val" id="res-tour-title">1-Tur</span></div>
+                <div class="col-center"><span class="lbl" data-i18n="stat_total">JAMI</span><span class="val" id="res-total">15</span></div>
+                <div class="col-right"><span class="lbl" data-i18n="stat_correct">TO'G'RI</span><span class="val green-text" id="res-correct">0</span></div>
             </div>
 
-            <div class="section-header"><h3>Работа над ошибками</h3></div>
+            <div class="section-header"><h3 data-i18n="review_title">Xatolar ustida ishlash</h3></div>
             <div class="card error-review-card">
                 <div class="review-item">
-                    <div class="review-header"><i class="fa-solid fa-circle-check" style="color:var(--success)"></i> <span>Данные сохранены</span></div>
-                    <p style="font-size:13px; margin-top:5px; color:#666;">Детальный разбор будет доступен после подведения итогов.</p>
+                    <div class="review-header"><i class="fa-solid fa-circle-check" style="color:var(--success)"></i> <span data-i18n="data_saved">Ma'lumotlar saqlandi</span></div>
+                    <p style="font-size:13px; margin-top:5px; color:#666;" data-i18n="review_desc">Batafsil tahlil natijalar e'lon qilingandan so'ng mavjud bo'ladi.</p>
                 </div>
             </div>
         </div>
 
         <div class="bottom-fixed column">
-            <button class="btn-secondary" id="download-certificate-res-btn"><i class="fa-solid fa-download"></i> Скачать сертификат</button>
-            <button class="btn-primary" id="back-home">На главную</button>
+            <button class="btn-secondary" id="download-certificate-res-btn"><i class="fa-solid fa-download"></i> <span data-i18n="btn_download_cert">Sertifikatni yuklash</span></button>
+            <button class="btn-primary" id="back-home" data-i18n="btn_to_main">Bosh sahifaga</button>
         </div>
     </div>
 
@@ -241,40 +249,38 @@
         <div class="lb-header-bg">
             <div class="lb-nav">
                 <div class="back-btn-simple" id="lb-back"><i class="fa-solid fa-arrow-left"></i></div>
-                <h3>Лидерборд</h3>
+                <h3 data-i18n="lb_title">Reyting</h3>
             </div>
             <div class="lb-filter-container">
                 <div class="lb-segmented-control">
-                    <div class="lb-segment active" id="filter-republic" onclick="setLeaderboardFilter('republic')">Республика</div>
-                    <div class="lb-segment" id="filter-region" onclick="setLeaderboardFilter('region')">Регион</div>
-                    <div class="lb-segment" id="filter-district" onclick="setLeaderboardFilter('district')">Район</div>
+                    <div class="lb-segment active" id="filter-republic" onclick="setLeaderboardFilter('republic')" data-i18n="lb_republic">Respublika</div>
+                    <div class="lb-segment" id="filter-region" onclick="setLeaderboardFilter('region')" data-i18n="lb_region">Viloyat</div>
+                    <div class="lb-segment" id="filter-district" onclick="setLeaderboardFilter('district')" data-i18n="lb_district">Tuman</div>
                 </div>
             </div>
         </div>
 
         <div class="lb-podium-container">
-            <div id="lb-podium" class="top-three">
-                </div>
+            <div id="lb-podium" class="top-three"></div>
         </div>
 
         <div class="container" style="padding:0;">
             <div class="list-header" style="padding: 0 16px; margin-bottom: 10px;">
-                <span>УЧАСТНИК</span><span>БАЛЛЫ</span>
+                <span data-i18n="lb_participant">ISHTIROKCHI</span><span data-i18n="lb_score">BALL</span>
             </div>
-            <div id="lb-list" class="lb-list-scroll">
-                </div>
+            <div id="lb-list" class="lb-list-scroll"></div>
         </div>
 
         <div id="lb-user-sticky" class="lb-sticky-footer hidden">
             <div class="my-rank-badge" id="my-rank-val">#--</div>
             <div class="my-info">
-                <span class="my-name">Вы</span>
-                <span class="my-sub" id="my-class-val">-- класс</span>
+                <span class="my-name" data-i18n="you">Siz</span>
+                <span class="my-sub" id="my-class-val">-- sinf</span>
             </div>
             <div class="my-stats">
                 <div class="stat-group">
                     <span class="stat-val" id="my-score-val">0</span>
-                    <span class="stat-lbl">БАЛЛЫ</span>
+                    <span class="stat-lbl" data-i18n="lb_points">BALL</span>
                 </div>
             </div>
         </div>
@@ -283,75 +289,64 @@
     <div class="modal hidden" id="warning-modal">
         <div class="modal-card">
             <div class="modal-icon-big"><i class="fa-solid fa-stopwatch"></i><div class="alert-badge">!</div></div>
-            <h2>Предупреждение</h2>
-            <p>У вас будет <strong id="warn-time-val">...</strong> на <strong id="warn-q-val">...</strong>.</p>
-            <div class="alert-box"><i class="fa-solid fa-triangle-exclamation"></i><p>Повтор тура невозможен.</p></div>
-            <button id="confirm-start" class="btn-primary">Начать <i class="fa-solid fa-arrow-right"></i></button>
-            <button id="cancel-start" class="btn-text">Отмена</button>
+            <h2 data-i18n="warn_title">Diqqat</h2>
+            <p><span data-i18n="warn_msg_1">Sizda</span> <strong id="warn-q-val">...</strong> <span data-i18n="warn_msg_2">uchun</span> <strong id="warn-time-val">...</strong> <span data-i18n="warn_msg_3">vaqt bor.</span></p>
+            <div class="alert-box"><i class="fa-solid fa-triangle-exclamation"></i><p data-i18n="warn_hint">Turni qayta ishlash imkonsiz.</p></div>
+            <button id="confirm-start" class="btn-primary"><span data-i18n="btn_start">Boshlash</span> <i class="fa-solid fa-arrow-right"></i></button>
+            <button id="cancel-start" class="btn-text" data-i18n="btn_cancel">Bekor qilish</button>
         </div>
     </div>
 
     <div class="modal hidden" id="subject-details-modal">
         <div class="modal-card">
             <div class="modal-header-custom">
-                <h3 id="sd-title">Предмет</h3>
+                <h3 id="sd-title">...</h3>
                 <div class="close-icon-btn" onclick="document.getElementById('subject-details-modal').classList.add('hidden')">
                     <i class="fa-solid fa-times"></i>
                 </div>
             </div>
-            <div id="sd-content" style="padding-bottom: 10px;">
-                </div>
-            <button class="btn-primary" onclick="document.getElementById('subject-details-modal').classList.add('hidden')">Закрыть</button>
+            <div id="sd-content" style="padding-bottom: 10px;"></div>
+            <button class="btn-primary" onclick="document.getElementById('subject-details-modal').classList.add('hidden')" data-i18n="btn_close">Yopish</button>
         </div>
     </div>
 
     <div class="modal hidden" id="certs-modal">
         <div class="modal-card">
             <div class="modal-header-custom">
-                <h3>Мои сертификаты</h3>
+                <h3 data-i18n="my_certs">Mening sertifikatlarim</h3>
                 <div class="close-icon-btn" onclick="document.getElementById('certs-modal').classList.add('hidden')">
                     <i class="fa-solid fa-times"></i>
                 </div>
             </div>
-            <div style="padding: 10px 0; text-align: left;" id="certs-list-container"><p>Загрузка...</p></div>
+            <div style="padding: 10px 0; text-align: left;" id="certs-list-container"><p data-i18n="loading">Yuklanmoqda...</p></div>
         </div>
     </div>
 
     <div class="modal hidden" id="tour-info-modal">
         <div class="modal-card">
             <div class="modal-icon-big" style="color:var(--success); background:#e8f8ec;"><i class="fa-solid fa-calendar-check"></i></div>
-            <h2>Тур уже пройден!</h2>
-            <p style="color:#666; font-size:14px; margin-bottom:15px;">Вы уже сдали ответы на текущий этап. Результаты будут доступны в Лидерборде.</p>
-            
-            <div class="alert-box" style="background:#F2F9FF; border:1px solid #007AFF;">
-                <i class="fa-solid fa-bullhorn" style="color:#007AFF;"></i>
-                <div style="text-align:left;">
-                    <strong style="color:#007AFF;">Следующий тур скоро!</strong>
-                    <p style="margin:0; font-size:12px;">Используйте раздел «Ресурсы» для подготовки.</p>
-                </div>
-            </div>
-
+            <h2 data-i18n="tour_passed_title">Tur yakunlangan!</h2>
+            <p style="color:#666; font-size:14px; margin-bottom:15px;" data-i18n="tour_passed_msg">Siz ushbu bosqich javoblarini topshirgansiz. Natijalar Reyting bo'limida.</p>
             <button class="btn-primary" onclick="openExternalLink('https://t.me/your_channel')" style="margin-top:15px;">
-                <i class="fa-brands fa-telegram"></i> Перейти в канал
+                <i class="fa-brands fa-telegram"></i> <span data-i18n="btn_channel">Kanalga o'tish</span>
             </button>
-            <button class="btn-text-simple" onclick="document.getElementById('tour-info-modal').classList.add('hidden')">Закрыть</button>
+            <button class="btn-text-simple" onclick="document.getElementById('tour-info-modal').classList.add('hidden')" data-i18n="btn_close">Yopish</button>
         </div>
     </div>
 
     <div class="modal hidden" id="profile-info-modal">
         <div class="modal-card">
             <div class="modal-icon-big" style="color:var(--danger); background:#FFF2F2;"><i class="fa-solid fa-lock"></i></div>
-            <h2>Профиль заполнен</h2>
-            <p style="color:#666; font-size:14px; margin-bottom:15px;">Данные участника зафиксированы для формирования корректного рейтинга.</p>
-            
+            <h2 data-i18n="profile_locked_title">Profil to'ldirilgan</h2>
+            <p style="color:#666; font-size:14px; margin-bottom:15px;" data-i18n="profile_locked_msg">Reyting to'g'ri shakllanishi uchun ma'lumotlar saqlab qo'yilgan.</p>
             <div class="alert-box">
                 <i class="fa-solid fa-circle-exclamation"></i>
                 <div style="text-align:left;">
-                    <strong>Изменение невозможно</strong>
-                    <p style="margin:0; font-size:12px;">До окончания олимпиады редактирование данных отключено.</p>
+                    <strong data-i18n="locked_alert_title">O'zgartirish imkonsiz</strong>
+                    <p style="margin:0; font-size:12px;" data-i18n="locked_alert_desc">Olimpiada yakunlanguncha tahrirlash o'chirilgan.</p>
                 </div>
             </div>
-            <button class="btn-primary" onclick="document.getElementById('profile-info-modal').classList.add('hidden')">Понятно</button>
+            <button class="btn-primary" onclick="document.getElementById('profile-info-modal').classList.add('hidden')" data-i18n="btn_understood">Tushunarli</button>
         </div>
     </div>
 
@@ -361,29 +356,29 @@
                 <div class="close-btn-white" id="close-about"><i class="fa-solid fa-times"></i></div>
                 <div class="logo-icon big"><i class="fa-solid fa-graduation-cap"></i></div>
                 <h1>Smart Olympiad</h1>
-                <div class="version-tag">Версия 1.0</div>
+                <div class="version-tag">Version 61.0</div>
             </div>
             <div class="modal-body-scroll" style="padding: 24px; text-align: left; flex:1; overflow-y:auto;">
-                <h3 style="margin-bottom:12px;">О платформе</h3>
-                <p style="font-size:14px; line-height:1.5; color:#444; margin-bottom:20px;">
-                    Уникальная платформа для школьников Узбекистана, объединяющая стандарты <b>Cambridge IGCSE</b>, <b>SAT</b> и <b>IELTS</b>. Проверь свои знания и соревнуйся с лучшими!
+                <h3 style="margin-bottom:12px;" data-i18n="about_platform">Platforma haqida</h3>
+                <p style="font-size:14px; line-height:1.5; color:#444; margin-bottom:20px;" data-i18n="about_text">
+                    O'zbekiston o'quvchilari uchun <b>Cambridge IGCSE</b>, <b>SAT</b> va <b>IELTS</b> standartlarini birlashtirgan noyob platforma.
                 </p>
 
-                <h3 style="margin-bottom:12px;">Особенности</h3>
+                <h3 style="margin-bottom:12px;" data-i18n="about_features">Xususiyatlar</h3>
                 <div class="about-features">
-                    <div class="feat-row"><i class="fa-solid fa-check-circle" style="color:var(--success)"></i> <span>Международные стандарты</span></div>
-                    <div class="feat-row"><i class="fa-solid fa-check-circle" style="color:var(--success)"></i> <span>Мгновенные результаты</span></div>
-                    <div class="feat-row"><i class="fa-solid fa-check-circle" style="color:var(--success)"></i> <span>Рейтинг по регионам</span></div>
-                    <div class="feat-row"><i class="fa-solid fa-check-circle" style="color:var(--success)"></i> <span>Сертификаты участия</span></div>
+                    <div class="feat-row"><i class="fa-solid fa-check-circle" style="color:var(--success)"></i> <span data-i18n="feat_1">Xalqaro standartlar</span></div>
+                    <div class="feat-row"><i class="fa-solid fa-check-circle" style="color:var(--success)"></i> <span data-i18n="feat_2">Tezkor natijalar</span></div>
+                    <div class="feat-row"><i class="fa-solid fa-check-circle" style="color:var(--success)"></i> <span data-i18n="feat_3">Hududlar bo'yicha reyting</span></div>
+                    <div class="feat-row"><i class="fa-solid fa-check-circle" style="color:var(--success)"></i> <span data-i18n="feat_4">Ishtirok sertifikatlari</span></div>
                 </div>
 
                 <div style="margin-top:30px; text-align:center;">
-                    <p style="font-size:12px; color:#999;">Разработано с ❤️ для образования</p>
+                    <p style="font-size:12px; color:#999;">Designed with ❤️ for education</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="script.js?v=60"></script>
+    <script src="script.js?v=61"></script>
 </body>
 </html>
