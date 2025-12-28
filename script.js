@@ -1,11 +1,12 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v65.0 (Lang Menu Fix + Stats Fix)');
+    console.log('App Started: v66.0 (Fix: Button Lang Update + Unified Certs)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
     let telegramData = { firstName: null, lastName: null, photoUrl: null, languageCode: null };
     let internalDbId = null; 
     let currentTourId = null;
+    let currentTourTitle = ""; // New: Store tour title for lang switching
     let currentTourEndDate = null; 
     let currentUserData = null;
     let tourQuestionsCache = [];
@@ -404,6 +405,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         updateSelectPlaceholders();
+        
+        // FIX: Update main button state immediately
+        if (tourCompleted) {
+            updateMainButton('completed');
+        } else if (currentTourId) {
+            updateMainButton('start', currentTourTitle); // Use saved title
+        } else {
+            updateMainButton('inactive');
+        }
     }
 
     function updateSelectPlaceholders() {
@@ -563,6 +573,7 @@ document.addEventListener('DOMContentLoaded', function() {
           updateMainButton('inactive');
       } else {
           currentTourId = tourData.id;
+          currentTourTitle = tourData.title; // SAVE TITLE FOR LANG SWITCH
           currentTourEndDate = tourData.end_date; 
           
           if (internalDbId && currentTourId) {
@@ -602,53 +613,35 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateDashboardStats() {
-        // Список префиксов, по которым мы будем считать
-        const subjectPrefixes = ['math', 'eng', 'phys', 'chem', 'bio', 'it', 'eco', 'sat', 'ielts'];
+        const subjectMap = {
+            'Matematika': 'math', 'Ingliz tili': 'eng', 'Fizika': 'phys',
+            'Kimyo': 'chem', 'Biologiya': 'bio', 'Informatika': 'it',
+            'Iqtisodiyot': 'eco', 'SAT': 'sat', 'IELTS': 'ielts',
+            'Математика': 'math', 'Английский': 'eng', 'Физика': 'phys', 
+            'Химия': 'chem', 'Биология': 'bio', 'Информатика': 'it', 'Экономика': 'eco'
+        };
         let totalCorrect = 0;
         let totalTours = 0; 
         
-        subjectPrefixes.forEach(prefix => {
-            const stats = calculateSubjectStats(prefix);
+        for (const [subjName, prefix] of Object.entries(subjectMap)) {
+            const stats = calculateSubjectStats(subjName);
             let percent = 0;
             if (stats.total > 0) percent = Math.round((stats.correct / stats.total) * 100);
-            
             const percentEl = document.getElementById(`${prefix}-percent`);
             if (percentEl) percentEl.textContent = `${percent}%`;
             const barEl = document.getElementById(`${prefix}-bar`);
             if (barEl) barEl.style.width = `${percent}%`;
-            
             totalCorrect += stats.correct;
-        });
+        }
         
         document.getElementById('cab-score').textContent = totalCorrect;
         if(tourCompleted) totalTours = 1;
         document.getElementById('cab-tours').textContent = totalTours;
     }
 
-    function calculateSubjectStats(prefix) {
-        // Словарь всех возможных вариантов написания предметов в базе данных
-        const keywords = {
-            'math': ['matematika', 'математика', 'math'],
-            'eng': ['ingliz', 'английский', 'english'],
-            'phys': ['fizika', 'физика', 'physics'],
-            'chem': ['kimyo', 'химия', 'chemistry'],
-            'bio': ['biologiya', 'биология', 'biology'],
-            'it': ['informatika', 'информатика', 'computer', 'it'],
-            'eco': ['iqtisodiyot', 'экономика', 'economics'],
-            'sat': ['sat'],
-            'ielts': ['ielts']
-        };
-
-        const targetKeywords = keywords[prefix] || [prefix];
-
-        const subjectQuestions = tourQuestionsCache.filter(q => {
-            if(!q.subject) return false;
-            const s = q.subject.toLowerCase();
-            return targetKeywords.some(k => s.includes(k));
-        });
-
+    function calculateSubjectStats(subjectName) {
+        const subjectQuestions = tourQuestionsCache.filter(q => q.subject && q.subject.toLowerCase().includes(subjectName.toLowerCase()));
         if (subjectQuestions.length === 0) return { total: 0, correct: 0 };
-        
         let correct = 0;
         let total = 0;
         subjectQuestions.forEach(q => {
@@ -664,15 +657,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const content = document.getElementById('sd-content');
         const title = document.getElementById('sd-title');
         
-        // Получаем название для заголовка (из перевода или UpperCase)
         let subjTitle = t('subj_' + prefix);
-        if(!subjTitle || subjTitle === ('subj_' + prefix)) subjTitle = prefix.toUpperCase();
+        if(!subjTitle) subjTitle = prefix.toUpperCase();
 
         if (modal && content) {
             title.textContent = subjTitle;
-            
-            // Используем новую универсальную функцию подсчета
-            let stats = calculateSubjectStats(prefix);
+            let stats = { total: 0, correct: 0};
+            ['Matematika', 'Математика', 'Math', 'Ingliz', 'Английский', 'English', 'Fizika', 'Физика', 'Physics'].forEach(n => {
+                if (t('subj_' + prefix).includes(n) || n.toLowerCase().includes(prefix)) {
+                    let s = calculateSubjectStats(n);
+                    if (s.total > stats.total) stats = s;
+                }
+            });
+            if(stats.total === 0) stats = calculateSubjectStats(subjTitle);
 
             const html = `
                 <div class="stat-list-item">
@@ -1237,6 +1234,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     safeAddListener('home-cert-btn', 'click', () => showCertsModal());
     safeAddListener('download-certificate-res-btn', 'click', () => showCertsModal());
+    safeAddListener('btn-open-certs-cab', 'click', () => showCertsModal()); // Added listener for cabinet
     safeAddListener('cancel-start', 'click', () => document.getElementById('warning-modal').classList.add('hidden'));
     safeAddListener('back-home', 'click', () => showScreen('home-screen'));
     safeAddListener('back-home-x', 'click', () => showScreen('home-screen'));
