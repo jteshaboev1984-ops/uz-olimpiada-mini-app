@@ -7,7 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=62">
+    <link rel="stylesheet" href="style.css?v=63">
 </head>
 <body>
 
@@ -76,8 +76,11 @@
     <div class="screen hidden" id="cabinet-screen">
         <div class="cabinet-hero">
             <div class="cabinet-top-nav">
-                <div class="close-icon-white" id="close-cabinet"><i class="fa-solid fa-times"></i></div>
+                <button class="nav-back-btn" id="close-cabinet">
+                    <i class="fa-solid fa-chevron-left"></i> <span data-i18n="btn_back">Orqaga</span>
+                </button>
             </div>
+            
             <div class="hero-content">
                 <div class="hero-avatar">
                     <img src="https://cdn-icons-png.flaticon.com/512/4140/4140048.png" id="cab-avatar-img">
@@ -150,8 +153,8 @@
             </div>
 
             <div class="footer-info">
-                <p>Smart Olympiad v62.0</p>
-                <button class="btn-text-danger" id="delete-account-btn" data-i18n="btn_delete_account">Hisobni o'chirish</button>
+                <p>Smart Olympiad v63.0</p>
+                <button class="btn-danger-box" id="delete-account-btn" style="margin-top: 15px;" data-i18n="btn_delete_account">Hisobni o'chirish</button>
             </div>
         </div>
     </div>
@@ -425,7 +428,7 @@
                 <div class="close-btn-white" id="close-about"><i class="fa-solid fa-times"></i></div>
                 <div class="logo-icon big"><i class="fa-solid fa-graduation-cap"></i></div>
                 <h1>Smart Olympiad</h1>
-                <div class="version-tag">Version 62.0</div>
+                <div class="version-tag">Version 63.0</div>
             </div>
             <div class="modal-body-scroll" style="padding: 24px; text-align: left; flex:1; overflow-y:auto;">
                 <h3 style="margin-bottom:12px;" data-i18n="about_platform">Platforma haqida</h3>
@@ -448,6 +451,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=62"></script>
+    <script src="script.js?v=63"></script>
 </body>
 </html>
