@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v100.0 (Original Base + New Features)');
+    console.log('App Started: v101.0 (Original Base + Logic)');
   
-    // === 1. ГЛОБАЛЬНЫЕ ФУНКЦИИ (ОБЯЗАТЕЛЬНО В НАЧАЛЕ) ===
+    // === 1. ГЛОБАЛЬНЫЕ ФУНКЦИИ (ВСЕГДА В НАЧАЛЕ) ===
     function showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
         document.getElementById(screenId).classList.remove('hidden');
@@ -18,12 +18,12 @@ document.addEventListener('DOMContentLoaded', function() {
         else window.open(url, '_blank');
     }
 
-    // === 2. ПЕРЕМЕННЫЕ И КОНФИГУРАЦИЯ ===
+    // === 2. ПЕРЕМЕННЫЕ И НАСТРОЙКИ ===
     let telegramUserId; 
     let telegramData = { firstName: null, lastName: null, photoUrl: null };
     let internalDbId = null; 
     let currentTourId = null;
-    let tourEndDate = null;
+    let tourEndDate = null; // Для блокировки работы над ошибками
     let currentUserData = null;
     let tourQuestionsCache = [];
     let userAnswersCache = [];
@@ -36,14 +36,15 @@ document.addEventListener('DOMContentLoaded', function() {
     let selectedAnswer = null;
     let questionStartTime = 0;
 
-    // === НАСТРОЙКИ SUPABASE (ВАШИ КЛЮЧИ) ===
+    // КЛЮЧИ SUPABASE
     const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
     const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI';
     const { createClient } = supabase;
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
 
-    // === 3. ПЕРЕВОДЫ И ЯЗЫКИ ===
+    // === 3. ПЕРЕВОДЫ (i18n) ===
     let currentLang = localStorage.getItem('app_lang') || 'uz';
+    
     const translations = {
         ru: {
             profile_title: "Профиль",
@@ -58,6 +59,7 @@ document.addEventListener('DOMContentLoaded', function() {
             agree_sub: "Принимаю правила и получение результатов",
             btn_save: "Сохранить",
             btn_home: "На главную",
+            btn_start: "Начать",
             status_locked: "Профиль заполнен",
             home_subtitle: "Добро пожаловать на олимпиаду.",
             greeting_prefix: "Здравствуйте",
@@ -75,8 +77,11 @@ document.addEventListener('DOMContentLoaded', function() {
             menu_errors_sub: "Посмотреть ответы",
             alert_fill_all: "Пожалуйста, заполните все поля!",
             alert_short_name: "Имя слишком короткое.",
+            alert_agree: "Необходимо согласие.",
+            alert_soon: "Скоро будет доступно",
+            alert_review_locked: "Разбор ошибок откроется после завершения тура.",
             btn_loading: "Загрузка...",
-            btn_start: "Начать тур",
+            btn_start_tour: "Начать тур",
             btn_completed: "Тур завершён",
             btn_no_tours: "Нет активных туров",
             warn_title: "Предупреждение",
@@ -91,8 +96,6 @@ document.addEventListener('DOMContentLoaded', function() {
             title_review: "Работа над ошибками",
             status_saved: "Данные сохранены",
             desc_review: "Детальный разбор будет доступен после подведения итогов.",
-            alert_review_locked: "Разбор ошибок откроется после завершения тура.",
-            alert_soon: "Скоро",
             about_platform: "О платформе",
             about_desc: "Уникальная платформа для школьников Узбекистана.",
             cert_modal_title: "Мои сертификаты",
@@ -116,6 +119,7 @@ document.addEventListener('DOMContentLoaded', function() {
             agree_sub: "Qoidalar va natijalarni olishga roziman",
             btn_save: "Saqlash",
             btn_home: "Bosh sahifa",
+            btn_start: "Boshlash",
             status_locked: "Profil to'ldirilgan",
             home_subtitle: "Olimpiadaga xush kelibsiz.",
             greeting_prefix: "Assalomu alaykum",
@@ -133,8 +137,11 @@ document.addEventListener('DOMContentLoaded', function() {
             menu_errors_sub: "Javoblarni ko'rish",
             alert_fill_all: "Iltimos, barcha maydonlarni to'ldiring!",
             alert_short_name: "Ism juda qisqa.",
+            alert_agree: "Rozilik bildirish kerak.",
+            alert_soon: "Tez orada",
+            alert_review_locked: "Xatolar tahlili tur yakunlanganidan so'ng ochiladi.",
             btn_loading: "Yuklanmoqda...",
-            btn_start: "Turni boshlash",
+            btn_start_tour: "Turni boshlash",
             btn_completed: "Tur yakunlandi",
             btn_no_tours: "Faol turlar yo'q",
             warn_title: "Diqqat",
@@ -149,8 +156,6 @@ document.addEventListener('DOMContentLoaded', function() {
             title_review: "Xatolar ustida ishlash",
             status_saved: "Ma'lumot saqlandi",
             desc_review: "Batafsil tahlil natijalar e'lon qilingandan so'ng ochiladi.",
-            alert_review_locked: "Xatolar tahlili tur yakunlanganidan so'ng ochiladi.",
-            alert_soon: "Tez orada",
             about_platform: "Platforma haqida",
             about_desc: "O'zbekiston o'quvchilari uchun maxsus.",
             cert_modal_title: "Mening sertifikatlarim",
@@ -174,6 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
             agree_sub: "Agree to rules and notifications",
             btn_save: "Save",
             btn_home: "Home",
+            btn_start: "Start",
             status_locked: "Profile Locked",
             home_subtitle: "Welcome to the Olympiad.",
             greeting_prefix: "Hello",
@@ -191,8 +197,11 @@ document.addEventListener('DOMContentLoaded', function() {
             menu_errors_sub: "View answers",
             alert_fill_all: "Please fill in all fields!",
             alert_short_name: "Name is too short.",
+            alert_agree: "Agreement required.",
+            alert_soon: "Coming soon",
+            alert_review_locked: "Error review will be available after the tour ends.",
             btn_loading: "Loading...",
-            btn_start: "Start Tour",
+            btn_start_tour: "Start Tour",
             btn_completed: "Tour Completed",
             btn_no_tours: "No active tours",
             warn_title: "Warning",
@@ -207,8 +216,6 @@ document.addEventListener('DOMContentLoaded', function() {
             title_review: "Review",
             status_saved: "Data saved",
             desc_review: "Detailed review available later.",
-            alert_review_locked: "Review available after tour ends.",
-            alert_soon: "Soon",
             about_platform: "About",
             about_desc: "Unique platform for Uzbekistan.",
             cert_modal_title: "My Certificates",
@@ -232,15 +239,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 el.textContent = translations[currentLang][key];
             }
         });
-        // Placeholders
-        const nameInput = document.getElementById('full-name-input');
-        if(nameInput) nameInput.placeholder = t('ph_name');
-        const schoolInput = document.getElementById('school-input');
-        if(schoolInput) schoolInput.placeholder = t('ph_school');
-        
+        const phs = ['#full-name-input'];
+        phs.forEach(id => {
+            const el = document.querySelector(id);
+            if(el) el.placeholder = t('ph_name');
+        });
+        const schs = ['#school-input'];
+        schs.forEach(id => {
+            const el = document.querySelector(id);
+            if(el) el.placeholder = t('ph_school');
+        });
         // Active Lang Button
         document.querySelectorAll('.lang-opt').forEach(el => el.classList.remove('active'));
-        // Find button with text matching current lang code and activate it
         const buttons = document.querySelectorAll('.lang-opt');
         buttons.forEach(btn => {
             if(btn.textContent.toLowerCase() === currentLang || (currentLang==='en' && btn.textContent==='EN')) {
@@ -253,7 +263,7 @@ document.addEventListener('DOMContentLoaded', function() {
         currentLang = lang;
         localStorage.setItem('app_lang', lang);
         applyTranslations();
-        checkProfileAndTour(); // Обновить интерфейс (приветствие и т.д.)
+        checkProfileAndTour(); // Обновить интерфейс
     }
 
     // === 4. РЕГИОНЫ (UZBEK LATIN) ===
@@ -321,15 +331,13 @@ document.addEventListener('DOMContentLoaded', function() {
           if (userData.name) {
              document.getElementById('home-user-name').textContent = userData.name.split(' ')[0];
           }
-          // Если данные есть - профиль только для чтения (Кабинет)
-          // Блокируем поля
-          lockProfileForm();
+          if (userData.avatar_url) document.getElementById('header-avatar').src = userData.avatar_url;
           
-          showScreen('home-screen');
+          showScreen('home-screen'); // Сразу на главную
       } else {
           // Если юзера нет - профиль открыт для редактирования (Регистрация)
-          unlockProfileForm();
           showScreen('profile-screen');
+          unlockProfileForm();
       }
 
       // 2. Проверяем Туры
@@ -360,7 +368,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function lockProfileForm() {
         // Блокируем все инпуты
         document.querySelectorAll('#profile-screen input, #profile-screen select').forEach(el => el.disabled = true);
-        // Скрываем кнопку Сохранить
+        // Скрываем кнопку Сохранить/Начать
         document.getElementById('save-profile').classList.add('hidden');
         // Показываем кнопку Назад (чтобы вернуться из кабинета на главную)
         document.getElementById('profile-back-btn').classList.remove('hidden');
@@ -370,12 +378,14 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('error-review-btn-container').classList.remove('hidden');
         // Скрываем галочку согласия (уже согласился)
         document.getElementById('consent-block').style.display = 'none';
+        // Скрываем предупреждение о имени
+        document.getElementById('name-warning').style.display = 'none';
     }
 
     function unlockProfileForm() {
         // Разблокируем
         document.querySelectorAll('#profile-screen input, #profile-screen select').forEach(el => el.disabled = false);
-        document.getElementById('district-select').disabled = true; // Сначала ждем регион
+        document.getElementById('district-select').disabled = true; 
         // Показываем Сохранить
         document.getElementById('save-profile').classList.remove('hidden');
         // Скрываем Назад (так как еще некуда идти)
@@ -383,6 +393,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('profile-locked-msg').classList.add('hidden');
         document.getElementById('error-review-btn-container').classList.add('hidden');
         document.getElementById('consent-block').style.display = 'flex';
+        document.getElementById('name-warning').style.display = 'block';
     }
 
     function fillProfileForm(data) {
@@ -441,19 +452,17 @@ document.addEventListener('DOMContentLoaded', function() {
           
           document.getElementById('home-user-name').textContent = data.name.split(' ')[0];
           
-          // Блокируем после сохранения
-          lockProfileForm();
           showScreen('home-screen');
           checkProfileAndTour();
       } catch (e) {
           alert('Error: ' + e.message);
           btn.disabled = false;
-          btn.innerHTML = t('btn_save');
+          btn.innerHTML = t('btn_start');
       } 
     });
 
-    // Работа над ошибками
-    window.openErrorReview = async function() {
+    // Работа над ошибками (МОДАЛЬНОЕ ОКНО)
+    window.openErrorReviewModal = async function() {
         if(!tourCompleted) {
             alert(t('alert_soon')); 
             return;
@@ -464,7 +473,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        showScreen('error-review-full-screen');
+        document.getElementById('error-review-modal').classList.remove('hidden');
         const container = document.getElementById('error-list-container');
         container.innerHTML = `<p style="text-align:center; margin-top:20px;">${t('btn_loading')}</p>`;
 
@@ -504,7 +513,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // === ТУР И ВОПРОСЫ ===
+    // === 9. ТУР И ВОПРОСЫ ===
     async function handleStartClick() {
         const btn = document.getElementById('main-action-btn');
         btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('btn_loading')}`;
@@ -653,6 +662,9 @@ document.addEventListener('DOMContentLoaded', function() {
       const nextBtn = document.getElementById('next-button');
       nextBtn.disabled = true;
       
+      // Аналитика
+      const timeSpent = Math.round((Date.now() - questionStartTime) / 1000); 
+      
       const q = questions[currentQuestionIndex];
       const questionIdNumber = Number(q.id);
 
@@ -708,7 +720,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // === PDF GENERATION ===
-    // Замените эти ссылки на свои!
+    // Замените на ваши ссылки!
     const CERT_TEMPLATE_URL = 'https://fgwnqxumukkgtzentlxr.supabase.co/storage/v1/object/public/assets/certificate_template.pdf'; 
     const FONT_URL = 'https://fgwnqxumukkgtzentlxr.supabase.co/storage/v1/object/public/assets/Roboto-Bold.ttf';
 
@@ -811,198 +823,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('certs-modal').classList.remove('hidden');
     }
 
-    // === ЛИДЕРБОРД ===
-    window.setLeaderboardFilter = function(filter) {
-        currentLbFilter = filter;
-        document.querySelectorAll('.lb-segment').forEach(el => el.classList.remove('active'));
-        document.getElementById(`filter-${filter}`).classList.add('active');
-        loadLeaderboard();
-    }
-
-    async function loadLeaderboard() {
-        const podium = document.getElementById('lb-podium');
-        const listEl = document.getElementById('lb-list');
-        const stickyBar = document.getElementById('lb-user-sticky');
-        
-        if(podium) podium.innerHTML = `<p style="text-align:center;width:100%;color:#999;margin-top:20px;"><i class="fa-solid fa-spinner fa-spin"></i> ${t('btn_loading')}</p>`;
-        if(listEl) listEl.innerHTML = '';
-
-        if (!currentUserData && internalDbId) {
-             const { data } = await supabaseClient.from('users').select('*').eq('id', internalDbId).single();
-             currentUserData = data;
-        }
-
-        let progressData = [];
-
-        try {
-            if (currentLbFilter === 'republic') {
-                let query = supabaseClient.from('tour_progress').select('user_id, score').order('score', { ascending: false }).limit(50);
-                if (currentTourId) query = query.eq('tour_id', currentTourId);
-                const { data, error } = await query;
-                if(error) throw error;
-                progressData = data;
-            } else {
-                if (!currentUserData) {
-                    podium.innerHTML = '<p style="text-align:center;width:100%;color:#999;">Profilni to\'ldiring</p>';
-                    return;
-                }
-                let userQuery = supabaseClient.from('users').select('id');
-                if (currentLbFilter === 'region') userQuery = userQuery.eq('region', currentUserData.region);
-                else if (currentLbFilter === 'district') userQuery = userQuery.eq('district', currentUserData.district);
-
-                let pQuery = supabaseClient.from('tour_progress').select('user_id, score').order('score', { ascending: false }).limit(300);
-                if (currentTourId) pQuery = pQuery.eq('tour_id', currentTourId);
-                const { data: pData } = await pQuery;
-                if (pData && pData.length > 0) {
-                    const pUserIds = pData.map(p => p.user_id);
-                    const { data: localUsers } = await userQuery.in('id', pUserIds);
-                    if (localUsers) {
-                        const localIds = localUsers.map(u => u.id);
-                        progressData = pData.filter(p => localIds.includes(p.user_id));
-                    }
-                }
-            }
-
-            if (!progressData || progressData.length === 0) {
-                 podium.innerHTML = '<p style="text-align:center;width:100%;color:#999;margin-top:20px;">Natijalar yo\'q</p>';
-                 return;
-            }
-
-            const userIdsToFetch = [...new Set(progressData.map(p => p.user_id))];
-            let usersData = [];
-            const { data, error } = await supabaseClient
-                .from('users')
-                .select('id, name, class, avatar_url, region, district, school') 
-                .in('id', userIdsToFetch);
-            if (error) throw error;
-            usersData = data;
-
-            let fullList = progressData.map(p => {
-                const u = usersData.find(user => user.id === p.user_id);
-                if (!u) return null;
-                return {
-                    id: u.id,
-                    name: u.name || 'Anonim', 
-                    classVal: u.class || '?',
-                    region: u.region,
-                    district: u.district,
-                    school: u.school,
-                    avatarUrl: u.avatar_url || null,
-                    score: p.score,
-                    isMe: String(u.id) === String(internalDbId) 
-                };
-            }).filter(item => item !== null);
-
-            fullList.sort((a, b) => b.score - a.score);
-            renderLeaderboardUI(fullList, podium, listEl);
-            updateMyStickyBar(fullList, stickyBar);
-
-        } catch (e) {
-            console.error(e);
-            podium.innerHTML = '<p style="text-align:center;color:red;">Error</p>';
-        }
-    }
-
-    function renderLeaderboardUI(list, podiumEl, listEl) {
-        podiumEl.innerHTML = '';
-        listEl.innerHTML = '';
-        const top3 = [list[1], list[0], list[2]]; 
-        const ranks = ['second', 'first', 'third'];
-        const rkClasses = ['rk-2', 'rk-1', 'rk-3'];
-        const realRanks = [2, 1, 3];
-
-        const getSubHtml = (player) => {
-            let parts = [];
-            if (currentLbFilter === 'republic' && player.region) {
-                parts.push(`<span class="meta-row"><i class="fa-solid fa-location-dot"></i> ${player.region}</span>`);
-            }
-            if ((currentLbFilter === 'republic' || currentLbFilter === 'region') && player.district) {
-                parts.push(`<span class="meta-row"><i class="fa-solid fa-map-pin"></i> ${player.district}</span>`);
-            }
-            if(player.school) {
-                parts.push(`<span class="meta-row"><i class="fa-solid fa-school"></i> ${player.school}</span>`);
-            }
-            parts.push(`<span class="meta-row"><i class="fa-solid fa-user-graduate"></i> ${player.classVal}-sinf</span>`);
-            return parts.join(''); 
-        };
-
-        top3.forEach((player, i) => {
-            if (player) {
-                const avatarHtml = player.avatarUrl 
-                    ? `<img src="${player.avatarUrl}" class="winner-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1077/1077114.png'">`
-                    : `<div class="winner-img" style="background:#E1E1E6; display:flex; align-items:center; justify-content:center; font-size:24px; color:#666;">${player.name[0]}</div>`;
-
-                // Имя (2 слова)
-                const displayName = player.name.split(' ').slice(0, 2).join(' ');
-
-                let html = `
-                    <div class="winner ${ranks[i]}">
-                        <div class="avatar-wrapper">
-                            ${avatarHtml}
-                            <div class="rank-circle ${rkClasses[i]}">${realRanks[i]}</div>
-                        </div>
-                        <div class="winner-name">${displayName}</div>
-                        <div class="winner-class">
-                            ${getSubHtml(player)}
-                        </div>
-                        <div class="winner-score">${player.score}</div>
-                    </div>
-                `;
-                podiumEl.insertAdjacentHTML('beforeend', html);
-            } else {
-                 podiumEl.insertAdjacentHTML('beforeend', `<div class="winner ${ranks[i]}" style="opacity:0"></div>`);
-            }
-        });
-
-        list.slice(3).forEach((player, index) => {
-            const realRank = index + 4;
-            const avatarHtml = player.avatarUrl 
-                ? `<img src="${player.avatarUrl}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
-                : '';
-            const fallbackAvatar = `<div class="no-img">${player.name[0]}</div>`;
-            
-            const displayName = player.name.split(' ').slice(0, 2).join(' ');
-
-            let cardStyle = player.isMe ? 'background:#F0F8FF; border:1px solid var(--primary);' : '';
-
-            let html = `
-                <div class="leader-card" style="${cardStyle}">
-                    <div class="l-rank">${realRank}</div>
-                    <div class="l-avatar">
-                        ${avatarHtml}
-                        ${player.avatarUrl ? fallbackAvatar.replace('class="no-img"', 'class="no-img" style="display:none"') : fallbackAvatar}
-                    </div>
-                    <div class="l-info">
-                        <span class="l-name">${displayName}</span>
-                        <div class="l-sub">${getSubHtml(player)}</div>
-                    </div>
-                    <div class="l-score">${player.score}</div>
-                </div>
-            `;
-            listEl.insertAdjacentHTML('beforeend', html);
-        });
-    }
-
     // === LISTENERS ===
-    if (window.Telegram && window.Telegram.WebApp) {
-      Telegram.WebApp.ready();
-      Telegram.WebApp.expand();
-      const user = Telegram.WebApp.initDataUnsafe.user;
-      if (user && user.id) {
-        telegramUserId = Number(user.id);
-        telegramData.firstName = user.first_name;
-        telegramData.lastName = user.last_name;
-        if (user.photo_url) telegramData.photoUrl = user.photo_url;
-        document.getElementById('home-user-name').textContent = telegramData.firstName || 'User';
-      } else {
-        console.warn("No Telegram user found. Running in Test Mode.");
-        if (!localStorage.getItem('test_user_id')) {
-             localStorage.setItem('test_user_id', Math.floor(Math.random() * 1000000000));
-        }
-        telegramUserId = Number(localStorage.getItem('test_user_id'));
-      }
-    }
-
     safeAddListener('leaderboard-btn', 'click', () => {
         showScreen('leaderboard-screen');
         setLeaderboardFilter('republic');
