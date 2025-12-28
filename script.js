@@ -1,16 +1,17 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v63.0 (Better Cabinet UI)');
+    console.log('App Started: v64.0 (Mistake Review Lock + Neutral Avatar)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
     let telegramData = { firstName: null, lastName: null, photoUrl: null, languageCode: null };
     let internalDbId = null; 
     let currentTourId = null;
+    let currentTourEndDate = null; // New variable
     let currentUserData = null;
     let tourQuestionsCache = [];
     let userAnswersCache = [];
     let currentLbFilter = 'republic'; 
-    let currentLang = 'uz'; // Default language is Uzbek
+    let currentLang = 'uz'; 
     let tourCompleted = false;
 
     // === ПЕРЕМЕННЫЕ ТЕСТА ===
@@ -141,7 +142,11 @@ document.addEventListener('DOMContentLoaded', function() {
             del_msg: "Barcha natijalaringiz va reytingdagi o'rningiz o'chib ketadi. Qayta tiklab bo'lmaydi.",
             btn_delete_confirm: "O'chirish",
             del_error_active_tour: "Joriy tur topshirilganligi sababli hisobni o'chirish mumkin emas. Iltimos, tur yakunlanishini kuting.",
-            btn_back: "Orqaga"
+            btn_back: "Orqaga",
+            menu_mistakes: "Xatolar tahlili",
+            menu_mistakes_desc: "Javoblarni ko'rish",
+            lock_review_title: "Tahlil yopiq",
+            lock_review_msg: "Adolatli raqobat uchun xatolar tahlili olimpiada yakunlangandan so'ng ochiladi."
         },
         ru: {
             reg_title: "Регистрация",
@@ -256,7 +261,11 @@ document.addEventListener('DOMContentLoaded', function() {
             del_msg: "Все ваши результаты и место в рейтинге будут удалены безвозвратно.",
             btn_delete_confirm: "Удалить",
             del_error_active_tour: "Удаление невозможно, так как вы уже сдали текущий тур. Дождитесь его завершения.",
-            btn_back: "Назад"
+            btn_back: "Назад",
+            menu_mistakes: "Работа над ошибками",
+            menu_mistakes_desc: "Посмотреть ответы",
+            lock_review_title: "Разбор закрыт",
+            lock_review_msg: "В целях честной игры разбор ошибок станет доступен после окончания олимпиады."
         },
         en: {
             reg_title: "Registration",
@@ -371,7 +380,11 @@ document.addEventListener('DOMContentLoaded', function() {
             del_msg: "All your results and ranking will be lost permanently.",
             btn_delete_confirm: "Delete",
             del_error_active_tour: "Cannot delete account while you have submitted the current tour. Please wait.",
-            btn_back: "Back"
+            btn_back: "Back",
+            menu_mistakes: "Mistake Review",
+            menu_mistakes_desc: "Check answers",
+            lock_review_title: "Review Locked",
+            lock_review_msg: "To ensure fair play, mistake review will be available after the Olympiad ends."
         }
     };
 
@@ -550,6 +563,8 @@ document.addEventListener('DOMContentLoaded', function() {
           updateMainButton('inactive');
       } else {
           currentTourId = tourData.id;
+          currentTourEndDate = tourData.end_date; // SAVE END DATE FOR LOCK CHECK
+          
           if (internalDbId && currentTourId) {
               await fetchStatsData(); 
               const { data: progress } = await supabaseClient.from('tour_progress').select('*').eq('user_id', internalDbId).eq('tour_id', currentTourId).maybeSingle();
@@ -595,7 +610,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'Химия': 'chem', 'Биология': 'bio', 'Информатика': 'it', 'Экономика': 'eco'
         };
         let totalCorrect = 0;
-        let totalTours = 0; // Simple stub logic: if stats > 0 then 1 tour
+        let totalTours = 0; 
         
         for (const [subjName, prefix] of Object.entries(subjectMap)) {
             const stats = calculateSubjectStats(subjName);
@@ -783,7 +798,7 @@ document.addEventListener('DOMContentLoaded', function() {
         top3.forEach((player, i) => {
             if (player) {
                 const avatarHtml = player.avatarUrl 
-                    ? `<img src="${player.avatarUrl}" class="winner-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">`
+                    ? `<img src="${player.avatarUrl}" class="winner-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3135/3135715.png'">`
                     : `<div class="winner-img" style="background:#E1E1E6; display:flex; align-items:center; justify-content:center; font-size:24px; color:#666;">${player.name[0]}</div>`;
 
                 let html = `
@@ -956,6 +971,21 @@ document.addEventListener('DOMContentLoaded', function() {
             alert(t('error') + ': ' + e.message);
             btn.disabled = false;
             btn.innerHTML = t('btn_delete_confirm');
+        }
+    });
+
+    // === ЛОГИКА РАЗБОРА ОШИБОК ===
+    safeAddListener('btn-mistakes', 'click', () => {
+        const now = new Date();
+        const end = currentTourEndDate ? new Date(currentTourEndDate) : null;
+        
+        // ЕСЛИ ТУР ЕЩЕ ИДЕТ (ИЛИ ДАТА НЕИЗВЕСТНА) - БЛОКИРУЕМ
+        if (end && now < end) {
+            document.getElementById('review-unlock-date').textContent = end.toLocaleDateString() + ' ' + end.toLocaleTimeString().slice(0,5);
+            document.getElementById('review-lock-modal').classList.remove('hidden');
+        } else {
+            // ТУР ЗАКОНЧЕН - ОТКРЫВАЕМ
+            alert("Tahlil uchun ruxsat ochiq (Keyingi yangilanishda bu yerda to'liq tahlil oynasi bo'ladi).");
         }
     });
 
