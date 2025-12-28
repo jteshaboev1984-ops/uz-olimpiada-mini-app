@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v61.0 (Multilingual + Full Uzbek Data)');
+    console.log('App Started: v61.1 (Fix: Quiz Variables Restored)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -11,6 +11,13 @@ document.addEventListener('DOMContentLoaded', function() {
     let userAnswersCache = [];
     let currentLbFilter = 'republic'; 
     let currentLang = 'uz'; // Default language is Uzbek
+
+    // === ПЕРЕМЕННЫЕ ТЕСТА (Добавлены обратно) ===
+    let questions = [];
+    let currentQuestionIndex = 0;
+    let correctCount = 0;
+    let timerInterval = null;
+    let selectedAnswer = null;
 
     // === НАСТРОЙКИ SUPABASE ===
     const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
@@ -348,14 +355,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Update selects placeholders
         updateSelectPlaceholders();
-        
-        // Update main button if it exists and logic permits
-        const mainBtn = document.getElementById('main-action-btn');
-        if (mainBtn && currentTourId) {
-             // We'll let the main logic update status, but if it's disabled/inactive, we can refresh text here if needed.
-             // For simplicity, re-run checkProfileAndTour if we want dynamic update, but that might be heavy.
-             // Instead, let's just leave it, user will click or it updates on load.
-        }
     }
 
     function updateSelectPlaceholders() {
