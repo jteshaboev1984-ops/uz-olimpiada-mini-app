@@ -1,9 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-/* ... (ВЕСЬ КОД CSS ОСТАЕТСЯ БЕЗ ИЗМЕНЕНИЙ ИЗ ВЕРСИИ 54) ... */
-/* Просто убедись, что подключил style.css?v=55 в index.html */
-/* Я привожу полный код для надежности: */
-
 :root {
     --primary: #007AFF;
     --primary-dark: #0056b3;
@@ -32,11 +28,12 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .btn-primary:active { transform: scale(0.98); background: var(--primary-dark); }
 .btn-primary:disabled { background: #B0C4DE; cursor: not-allowed; opacity: 0.7; }
 .btn-secondary { width: 100%; background: #EEF1F4; color: var(--primary); padding: 14px; border: none; border-radius: 14px; font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
-.btn-danger-box { width: 100%; background: #FFF2F2; color: var(--danger); padding: 14px; border: 1px solid #FFD6D6; border-radius: 14px; font-weight: 600; }
+.btn-danger-box { width: 100%; background: #FFF2F2; color: var(--danger); padding: 14px; border: 1px solid #FFD6D6; border-radius: 14px; font-weight: 600; cursor: pointer;}
+.btn-text-danger { background: none; color: var(--danger); font-weight: 600; font-size: 14px; padding: 10px; border: none; cursor: pointer; margin-top: 20px; opacity: 0.7;}
 .bottom-fixed { position: fixed; bottom: 0; left: 0; width: 100%; padding: 16px 20px 30px; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid var(--border); z-index: 100; display: flex; gap: 10px; }
 .bottom-fixed.column { flex-direction: column; }
 
-/* PROFILE */
+/* PROFILE (REGISTRATION) */
 .header-profile { background: white; padding: 20px 20px 30px; border-radius: 0 0 24px 24px; text-align: center; margin-bottom: 20px; box-shadow: var(--shadow); }
 .user-avatar-small { width: 60px; height: 60px; background: #F0F8FF; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: var(--primary); }
 .header-profile h1 { font-size: 22px; font-weight: 800; }
@@ -58,7 +55,37 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .checkbox-card input { width: 20px; height: 20px; accent-color: var(--primary); }
 .checkbox-text { font-size: 14px; color: var(--text-main); display: flex; flex-direction: column; }
 .checkbox-text span { font-size: 11px; color: var(--text-sec); }
-.locked-status-btn { text-align: center; color: var(--success); font-weight: 600; font-size: 14px; padding: 10px; background: #F0FFF4; border-radius: 12px; margin-bottom: 10px; border: 1px solid #D1FAE5; }
+.locked-status-btn { text-align: center; color: var(--text-sec); font-weight: 600; font-size: 14px; padding: 10px; background: #F9F9F9; border-radius: 12px; margin-bottom: 10px; border: 1px solid #EEE; display:flex; align-items:center; justify-content:center; gap:8px; }
+
+/* NEW CABINET SCREEN */
+.cabinet-hero { background: linear-gradient(135deg, #007AFF 0%, #0056b3 100%); padding: 20px 20px 50px; color: white; border-radius: 0 0 30px 30px; position: relative; text-align: center; }
+.cabinet-top-nav { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+.close-icon-white { width: 32px; height: 32px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.hero-avatar { width: 90px; height: 90px; border-radius: 50%; border: 4px solid rgba(255,255,255,0.3); margin: 0 auto 15px; overflow: hidden; background: white; }
+.hero-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.hero-content h2 { font-size: 24px; font-weight: 800; margin-bottom: 5px; }
+.id-badge { background: rgba(255,255,255,0.2); display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 13px; font-weight: 600; letter-spacing: 0.5px; }
+
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.stat-box { background: white; padding: 15px 10px; border-radius: 18px; text-align: center; box-shadow: var(--shadow); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.stat-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; margin-bottom: 8px; }
+.stat-val { font-size: 18px; font-weight: 800; color: #000; line-height: 1.2; }
+.stat-label { font-size: 11px; color: var(--text-sec); font-weight: 600; margin-top: 2px; }
+
+.settings-list { background: white; border-radius: 18px; padding: 0 16px; box-shadow: var(--shadow); display: flex; flex-direction: column; }
+.settings-item { display: flex; align-items: center; padding: 16px 0; border-bottom: 1px solid #F2F2F7; cursor: pointer; transition: 0.2s; }
+.settings-item:last-child { border-bottom: none; }
+.settings-item:active { opacity: 0.6; }
+.set-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-right: 14px; flex-shrink: 0; }
+.set-icon.blue { background: #E6F2FF; color: var(--primary); }
+.set-icon.green { background: #E8F5E9; color: var(--success); }
+.set-icon.gold { background: #FFF9E6; color: #FFD60A; }
+.set-icon.gray { background: #F2F2F7; color: #8E8E93; }
+.set-text { flex: 1; }
+.set-text h4 { font-size: 15px; font-weight: 600; color: #000; margin-bottom: 2px; }
+.set-text p { font-size: 12px; color: var(--text-sec); }
+.lang-select-clean { border: none; background: transparent; font-size: 13px; font-weight: 600; color: var(--primary); outline: none; padding: 0; margin: 0; width: 100%; -webkit-appearance: none; }
+.footer-info { text-align: center; margin-top: 30px; font-size: 12px; color: #C7C7CC; }
 
 /* HOME */
 .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: white; position: sticky; top: 0; z-index: 50; border-bottom: 1px solid rgba(0,0,0,0.05); }
@@ -144,7 +171,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .error-review-card { text-align: left; background: white; padding: 20px; border-radius: 16px; border: 1px solid #E5E5EA; }
 .review-header { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; margin-bottom: 5px; }
 
-/* LEADERBOARD & V54 FIXES */
+/* LEADERBOARD */
 .lb-header-bg { background: white; padding-bottom: 10px; border-radius: 0 0 24px 24px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
 .lb-nav { display: flex; align-items: center; padding: 16px 20px; justify-content: center; position: relative; margin-bottom: 10px; }
 .back-btn-simple { position: absolute; left: 20px; color: var(--primary); font-size: 24px; cursor: pointer; padding: 5px; }
@@ -167,34 +194,13 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .rk-2 { background: #C0C0C0; }
 .rk-3 { background: #CD7F32; }
 .winner-name { font-weight: 700; font-size: 13px; color: #000; margin-bottom: 2px; text-align: center; line-height: 1.2; width: 100%; white-space: normal; max-width: 100px; }
-
-/* ОБНОВЛЕННЫЕ СТИЛИ ПОДИУМА (v54) - РОВНЫЙ СТОЛБИК ПО ЦЕНТРУ */
-.winner-class { 
-    font-size: 10px; color: #8E8E93; margin-bottom: 4px; 
-    /* Делаем блок inline-flex, чтобы он ужался по контенту */
-    display: inline-flex; 
-    flex-direction: column; 
-    align-items: flex-start; /* Выравнивание внутри блока - влево */
-    justify-content: center;
-    gap: 2px;
-}
-.winner-class .meta-row { 
-    display: flex; align-items: center; gap: 4px; 
-    white-space: nowrap; /* Не переносить строки внутри данных */
-}
+.winner-class { font-size: 10px; color: #8E8E93; margin-bottom: 4px; display: inline-flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; }
+.winner-class .meta-row { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
 .winner-class .meta-row i { font-size: 9px; margin-right: 2px; color: var(--primary); opacity: 0.8; width: 12px; text-align: center; }
-
 .winner-score { font-weight: 800; font-size: 16px; color: var(--primary); }
 .lb-list-scroll { padding: 10px 16px 100px; background: #fff; min-height: 50vh; }
 .list-header { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: #8E8E93; margin-bottom: 8px; }
-
-/* LEADERBOARD CARD */
-.leader-card { 
-    background: white; border-radius: 16px; padding: 12px 16px; 
-    display: flex; align-items: flex-start; 
-    gap: 12px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); 
-    border: 1px solid #f0f0f0; min-height: 64px; height: auto; 
-}
+.leader-card { background: white; border-radius: 16px; padding: 12px 16px; display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #f0f0f0; min-height: 64px; height: auto; }
 .l-rank { font-size: 16px; font-weight: 600; color: #8E8E93; width: 24px; text-align: center; flex-shrink: 0; margin-top: 4px; }
 .l-avatar { flex-shrink: 0; margin-top: 0; }
 .l-avatar img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #eee; }
@@ -205,8 +211,6 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .meta-row { display: flex; align-items: center; gap: 5px; } 
 .meta-row i { width: 14px; text-align: center; font-size: 10px; color: #bbb; }
 .l-score { font-weight: 700; font-size: 16px; color: #000; flex-shrink: 0; margin-left: 5px; align-self: flex-start; margin-top: 4px; }
-
-/* BOTTOM STICKY BAR */
 .lb-sticky-footer { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #E5E5EA; padding: 12px 20px 30px; display: flex; align-items: center; justify-content: space-between; z-index: 999; box-shadow: 0 -4px 15px rgba(0,0,0,0.05); }
 .my-rank-badge { background: var(--primary); color: white; padding: 4px 10px; border-radius: 8px; font-weight: 700; font-size: 14px; margin-right: 12px; }
 .my-info { flex: 1; text-align: left; }
