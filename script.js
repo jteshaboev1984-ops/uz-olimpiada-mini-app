@@ -1,28 +1,384 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v60.0 (Stable: Client Auth + Secure Answers)');
+    console.log('App Started: v61.0 (Multilingual + Full Uzbek Data)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
-    let telegramData = { firstName: null, lastName: null, photoUrl: null };
+    let telegramData = { firstName: null, lastName: null, photoUrl: null, languageCode: null };
     let internalDbId = null; 
     let currentTourId = null;
     let currentUserData = null;
     let tourQuestionsCache = [];
     let userAnswersCache = [];
     let currentLbFilter = 'republic'; 
+    let currentLang = 'uz'; // Default language is Uzbek
 
     // === НАСТРОЙКИ SUPABASE ===
     const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
     const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI';
     const { createClient } = supabase;
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
-  
-    // === ИНИЦИАЛИЗАЦИЯ TELEGRAM ===
+
+    // === СЛОВАРЬ ПЕРЕВОДОВ ===
+    const translations = {
+        uz: {
+            profile_title: "Profil",
+            profile_subtitle: "Ishtirokchi ma'lumotlari",
+            participant_label: "Ishtirokchi",
+            label_class: "Sinf",
+            label_region: "Viloyat",
+            label_district: "Tuman / Shahar",
+            label_school: "Maktab",
+            consent_title: "Ma'lumotlarni qayta ishlashga rozilik",
+            consent_desc: "Reyting uchun.",
+            btn_save: "Saqlash",
+            profile_locked: "Profil to'ldirilgan",
+            btn_to_main: "Bosh sahifaga",
+            greeting_hi: "Salom",
+            greeting_sub: "Olimpiadaga xush kelibsiz.",
+            btn_leaderboard: "Reyting",
+            btn_about: "Loyiha haqida",
+            subjects_title: "Fanlar",
+            subj_math: "Matematika",
+            subj_eng: "Ingliz tili",
+            subj_phys: "Fizika",
+            subj_chem: "Kimyo",
+            subj_bio: "Biologiya",
+            subj_it: "Informatika",
+            subj_eco: "Iqtisodiyot",
+            cert_title: "Sertifikat",
+            cert_desc: "PDF yuklab olish",
+            res_title: "Resurslar",
+            res_vid_title: "Video darslar",
+            res_vid_desc: "Masalalar yechimi",
+            res_ch_title: "Kanal",
+            res_ch_desc: "Yangiliklar",
+            res_grp_title: "Ishtirokchilar chati",
+            res_grp_desc: "Muhokama",
+            loading: "Yuklanmoqda...",
+            btn_exit: "Chiqish",
+            btn_next: "Keyingi",
+            res_screen_title: "Tur natijasi",
+            res_finished: "Tur yakunlandi!",
+            res_saved: "Natijangiz saqlandi",
+            stat_tour: "TUR",
+            stat_total: "JAMI",
+            stat_correct: "TO'G'RI",
+            review_title: "Xatolar ustida ishlash",
+            data_saved: "Ma'lumotlar saqlandi",
+            review_desc: "Batafsil tahlil natijalar e'lon qilingandan so'ng mavjud bo'ladi.",
+            btn_download_cert: "Sertifikatni yuklash",
+            lb_title: "Reyting",
+            lb_republic: "Respublika",
+            lb_region: "Viloyat",
+            lb_district: "Tuman",
+            lb_participant: "ISHTIROKCHI",
+            lb_score: "BALL",
+            you: "Siz",
+            lb_points: "BALL",
+            warn_title: "Diqqat",
+            warn_msg_1: "Sizda",
+            warn_msg_2: "ta savol uchun",
+            warn_msg_3: "daqiqa vaqt bor.",
+            warn_hint: "Turni qayta ishlash imkonsiz.",
+            btn_start: "Boshlash",
+            btn_cancel: "Bekor qilish",
+            btn_close: "Yopish",
+            my_certs: "Mening sertifikatlarim",
+            tour_passed_title: "Tur yakunlangan!",
+            tour_passed_msg: "Siz ushbu bosqich javoblarini topshirgansiz. Natijalar Reyting bo'limida.",
+            btn_channel: "Kanalga o'tish",
+            profile_locked_title: "Profil to'ldirilgan",
+            profile_locked_msg: "Reyting to'g'ri shakllanishi uchun ma'lumotlar saqlab qo'yilgan.",
+            locked_alert_title: "O'zgartirish imkonsiz",
+            locked_alert_desc: "Olimpiada yakunlanguncha tahrirlash o'chirilgan.",
+            btn_understood: "Tushunarli",
+            about_platform: "Platforma haqida",
+            about_text: "O'zbekiston o'quvchilari uchun <b>Cambridge IGCSE</b>, <b>SAT</b> va <b>IELTS</b> standartlarini birlashtirgan noyob platforma.",
+            about_features: "Xususiyatlar",
+            feat_1: "Xalqaro standartlar",
+            feat_2: "Tezkor natijalar",
+            feat_3: "Hududlar bo'yicha reyting",
+            feat_4: "Ishtirok sertifikatlari",
+            select_region: "Viloyatni tanlang",
+            select_district: "Tumanni tanlang",
+            select_class: "Sinfni tanlang",
+            class_s: "sinf",
+            save_saving: "Saqlash...",
+            alert_fill: "Barcha maydonlarni to'ldiring!",
+            no_active_tour: "Faol turlar yo'q",
+            tour_completed_btn: "Tur yakunlangan",
+            start_tour_btn: "Turni boshlash",
+            minutes: "daqiqa",
+            questions: "savol",
+            correct_txt: "to'g'ri",
+            no_data: "Ma'lumot yo'q",
+            curr_tour: "Joriy tur",
+            total_q: "Jami savollar",
+            school_prefix: "Maktab",
+            anonymous: "Anonim",
+            city_tashkent: "Toshkent sh.",
+            saving_ans: "Saqlash...",
+            repeat: "Qayta urinish",
+            error: "Xatolik",
+            answer_placeholder: "Javobni kiriting..."
+        },
+        ru: {
+            profile_title: "Профиль",
+            profile_subtitle: "Данные участника",
+            participant_label: "Участник",
+            label_class: "Класс",
+            label_region: "Регион",
+            label_district: "Район / Город",
+            label_school: "Школа",
+            consent_title: "Согласие на обработку",
+            consent_desc: "Для рейтинга.",
+            btn_save: "Сохранить",
+            profile_locked: "Профиль заполнен",
+            btn_to_main: "На главную",
+            greeting_hi: "Привет",
+            greeting_sub: "Добро пожаловать на олимпиаду.",
+            btn_leaderboard: "Рейтинг",
+            btn_about: "О проекте",
+            subjects_title: "Предметы",
+            subj_math: "Математика",
+            subj_eng: "Английский",
+            subj_phys: "Физика",
+            subj_chem: "Химия",
+            subj_bio: "Биология",
+            subj_it: "Информатика",
+            subj_eco: "Экономика",
+            cert_title: "Сертификат",
+            cert_desc: "Скачать PDF",
+            res_title: "Ресурсы",
+            res_vid_title: "Видеоуроки",
+            res_vid_desc: "Разборы задач",
+            res_ch_title: "Канал",
+            res_ch_desc: "Новости",
+            res_grp_title: "Чат участников",
+            res_grp_desc: "Обсуждение",
+            loading: "Загрузка...",
+            btn_exit: "Выход",
+            btn_next: "Далее",
+            res_screen_title: "Результат тура",
+            res_finished: "Тур завершён!",
+            res_saved: "Ваш результат сохранен",
+            stat_tour: "ТУР",
+            stat_total: "ВСЕГО",
+            stat_correct: "ВЕРНО",
+            review_title: "Работа над ошибками",
+            data_saved: "Данные сохранены",
+            review_desc: "Детальный разбор будет доступен после подведения итогов.",
+            btn_download_cert: "Скачать сертификат",
+            lb_title: "Лидерборд",
+            lb_republic: "Республика",
+            lb_region: "Регион",
+            lb_district: "Район",
+            lb_participant: "УЧАСТНИК",
+            lb_score: "БАЛЛЫ",
+            you: "Вы",
+            lb_points: "БАЛЛЫ",
+            warn_title: "Предупреждение",
+            warn_msg_1: "У вас будет",
+            warn_msg_2: "на",
+            warn_msg_3: "вопросов.",
+            warn_hint: "Повтор тура невозможен.",
+            btn_start: "Начать",
+            btn_cancel: "Отмена",
+            btn_close: "Закрыть",
+            my_certs: "Мои сертификаты",
+            tour_passed_title: "Тур уже пройден!",
+            tour_passed_msg: "Вы уже сдали ответы на текущий этап. Результаты доступны в Лидерборде.",
+            btn_channel: "Перейти в канал",
+            profile_locked_title: "Профиль заполнен",
+            profile_locked_msg: "Данные участника зафиксированы для формирования рейтинга.",
+            locked_alert_title: "Изменение невозможно",
+            locked_alert_desc: "До окончания олимпиады редактирование данных отключено.",
+            btn_understood: "Понятно",
+            about_platform: "О платформе",
+            about_text: "Уникальная платформа для школьников Узбекистана, объединяющая стандарты <b>Cambridge IGCSE</b>, <b>SAT</b> и <b>IELTS</b>.",
+            about_features: "Особенности",
+            feat_1: "Международные стандарты",
+            feat_2: "Мгновенные результаты",
+            feat_3: "Рейтинг по регионам",
+            feat_4: "Сертификаты участия",
+            select_region: "Выберите регион",
+            select_district: "Выберите район",
+            select_class: "Выберите класс",
+            class_s: "класс",
+            save_saving: "Сохранение...",
+            alert_fill: "Заполните все поля!",
+            no_active_tour: "Нет активных туров",
+            tour_completed_btn: "Текущий тур пройден",
+            start_tour_btn: "Начать тур",
+            minutes: "минут",
+            questions: "вопросов",
+            correct_txt: "верно",
+            no_data: "Нет данных",
+            curr_tour: "Текущий тур",
+            total_q: "Всего вопросов",
+            school_prefix: "Школа",
+            anonymous: "Аноним",
+            city_tashkent: "г. Ташкент",
+            saving_ans: "Сохранение...",
+            repeat: "Повторить",
+            error: "Ошибка",
+            answer_placeholder: "Введите ответ..."
+        },
+        en: {
+            profile_title: "Profile",
+            profile_subtitle: "Participant Data",
+            participant_label: "Participant",
+            label_class: "Grade",
+            label_region: "Region",
+            label_district: "District / City",
+            label_school: "School",
+            consent_title: "Data Processing Consent",
+            consent_desc: "For leaderboard ranking.",
+            btn_save: "Save",
+            profile_locked: "Profile Completed",
+            btn_to_main: "Go to Home",
+            greeting_hi: "Hi",
+            greeting_sub: "Welcome to the Olympiad.",
+            btn_leaderboard: "Leaderboard",
+            btn_about: "About",
+            subjects_title: "Subjects",
+            subj_math: "Math",
+            subj_eng: "English",
+            subj_phys: "Physics",
+            subj_chem: "Chemistry",
+            subj_bio: "Biology",
+            subj_it: "Computer Science",
+            subj_eco: "Economics",
+            cert_title: "Certificate",
+            cert_desc: "Download PDF",
+            res_title: "Resources",
+            res_vid_title: "Video Lessons",
+            res_vid_desc: "Problem solving",
+            res_ch_title: "Channel",
+            res_ch_desc: "News",
+            res_grp_title: "Chat Group",
+            res_grp_desc: "Discussion",
+            loading: "Loading...",
+            btn_exit: "Exit",
+            btn_next: "Next",
+            res_screen_title: "Tour Result",
+            res_finished: "Tour Finished!",
+            res_saved: "Your result is saved",
+            stat_tour: "TOUR",
+            stat_total: "TOTAL",
+            stat_correct: "CORRECT",
+            review_title: "Mistake Review",
+            data_saved: "Data Saved",
+            review_desc: "Detailed review will be available after results.",
+            btn_download_cert: "Download Certificate",
+            lb_title: "Leaderboard",
+            lb_republic: "Republic",
+            lb_region: "Region",
+            lb_district: "District",
+            lb_participant: "PARTICIPANT",
+            lb_score: "SCORE",
+            you: "You",
+            lb_points: "POINTS",
+            warn_title: "Warning",
+            warn_msg_1: "You have",
+            warn_msg_2: "for",
+            warn_msg_3: "questions.",
+            warn_hint: "Retaking the tour is not possible.",
+            btn_start: "Start",
+            btn_cancel: "Cancel",
+            btn_close: "Close",
+            my_certs: "My Certificates",
+            tour_passed_title: "Tour Completed!",
+            tour_passed_msg: "You have already submitted answers. Check the Leaderboard.",
+            btn_channel: "Go to Channel",
+            profile_locked_title: "Profile Locked",
+            profile_locked_msg: "Participant data is locked for ranking accuracy.",
+            locked_alert_title: "Editing Disabled",
+            locked_alert_desc: "Changes are not allowed until Olympiad ends.",
+            btn_understood: "Understood",
+            about_platform: "About Platform",
+            about_text: "Unique platform for Uzbekistan students combining <b>Cambridge IGCSE</b>, <b>SAT</b>, and <b>IELTS</b> standards.",
+            about_features: "Features",
+            feat_1: "International Standards",
+            feat_2: "Instant Results",
+            feat_3: "Regional Ranking",
+            feat_4: "Participation Certificates",
+            select_region: "Select Region",
+            select_district: "Select District",
+            select_class: "Select Grade",
+            class_s: "grade",
+            save_saving: "Saving...",
+            alert_fill: "Fill in all fields!",
+            no_active_tour: "No Active Tours",
+            tour_completed_btn: "Tour Completed",
+            start_tour_btn: "Start Tour",
+            minutes: "minutes",
+            questions: "questions",
+            correct_txt: "correct",
+            no_data: "No data",
+            curr_tour: "Current Tour",
+            total_q: "Total Questions",
+            school_prefix: "School",
+            anonymous: "Anonymous",
+            city_tashkent: "Tashkent City",
+            saving_ans: "Saving...",
+            repeat: "Retry",
+            error: "Error",
+            answer_placeholder: "Enter answer..."
+        }
+    };
+
+    // Helper function to get translation
+    function t(key) {
+        return translations[currentLang][key] || key;
+    }
+
+    function setLanguage(lang) {
+        if (!translations[lang]) lang = 'uz'; // Fallback to Uzbek
+        currentLang = lang;
+        document.getElementById('lang-switcher').value = lang;
+        
+        // Update all data-i18n elements
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (translations[lang][key]) {
+                el.innerHTML = translations[lang][key]; // innerHTML to support <b> tags
+            }
+        });
+
+        // Update selects placeholders
+        updateSelectPlaceholders();
+        
+        // Update main button if it exists and logic permits
+        const mainBtn = document.getElementById('main-action-btn');
+        if (mainBtn && currentTourId) {
+             // We'll let the main logic update status, but if it's disabled/inactive, we can refresh text here if needed.
+             // For simplicity, re-run checkProfileAndTour if we want dynamic update, but that might be heavy.
+             // Instead, let's just leave it, user will click or it updates on load.
+        }
+    }
+
+    function updateSelectPlaceholders() {
+        const regionSel = document.getElementById('region-select');
+        if (regionSel && regionSel.options.length > 0) regionSel.options[0].textContent = t('select_region');
+        
+        const districtSel = document.getElementById('district-select');
+        if (districtSel && districtSel.options.length > 0) districtSel.options[0].textContent = t('select_district');
+
+        const classSel = document.getElementById('class-select');
+        if (classSel && classSel.options.length > 0) classSel.options[0].textContent = t('select_class');
+    }
+
+    document.getElementById('lang-switcher').addEventListener('change', (e) => {
+        setLanguage(e.target.value);
+        localStorage.setItem('user_lang', e.target.value);
+    });
+
+    // === ИНИЦИАЛИЗАЦИЯ TELEGRAM & LANGUAGE ===
     if (window.Telegram && window.Telegram.WebApp) {
       Telegram.WebApp.ready();
       Telegram.WebApp.expand();
       
-      // ИСПОЛЬЗУЕМ КЛИЕНТСКИЕ ДАННЫЕ (Стабильно работает на всех устройствах)
       const user = Telegram.WebApp.initDataUnsafe.user;
       
       if (user && user.id) {
@@ -30,42 +386,54 @@ document.addEventListener('DOMContentLoaded', function() {
         telegramData.firstName = user.first_name;
         telegramData.lastName = user.last_name;
         if (user.photo_url) telegramData.photoUrl = user.photo_url;
+        telegramData.languageCode = user.language_code;
 
         document.getElementById('profile-user-name').textContent = telegramData.firstName + ' ' + (telegramData.lastName || '');
-        document.getElementById('home-user-name').textContent = telegramData.firstName || 'Участник';
+        document.getElementById('home-user-name').textContent = telegramData.firstName || t('lb_participant');
       } else {
-        // Если открыли не в телеграм — тестовый режим
         console.warn("No Telegram user found. Running in Test Mode.");
         if (!localStorage.getItem('test_user_id')) {
              localStorage.setItem('test_user_id', Math.floor(Math.random() * 1000000000));
         }
         telegramUserId = Number(localStorage.getItem('test_user_id'));
-        document.getElementById('profile-user-name').textContent = 'Тестовый Участник';
+        document.getElementById('profile-user-name').textContent = 'Test User';
       }
     }
+
+    // Determine Language Priority: LocalStorage -> Telegram -> Default (UZ)
+    const savedLang = localStorage.getItem('user_lang');
+    if (savedLang) {
+        setLanguage(savedLang);
+    } else if (telegramData.languageCode) {
+        if (telegramData.languageCode === 'ru') setLanguage('ru');
+        else if (telegramData.languageCode === 'en') setLanguage('en');
+        else setLanguage('uz');
+    } else {
+        setLanguage('uz');
+    }
   
-    // === ДАННЫЕ РЕГИОНОВ ===
+    // === ДАННЫЕ РЕГИОНОВ (OFFICIAL UZBEK - FULL LIST) ===
     const regions = {
-        "Город Ташкент": ["Алмазарский", "Бектемирский", "Мирабадский", "Мирзо-Улугбекский", "Сергелийский", "Учтепинский", "Чиланзарский", "Шайхантахурский", "Юнусабадский", "Яккасарайский", "Яшнабадский", "Янгихаётский"],
-        "Андижанская область": ["город Андижан", "Андижанский район", "Асакинский", "Балыкчинский", "Бозский", "Булакбашинский", "Джалакудукский", "Избасканский", "Кургантепинский", "Мархаматский", "Пахтаабадский", "Улугнарский", "Ходжаабадский", "Шахриханский"],
-        "Бухарская область": ["город Бухара", "Алатский", "Бухарский", "Вабкентский", "Гиждуванский", "Жондорский", "Каганский", "Каракульский", "Караулбазарский", "Пешкунский", "Ромитанский", "Шафирканский"],
-        "Джизакская область": ["город Джизак", "Арнасайский", "Бахмальский", "Галляаральский", "Джизакский", "Дустликский", "Зааминский", "Зарбдарский", "Зафарбадский", "Мирзачульский", "Пахтакорский", "Фаришский", "Янгиабадский"],
-        "Кашкадарьинская область": ["город Карши", "Гузарский", "Дехканабадский", "Камашинский", "Каршинский", "Касанский", "Китабский", "Миришкорский", "Мубарекский", "Нишанский", "Чиракчинский", "Шахрисабзский", "Яккабагский"],
-        "Навоийская область": ["город Навои", "Канимехский", "Карманинский", "Кызылтепинский", "Навбахорский", "Нуратинский", "Тамдынский", "Учкудукский", "Хатырчинский"],
-        "Наманганская область": ["город Наманган", "Касансайский", "Мингбулакский", "Наманганский", "Нарынский", "Папский", "Туракурганский", "Уйчинский", "Учкурганский", "Чартакский", "Чустский", "Янгикурганский"],
-        "Самаркандская область": ["город Самарканд", "Акдарьинский", "Булунгурский", "Джамбайский", "Иштыханский", "Каттакурганский", "Кошрабадский", "Нарпайский", "Нурабадский", "Пастдаргомский", "Пахтачийский", "Пайарыкский", "Самаркандский", "Тайлакский", "Ургутский"],
-        "Сурхандарьинская область": ["город Термез", "Алтынсайский", "Ангорский", "Байсунский", "Денауский", "Джаркурганский", "Кумкурганский", "Кизирикский", "Музрабатский", "Сариасийский", "Термезский", "Узунский", "Шерабадский", "Шурчинский"],
-        "Сырдарьинская область": ["город Гулистан", "Акалтынский", "Баяутский", "Гулистанский", "Мирзаабадский", "Сайхунабадский", "Сардобинский", "Сырдарьинский", "Хавастский"],
-        "Ташкентская область": ["Аккурганский", "Ахангаранский", "Бекабадский", "Бостанлыкский", "Букинский", "Зангиатинский", "Кибрайский", "Куйичирчикский", "Паркентский", "Пскентский", "Ташкентский", "Уртачирчикский", "Чинозский", "Юкоричирчикский", "Янгиюльский"],
-        "Ферганская область": ["город Фергана", "Алтыарыкский", "Багдадский", "Бешарыкский", "Бувайдинский", "Дангаринский", "Кувинский", "Риштанский", "Сохский", "Ташлакский", "Узбекистанский", "Учкуприкский", "Ферганский", "Фуркатский", "Язъяванский"],
-        "Хорезмская область": ["город Ургенч", "Багатский", "Гурленский", "Кошкупырский", "Ургенчский", "Хазараспский", "Ханкинский", "Хивинский", "Шаватский", "Янгиарыкский", "Янгибазарский"],
-        "Республика Каракалпакстан": ["город Нукус", "Амударьинский", "Берунийский", "Канлыкульский", "Караузякский", "Кегейлийский", "Кунградский", "Муйнакский", "Нукусский", "Тахтакупырский", "Терткульский", "Ходжейлийский", "Чимбайский", "Шуманайский", "Элликкалинский"]
+        "Toshkent shahri": ["Bektemir tumani", "Chilonzor tumani", "Mirobod tumani", "Mirzo Ulug'bek tumani", "Olmazor tumani", "Sergeli tumani", "Shayxontohur tumani", "Uchtepa tumani", "Yakkasaroy tumani", "Yangihayot tumani", "Yashnobod tumani", "Yunusobod tumani"],
+        "Andijon viloyati": ["Andijon shahri", "Xonobod shahri", "Andijon tumani", "Asaka tumani", "Baliqchi tumani", "Bo'z tumani", "Buloqboshi tumani", "Izboskan tumani", "Jalaquduq tumani", "Marhamat tumani", "Oltinko'l tumani", "Paxtaobod tumani", "Qo'rg'ontepa tumani", "Shahrixon tumani", "Ulug'nor tumani", "Xo'jaobod tumani"],
+        "Buxoro viloyati": ["Buxoro shahri", "Kogon shahri", "Buxoro tumani", "G'ijduvon tumani", "Jondor tumani", "Kogon tumani", "Olot tumani", "Peshku tumani", "Qorako'l tumani", "Qorovulbozor tumani", "Romitan tumani", "Shofirkon tumani", "Vobkent tumani"],
+        "Farg'ona viloyati": ["Farg'ona shahri", "Marg'ilon shahri", "Qo'qon shahri", "Quvasoy shahri", "Bag'dod tumani", "Beshariq tumani", "Buvayda tumani", "Dang'ara tumani", "Farg'ona tumani", "Furqat tumani", "Oltiariq tumani", "Qo'shtepa tumani", "Quva tumani", "Rishton tumani", "So'x tumani", "Toshloq tumani", "Uchko'prik tumani", "O'zbekiston tumani", "Yozyovon tumani"],
+        "Jizzax viloyati": ["Jizzax shahri", "Arnasoy tumani", "Baxmal tumani", "Do'stlik tumani", "Forish tumani", "G'allaorol tumani", "Jizzax tumani", "Mirzacho'l tumani", "Paxtakor tumani", "Sharof Rashidov tumani", "Yangiobod tumani", "Zomin tumani", "Zarbdor tumani", "Zafarobod tumani"],
+        "Xorazm viloyati": ["Urganch shahri", "Xiva shahri", "Bog'ot tumani", "Gurlan tumani", "Xiva tumani", "Hazorasp tumani", "Xonqa tumani", "Qo'shko'pir tumani", "Shovot tumani", "Urganch tumani", "Yangiariq tumani", "Yangibozor tumani"],
+        "Namangan viloyati": ["Namangan shahri", "Chortoq tumani", "Chust tumani", "Kosonsoy tumani", "Mingbuloq tumani", "Namangan tumani", "Norin tumani", "Pop tumani", "To'raqo'rg'on tumani", "Uchqo'rg'on tumani", "Uychi tumani", "Yangiqo'rg'on tumani"],
+        "Navoiy viloyati": ["Navoiy shahri", "Zarafshon shahri", "G'ozg'on shahri", "Konimex tumani", "Karmana tumani", "Qiziltepa tumani", "Xatirchi tumani", "Navbahor tumani", "Nurota tumani", "Tomdi tumani", "Uchquduq tumani"],
+        "Qashqadaryo viloyati": ["Qarshi shahri", "Shahrisabz shahri", "Chiroqchi tumani", "Dehqonobod tumani", "G'uzor tumani", "Qamashi tumani", "Qarshi tumani", "Kasbi tumani", "Kitob tumani", "Koson tumani", "Mirishkor tumani", "Muborak tumani", "Nishon tumani", "Shahrisabz tumani", "Yakkabog' tumani", "Ko'kdala tumani"],
+        "Qoraqalpog'iston Respublikasi": ["Nukus shahri", "Amudaryo tumani", "Beruniy tumani", "Chimboy tumani", "Ellikqal'a tumani", "Kegeyli tumani", "Mo'ynoq tumani", "Nukus tumani", "Qanliko'l tumani", "Qo'ng'irot tumani", "Qorao'zak tumani", "Shumanay tumani", "Taxtako'pir tumani", "To'rtko'l tumani", "Xo'jayli tumani", "Taxiatosh tumani", "Bo'zatov tumani"],
+        "Samarqand viloyati": ["Samarqand shahri", "Kattaqo'rg'on shahri", "Bulung'ur tumani", "Ishtixon tumani", "Jomboy tumani", "Kattaqo'rg'on tumani", "Qo'shrabot tumani", "Narpay tumani", "Nurabod tumani", "Oqdaryo tumani", "Paxtachi tumani", "Payariq tumani", "Pastdarg'om tumani", "Samarqand tumani", "Toyloq tumani", "Urgut tumani"],
+        "Sirdaryo viloyati": ["Guliston shahri", "Yangiyer shahri", "Shirin shahri", "Oqoltin tumani", "Boyovut tumani", "Guliston tumani", "Xovos tumani", "Mirzaobod tumani", "Sayxunobod tumani", "Sardoba tumani", "Sirdaryo tumani"],
+        "Surxondaryo viloyati": ["Termiz shahri", "Angor tumani", "Bandixon tumani", "Boysun tumani", "Denov tumani", "Jarqo'rg'on tumani", "Qiziriq tumani", "Qumqo'rg'on tumani", "Muzrabot tumani", "Oltinsoy tumani", "Sariosiyo tumani", "Sherobod tumani", "Sho'rchi tumani", "Termiz tumani", "Uzun tumani"],
+        "Toshkent viloyati": ["Nurafshon shahri", "Olmaliq shahri", "Angren shahri", "Bekobod shahri", "Ohangaron shahri", "Chirchiq shahri", "Yangiyo'l shahri", "Bekobod tumani", "Bo'stonliq tumani", "Bo'ka tumani", "Chinoz tumani", "Qibray tumani", "Ohangaron tumani", "Oqqo'rg'on tumani", "Parkent tumani", "Piskent tumani", "Quyi Chirchiq tumani", "O'rta Chirchiq tumani", "Yangiyo'l tumani", "Yuqori Chirchiq tumani", "Zangiota tumani"]
     };
   
     // Настройка селектов
     const regionSelect = document.getElementById('region-select');
     if (regionSelect) {
-        regionSelect.innerHTML = '<option value="" disabled selected>Выберите регион</option>';
+        regionSelect.innerHTML = `<option value="" disabled selected>${t('select_region')}</option>`;
         Object.keys(regions).sort().forEach(region => {
           const option = document.createElement('option');
           option.value = region;
@@ -75,11 +443,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         regionSelect.addEventListener('change', () => {
           const districtSelect = document.getElementById('district-select');
-          districtSelect.innerHTML = '<option value="" disabled selected>Выберите район</option>';
+          districtSelect.innerHTML = `<option value="" disabled selected>${t('select_district')}</option>`;
           districtSelect.disabled = false;
           const selected = regionSelect.value;
           if (selected && regions[selected]) {
-            regions[selected].forEach(district => {
+            regions[selected].sort().forEach(district => {
               const option = document.createElement('option');
               option.value = district;
               option.textContent = district;
@@ -91,16 +459,16 @@ document.addEventListener('DOMContentLoaded', function() {
   
     const classSelect = document.getElementById('class-select');
     if (classSelect) {
-        classSelect.innerHTML = '<option value="" disabled selected>Выберите класс</option>';
+        classSelect.innerHTML = `<option value="" disabled selected>${t('select_class')}</option>`;
         for (let i = 8; i <= 11; i++) {
           const option = document.createElement('option');
           option.value = i;
-          option.textContent = i + ' класс';
+          option.textContent = i + ' ' + t('class_s');
           classSelect.appendChild(option);
         }
     }
   
-    // === ГЛАВНАЯ ЛОГИКА (СТАБИЛЬНАЯ) ===
+    // === ГЛАВНАЯ ЛОГИКА ===
     async function checkProfileAndTour() {
       // 1. Сначала находим пользователя в базе
       const { data: userData } = await supabaseClient.from('users').select('*').eq('telegram_id', telegramUserId).maybeSingle();
@@ -120,7 +488,7 @@ document.addEventListener('DOMContentLoaded', function() {
           }
       } else {
           // Если юзера нет - создаем
-          let fullName = telegramData.firstName ? (telegramData.firstName + (telegramData.lastName ? ' ' + telegramData.lastName : '')).trim() : 'Участник';
+          let fullName = telegramData.firstName ? (telegramData.firstName + (telegramData.lastName ? ' ' + telegramData.lastName : '')).trim() : 'Foydalanuvchi';
           const { data: newUser } = await supabaseClient.from('users')
               .insert({ telegram_id: telegramUserId, name: fullName, avatar_url: telegramData.photoUrl })
               .select().single();
@@ -144,11 +512,11 @@ document.addEventListener('DOMContentLoaded', function() {
               if (progress) {
                   tourCompleted = true;
                   updateMainButton('completed');
-                  document.getElementById('subjects-title').textContent = "Ваши результаты";
+                  document.getElementById('subjects-title').textContent = t('curr_tour'); // Or results title
               } else {
                   tourCompleted = false;
                   updateMainButton('start', tourData.title);
-                  document.getElementById('subjects-title').textContent = "Предметы";
+                  document.getElementById('subjects-title').textContent = t('subjects_title');
               }
           }
       }
@@ -166,7 +534,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function fetchStatsData() {
         if (!internalDbId || !currentTourId) return;
-        // Защита: Запрашиваем только публичные поля вопросов
         const { data: qData } = await supabaseClient.from('questions').select('id, subject').eq('tour_id', currentTourId);
         if (qData) tourQuestionsCache = qData;
         const { data: aData } = await supabaseClient.from('user_answers').select('question_id, is_correct').eq('user_id', internalDbId);
@@ -176,9 +543,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateDashboardStats() {
         const subjectMap = {
-            'Математика': 'math', 'Английский': 'eng', 'Физика': 'phys',
-            'Химия': 'chem', 'Биология': 'bio', 'Информатика': 'it',
-            'Экономика': 'eco', 'SAT': 'sat', 'IELTS': 'ielts'
+            'Matematika': 'math', 'Ingliz tili': 'eng', 'Fizika': 'phys',
+            'Kimyo': 'chem', 'Biologiya': 'bio', 'Informatika': 'it',
+            'Iqtisodiyot': 'eco', 'SAT': 'sat', 'IELTS': 'ielts',
+            // Mappings for RU/EN fallback just in case data comes differently
+            'Математика': 'math', 'Английский': 'eng', 'Физика': 'phys', 
+            'Химия': 'chem', 'Биология': 'bio', 'Информатика': 'it', 'Экономика': 'eco'
         };
         for (const [subjName, prefix] of Object.entries(subjectMap)) {
             const stats = calculateSubjectStats(subjName);
@@ -192,6 +562,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function calculateSubjectStats(subjectName) {
+        // Simple text matching
         const subjectQuestions = tourQuestionsCache.filter(q => q.subject && q.subject.toLowerCase().includes(subjectName.toLowerCase()));
         if (subjectQuestions.length === 0) return { total: 0, correct: 0 };
         let correct = 0;
@@ -204,21 +575,45 @@ document.addEventListener('DOMContentLoaded', function() {
         return { total, correct };
     }
 
-    window.openSubjectStats = function(subject) {
+    window.openSubjectStats = function(prefix) {
+        // prefix comes from onClick 'math', 'eng' etc.
+        // We need to map prefix back to possible DB subject names or just show generic
         const modal = document.getElementById('subject-details-modal');
         const content = document.getElementById('sd-content');
         const title = document.getElementById('sd-title');
+        
+        // Find subject translation
+        let subjTitle = t('subj_' + prefix);
+        if(!subjTitle) subjTitle = prefix.toUpperCase();
+
         if (modal && content) {
-            title.textContent = subject;
-            const stats = calculateSubjectStats(subject);
+            title.textContent = subjTitle;
+            
+            // Try to calc stats by name in current Lang or hardcoded keys
+            // This is tricky if DB has 'Matematika' but we are in EN.
+            // Ideally questions in DB should have a 'subject_code'.
+            // For now, we try to match the translated name OR the known russian/uzbek names.
+            
+            let stats = { total: 0, correct: 0};
+            // Try matching common names
+            ['Matematika', 'Математика', 'Math', 'Ingliz', 'Английский', 'English', 'Fizika', 'Физика', 'Physics'].forEach(n => {
+                if (t('subj_' + prefix).includes(n) || n.toLowerCase().includes(prefix)) {
+                    let s = calculateSubjectStats(n);
+                    if (s.total > stats.total) stats = s;
+                }
+            });
+
+            // If still 0, try exact translation
+            if(stats.total === 0) stats = calculateSubjectStats(subjTitle);
+
             const html = `
                 <div class="stat-list-item">
-                    <div class="stat-list-info"><h4>Текущий тур</h4><p>Всего вопросов: ${stats.total}</p></div>
+                    <div class="stat-list-info"><h4>${t('curr_tour')}</h4><p>${t('total_q')}: ${stats.total}</p></div>
                     <div class="stat-list-value" style="color:${stats.correct > 0 ? 'var(--success)' : 'var(--text-sec)'}">
-                        ${stats.correct} верно
+                        ${stats.correct} ${t('correct_txt')}
                     </div>
                 </div>`;
-            content.innerHTML = stats.total === 0 ? `<p style="color:#8E8E93;text-align:center;padding:20px;">Нет данных</p>` : html;
+            content.innerHTML = stats.total === 0 ? `<p style="color:#8E8E93;text-align:center;padding:20px;">${t('no_data')}</p>` : html;
             modal.classList.remove('hidden');
         }
     }
@@ -236,10 +631,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const listEl = document.getElementById('lb-list');
         const stickyBar = document.getElementById('lb-user-sticky');
         
-        if(podium) podium.innerHTML = '<p style="text-align:center;width:100%;color:#999;margin-top:20px;"><i class="fa-solid fa-spinner fa-spin"></i> Загрузка...</p>';
+        if(podium) podium.innerHTML = `<p style="text-align:center;width:100%;color:#999;margin-top:20px;"><i class="fa-solid fa-spinner fa-spin"></i> ${t('loading')}</p>`;
         if(listEl) listEl.innerHTML = '';
 
-        // Убеждаемся, что данные пользователя загружены
         if (!currentUserData && internalDbId) {
              const { data } = await supabaseClient.from('users').select('*').eq('id', internalDbId).single();
              currentUserData = data;
@@ -256,7 +650,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 progressData = data;
             } else {
                 if (!currentUserData) {
-                    podium.innerHTML = '<p style="text-align:center;width:100%;color:#999;">Заполните профиль</p>';
+                    podium.innerHTML = '<p style="text-align:center;width:100%;color:#999;">Error: No Profile</p>';
                     return;
                 }
                 let userQuery = supabaseClient.from('users').select('id');
@@ -277,7 +671,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             if (!progressData || progressData.length === 0) {
-                 podium.innerHTML = '<p style="text-align:center;width:100%;color:#999;margin-top:20px;">Нет результатов</p>';
+                 podium.innerHTML = `<p style="text-align:center;width:100%;color:#999;margin-top:20px;">${t('no_data')}</p>`;
                  return;
             }
 
@@ -295,7 +689,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!u) return null;
                 return {
                     id: u.id,
-                    name: u.name || 'Аноним', 
+                    name: u.name || t('anonymous'), 
                     classVal: u.class || '?',
                     region: u.region,
                     district: u.district,
@@ -312,7 +706,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         } catch (e) {
             console.error(e);
-            podium.innerHTML = '<p style="text-align:center;color:red;">Ошибка загрузки</p>';
+            podium.innerHTML = `<p style="text-align:center;color:red;">${t('error')}</p>`;
         }
     }
 
@@ -328,22 +722,22 @@ document.addEventListener('DOMContentLoaded', function() {
             let parts = [];
             if (currentLbFilter === 'republic' && player.region) {
                 let r = player.region;
-                if(r.trim() === 'Ташкент' || r.trim() === 'Город Ташкент') r = 'г. Ташкент';
+                if(r.includes('Toshkent shahri') || r.includes('Ташкент')) r = t('city_tashkent');
                 parts.push(`<span class="meta-row"><i class="fa-solid fa-location-dot"></i> ${r}</span>`);
             }
             if ((currentLbFilter === 'republic' || currentLbFilter === 'region') && player.district) {
                 let d = player.district;
-                if(!d.toLowerCase().includes('район')) d += ' район';
+                d = d.replace(' tumani', '').replace(' района', ''); // Shorten
                 parts.push(`<span class="meta-row"><i class="fa-solid fa-map-pin"></i> ${d}</span>`);
             }
             if(player.school) {
                 let s = player.school;
-                if(!s.toLowerCase().includes('школа') && !s.toLowerCase().includes('school')) {
-                    s = `Школа - ${s}`;
+                if(!s.toLowerCase().includes('maktab') && !s.toLowerCase().includes('school')) {
+                    s = `${t('school_prefix')} ${s}`;
                 }
                 parts.push(`<span class="meta-row"><i class="fa-solid fa-school"></i> ${s}</span>`);
             }
-            parts.push(`<span class="meta-row"><i class="fa-solid fa-user-graduate"></i> ${player.classVal} класс</span>`);
+            parts.push(`<span class="meta-row"><i class="fa-solid fa-user-graduate"></i> ${player.classVal} ${t('class_s')}</span>`);
             return parts.join(''); 
         };
 
@@ -413,7 +807,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         if (me) {
             document.getElementById('my-rank-val').textContent = myRank === "50+" ? ">50" : `#${myRank}`;
-            if(currentUserData) document.getElementById('my-class-val').textContent = `${currentUserData.class} класс`;
+            if(currentUserData) document.getElementById('my-class-val').textContent = `${currentUserData.class} ${t('class_s')}`;
             document.getElementById('my-score-val').textContent = me.score;
             stickyEl.classList.remove('hidden');
         } else {
@@ -425,9 +819,9 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('class-select').value = data.class;
         document.getElementById('region-select').value = data.region;
         const districtSelect = document.getElementById('district-select');
-        districtSelect.innerHTML = '<option value="" disabled selected>Выберите район</option>';
+        districtSelect.innerHTML = `<option value="" disabled selected>${t('select_district')}</option>`;
         if (regions[data.region]) {
-          regions[data.region].forEach(district => {
+          regions[data.region].sort().forEach(district => {
             const option = document.createElement('option');
             option.value = district;
             option.textContent = district;
@@ -445,11 +839,13 @@ document.addEventListener('DOMContentLoaded', function() {
       const district = document.getElementById('district-select').value;
       const school = document.getElementById('school-input').value.trim();
       const consent = document.getElementById('research-consent').checked;
-      if (!classVal || !region || !district || !school) { alert('Заполните все поля!'); return; }
+      
+      if (!classVal || !region || !district || !school) { alert(t('alert_fill')); return; }
+      
       const btn = document.getElementById('save-profile');
       const originalText = btn.innerHTML;
       btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Сохранение...';
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('save_saving')}`;
       try {
           const updateData = { telegram_id: telegramUserId, class: classVal, region: region, district: district, school: school, research_consent: consent };
           if (telegramData.photoUrl) updateData.avatar_url = telegramData.photoUrl;
@@ -467,7 +863,7 @@ document.addEventListener('DOMContentLoaded', function() {
           showScreen('home-screen');
           checkProfileAndTour();
       } catch (e) {
-          alert('Ошибка: ' + e.message);
+          alert(t('error') + ': ' + e.message);
           btn.disabled = false;
           btn.innerHTML = originalText;
       } 
@@ -478,6 +874,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('profile-back-btn').classList.remove('hidden');
         document.getElementById('profile-locked-btn').classList.remove('hidden');
         document.querySelectorAll('#profile-screen input, #profile-screen select').forEach(el => el.disabled = true);
+        document.getElementById('lang-switcher').disabled = false; // Allow changing lang
     }
     function unlockProfileForm() {
         document.getElementById('save-profile').classList.remove('hidden');
@@ -494,7 +891,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     async function handleStartClick() {
         const btn = document.getElementById('main-action-btn');
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Загрузка...';
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('loading')}`;
         const { data } = await supabaseClient.from('questions').select('time_limit_seconds').eq('tour_id', currentTourId).limit(50);
         let totalSeconds = 0;
         let count = 0;
@@ -503,12 +900,13 @@ document.addEventListener('DOMContentLoaded', function() {
             count = Math.min(data.length, 15);
         }
         const mins = Math.ceil(totalSeconds / 60);
-        document.getElementById('warn-time-val').textContent = `${mins} минут`;
-        document.getElementById('warn-q-val').textContent = `${count} вопросов`;
+        document.getElementById('warn-time-val').textContent = `${mins} ${t('minutes')}`;
+        document.getElementById('warn-q-val').textContent = `${count} ${t('questions')}`;
         updateMainButton('start');
         document.getElementById('warning-modal').classList.remove('hidden');
     }
-    function updateMainButton(state, title = "Начать тур") {
+    function updateMainButton(state, title = "") {
+        if(!title) title = t('start_tour_btn');
         const btn = document.getElementById('main-action-btn');
         const certCard = document.getElementById('home-cert-btn'); 
         if (!btn) return;
@@ -516,13 +914,13 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.parentNode.replaceChild(newBtn, btn);
         const activeBtn = document.getElementById('main-action-btn');
         if (state === 'inactive') {
-            activeBtn.innerHTML = '<i class="fa-solid fa-calendar-xmark"></i> Нет активных туров';
+            activeBtn.innerHTML = `<i class="fa-solid fa-calendar-xmark"></i> ${t('no_active_tour')}`;
             activeBtn.disabled = true;
             activeBtn.className = 'btn-primary'; 
             activeBtn.style.background = "#8E8E93";
             if (certCard) certCard.classList.add('hidden'); 
         } else if (state === 'completed') {
-            activeBtn.innerHTML = '<i class="fa-solid fa-check"></i> Текущий тур пройден';
+            activeBtn.innerHTML = `<i class="fa-solid fa-check"></i> ${t('tour_completed_btn')}`;
             activeBtn.className = 'btn-success-clickable';
             activeBtn.disabled = false;
             activeBtn.style.background = ""; 
@@ -575,16 +973,16 @@ document.addEventListener('DOMContentLoaded', function() {
       const q = questions[currentQuestionIndex];
       document.getElementById('question-number').textContent = currentQuestionIndex + 1;
       document.getElementById('total-q-count').textContent = questions.length;
-      document.getElementById('subject-tag').textContent = q.subject || 'ВОПРОС';
+      document.getElementById('subject-tag').textContent = q.subject || 'Q';
       document.getElementById('question-text').innerHTML = q.question_text;
       const timeForQ = q.time_limit_seconds || 60;
-      document.getElementById('q-time-hint').innerHTML = `<i class="fa-solid fa-hourglass-half"></i> ~${Math.round(timeForQ/60*10)/10} мин`;
+      document.getElementById('q-time-hint').innerHTML = `<i class="fa-solid fa-hourglass-half"></i> ~${Math.round(timeForQ/60*10)/10} m`;
       document.getElementById('quiz-progress-fill').style.width = `${((currentQuestionIndex + 1) / questions.length) * 100}%`;
       const container = document.getElementById('options-container');
       container.innerHTML = '';
       const nextBtn = document.getElementById('next-button');
       nextBtn.disabled = true;
-      nextBtn.innerHTML = 'Далее <i class="fa-solid fa-arrow-right"></i>';
+      nextBtn.innerHTML = `${t('btn_next')} <i class="fa-solid fa-arrow-right"></i>`;
       selectedAnswer = null;
       const optionsText = (q.options_text || '').trim();
       if (optionsText !== '') {
@@ -612,7 +1010,7 @@ document.addEventListener('DOMContentLoaded', function() {
       } else {
         const textarea = document.createElement('textarea');
         textarea.className = 'answer-input';
-        textarea.placeholder = 'Введите ответ...';
+        textarea.placeholder = t('answer_placeholder');
         textarea.rows = 2;
         textarea.addEventListener('input', () => {
           selectedAnswer = textarea.value.trim();
@@ -622,15 +1020,12 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
     
-    // === ЗАЩИЩЕННАЯ ОТПРАВКА ОТВЕТА (ВСЕ ЕЩЕ ИСПОЛЬЗУЕМ RPC) ===
-    // Здесь RPC работает, потому что он не проверяет подпись WebApp, 
-    // он просто проверяет ответ математически.
+    // === ЗАЩИЩЕННАЯ ОТПРАВКА ОТВЕТА ===
     safeAddListener('next-button', 'click', async () => {
       const nextBtn = document.getElementById('next-button');
       nextBtn.disabled = true;
-      nextBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Сохранение...';
+      nextBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('saving_ans')}`;
       
-      // Страховка
       if (!internalDbId) {
           const { data } = await supabaseClient.from('users').select('id').eq('telegram_id', telegramUserId).maybeSingle();
           if(data) internalDbId = data.id;
@@ -639,14 +1034,12 @@ document.addEventListener('DOMContentLoaded', function() {
       const q = questions[currentQuestionIndex];
       const questionIdNumber = Number(q.id);
 
-      // Проверяем ответ на сервере (это работает!)
       const { data: isCorrect, error: rpcError } = await supabaseClient.rpc('check_user_answer', {
           p_question_id: questionIdNumber,
           p_user_answer: selectedAnswer
       });
       
       const finalIsCorrect = (isCorrect === true);
-
       if (finalIsCorrect) correctCount++;
       
       try {
@@ -659,28 +1052,25 @@ document.addEventListener('DOMContentLoaded', function() {
           if (currentQuestionIndex < questions.length) showQuestion();
           else finishTour();
       } catch (e) {
-          alert('Ошибка: ' + e.message);
+          alert('Error: ' + e.message);
           nextBtn.disabled = false;
-          nextBtn.innerHTML = 'Повторить';
+          nextBtn.innerHTML = t('repeat');
       }
     });
 
     async function finishTour() {
       clearInterval(timerInterval);
-      
-      // Баллы считает SQL-триггер, поэтому мы ничего не отправляем в tour_progress
-      
       tourCompleted = true;
       const percent = Math.round((correctCount / questions.length) * 100);
       showScreen('result-screen');
-      document.getElementById('res-tour-title').textContent = "Тур №1";
+      document.getElementById('res-tour-title').textContent = "1-Tur";
       document.getElementById('res-total').textContent = questions.length;
       document.getElementById('res-correct').textContent = correctCount;
       document.getElementById('result-percent').textContent = `${percent}%`;
       const circle = document.getElementById('result-circle');
       if (circle) circle.style.background = `conic-gradient(var(--primary) 0% ${percent}%, #E5E5EA ${percent}% 100%)`;
       updateMainButton('completed');
-      document.getElementById('subjects-title').textContent = "Ваши результаты";
+      document.getElementById('subjects-title').textContent = t('curr_tour'); // "Results"
       fetchStatsData(); 
     }
     function showScreen(screenId) {
@@ -717,8 +1107,8 @@ document.addEventListener('DOMContentLoaded', function() {
         container.innerHTML = `
             <div class="cert-card">
                 <div class="cert-icon"><i class="fa-solid fa-file-pdf"></i></div>
-                <div class="cert-info"><h4>Сертификат: Тур №1</h4><p>${new Date().toLocaleDateString()}</p></div>
-                <div class="cert-action"><span class="badge-soon">Скоро</span></div>
+                <div class="cert-info"><h4>${t('cert_title')}</h4><p>${new Date().toLocaleDateString()}</p></div>
+                <div class="cert-action"><span class="badge-soon">Soon</span></div>
             </div>`;
         document.getElementById('certs-modal').classList.remove('hidden');
     }
