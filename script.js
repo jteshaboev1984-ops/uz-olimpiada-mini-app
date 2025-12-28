@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v62.0 (New Cabinet + Delete Account)');
+    console.log('App Started: v63.0 (Better Cabinet UI)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -140,7 +140,8 @@ document.addEventListener('DOMContentLoaded', function() {
             del_title: "Hisobni o'chirish?",
             del_msg: "Barcha natijalaringiz va reytingdagi o'rningiz o'chib ketadi. Qayta tiklab bo'lmaydi.",
             btn_delete_confirm: "O'chirish",
-            del_error_active_tour: "Joriy tur topshirilganligi sababli hisobni o'chirish mumkin emas. Iltimos, tur yakunlanishini kuting."
+            del_error_active_tour: "Joriy tur topshirilganligi sababli hisobni o'chirish mumkin emas. Iltimos, tur yakunlanishini kuting.",
+            btn_back: "Orqaga"
         },
         ru: {
             reg_title: "Регистрация",
@@ -254,7 +255,8 @@ document.addEventListener('DOMContentLoaded', function() {
             del_title: "Удалить аккаунт?",
             del_msg: "Все ваши результаты и место в рейтинге будут удалены безвозвратно.",
             btn_delete_confirm: "Удалить",
-            del_error_active_tour: "Удаление невозможно, так как вы уже сдали текущий тур. Дождитесь его завершения."
+            del_error_active_tour: "Удаление невозможно, так как вы уже сдали текущий тур. Дождитесь его завершения.",
+            btn_back: "Назад"
         },
         en: {
             reg_title: "Registration",
@@ -368,7 +370,8 @@ document.addEventListener('DOMContentLoaded', function() {
             del_title: "Delete Account?",
             del_msg: "All your results and ranking will be lost permanently.",
             btn_delete_confirm: "Delete",
-            del_error_active_tour: "Cannot delete account while you have submitted the current tour. Please wait."
+            del_error_active_tour: "Cannot delete account while you have submitted the current tour. Please wait.",
+            btn_back: "Back"
         }
     };
 
