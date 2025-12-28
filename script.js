@@ -1,12 +1,12 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v90.0 (Research + Cabinet + Error Review Protection)');
+    console.log('App Started: v91.0 (Fixed: safeAddListener + Full Logic)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
     let telegramData = { firstName: null, lastName: null, photoUrl: null };
     let internalDbId = null; 
     let currentTourId = null;
-    let tourEndDate = null; // Для блокировки ответов
+    let tourEndDate = null; 
     let currentUserData = null;
     let tourQuestionsCache = [];
     let userAnswersCache = [];
@@ -17,15 +17,23 @@ document.addEventListener('DOMContentLoaded', function() {
     let timerInterval = null;
     let tourCompleted = false;
     let selectedAnswer = null;
-    
-    // Аналитика
     let questionStartTime = 0;
 
-    // === НАСТРОЙКИ SUPABASE ===
+    // === НАСТРОЙКИ SUPABASE (ВАШИ КЛЮЧИ) ===
     const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
     const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI';
     const { createClient } = supabase;
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+
+    // === ФУНКЦИЯ-ПОМОЩНИК (КОТОРОЙ НЕ ХВАТАЛО) ===
+    function safeAddListener(id, event, handler) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener(event, handler);
+        } else {
+            console.warn(`Element with id '${id}' not found for event '${event}'`);
+        }
+    }
 
     // === СИСТЕМА ПЕРЕВОДОВ ===
     let currentLang = localStorage.getItem('app_lang') || 'uz';
@@ -90,6 +98,8 @@ document.addEventListener('DOMContentLoaded', function() {
             res_video_sub: "Разборы задач",
             res_channel: "Канал",
             res_channel_sub: "Новости",
+            res_chat: "Чат",
+            res_chat_sub: "Обсуждение",
             about_platform: "О платформе",
             about_desc: "Уникальная платформа для школьников Узбекистана.",
             subj_math: "Математика", subj_eng: "Английский", subj_phys: "Физика", subj_chem: "Химия", 
@@ -168,6 +178,8 @@ document.addEventListener('DOMContentLoaded', function() {
             res_video_sub: "Masalalar tahlili",
             res_channel: "Kanal",
             res_channel_sub: "Yangiliklar",
+            res_chat: "Chat",
+            res_chat_sub: "Muhokama",
             about_platform: "Platforma haqida",
             about_desc: "O'zbekiston o'quvchilari uchun maxsus.",
             subj_math: "Matematika", subj_eng: "Ingliz tili", subj_phys: "Fizika", subj_chem: "Kimyo", 
@@ -246,6 +258,8 @@ document.addEventListener('DOMContentLoaded', function() {
             res_video_sub: "Analysis",
             res_channel: "Channel",
             res_channel_sub: "News",
+            res_chat: "Chat",
+            res_chat_sub: "Discussion",
             about_platform: "About",
             about_desc: "Unique platform for Uzbekistan.",
             subj_math: "Math", subj_eng: "English", subj_phys: "Physics", subj_chem: "Chemistry", 
@@ -288,7 +302,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const el = document.querySelector(id);
             if(el) el.placeholder = t('ph_school');
         });
-        document.getElementById('current-lang-display').textContent = currentLang === 'uz' ? "O'zbekcha" : currentLang === 'ru' ? "Русский" : "English";
+        const displayLang = currentLang === 'uz' ? "O'zbekcha" : currentLang === 'ru' ? "Русский" : "English";
+        const langDisplayEl = document.getElementById('current-lang-display');
+        if(langDisplayEl) langDisplayEl.textContent = displayLang;
     }
 
     window.setRegLang = function(lang, el) {
@@ -305,7 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
         applyTranslations();
         document.querySelectorAll('.lang-item i').forEach(i => i.classList.add('hidden'));
         document.querySelector(`.check-${lang}`).classList.remove('hidden');
-        document.getElementById('lang-screen').classList.add('hidden'); // Закрыть выбор
+        document.getElementById('lang-screen').classList.add('hidden'); 
     }
   
     // === ИНИЦИАЛИЗАЦИЯ TELEGRAM ===
@@ -328,7 +344,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
   
-    // === ДАННЫЕ РЕГИОНОВ (FULL UZBEK LATIN) ===
+    // === ДАННЫЕ РЕГИОНОВ ===
     const regions = {
         "Toshkent shahri": ["Olmazor", "Bektemir", "Mirobod", "Mirzo Ulug'bek", "Sergeli", "Uchtepa", "Chilonzor", "Shayxontohur", "Yunusobod", "Yakkasaroy", "Yashnobod", "Yangihayot"],
         "Andijon viloyati": ["Andijon shahri", "Xonobod shahri", "Andijon tumani", "Asaka", "Baliqchi", "Bo'ston (Bo'z)", "Buloqboshi", "Jalaquduq", "Izboskan", "Qo'rg'ontepa", "Marhamat", "Paxtaobod", "Ulug'nor", "Xo'jaobod", "Shahrixon"],
@@ -383,7 +399,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     setupRegionSelects('reg');
     setupRegionSelects('edit');
-    setupRegionSelects(''); // Для лидерборда фильтр отдельно в HTML
+    setupRegionSelects('');
 
     // === ГЛАВНАЯ ЛОГИКА ===
     async function checkProfileAndTour() {
@@ -413,7 +429,7 @@ document.addEventListener('DOMContentLoaded', function() {
           updateMainButton('inactive');
       } else {
           currentTourId = tourData.id;
-          tourEndDate = new Date(tourData.end_date); // Сохраняем дату конца для защиты ответов
+          tourEndDate = new Date(tourData.end_date);
           
           if (internalDbId && currentTourId) {
               await fetchStatsData(); 
@@ -421,12 +437,18 @@ document.addEventListener('DOMContentLoaded', function() {
               if (progress) {
                   tourCompleted = true;
                   updateMainButton('completed');
-                  document.getElementById('error-lock-icon').style.display = "none"; // Тур пройден - разблокируем (но проверим дату)
+                  document.getElementById('error-lock-icon').style.display = "none";
               } else {
                   tourCompleted = false;
                   updateMainButton('start', tourData.title);
               }
           }
+      }
+      
+      // Проверка на случай ручного удаления данных
+      const isProfileComplete = currentUserData && currentUserData.name && currentUserData.name.length > 2;
+      if (internalDbId && !isProfileComplete) {
+        showScreen('register-screen');
       }
     }
 
@@ -472,11 +494,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // === РЕГИСТРАЦИЯ ===
     const regAgreementBox = document.getElementById('reg-agreement-box');
     let isRegAgreed = false;
-    regAgreementBox.addEventListener('click', () => {
-        isRegAgreed = !isRegAgreed;
-        regAgreementBox.classList.toggle('checked', isRegAgreed);
-        validateRegForm();
-    });
+    if(regAgreementBox){
+        regAgreementBox.addEventListener('click', () => {
+            isRegAgreed = !isRegAgreed;
+            regAgreementBox.classList.toggle('checked', isRegAgreed);
+            validateRegForm();
+        });
+    }
 
     const regInputs = document.querySelectorAll('#reg-full-name, #reg-class-select, #reg-region-select, #reg-district-select, #reg-school-input');
     regInputs.forEach(el => el.addEventListener('input', validateRegForm));
@@ -487,39 +511,41 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('finish-reg-btn').disabled = !(allFilled && nameValid && isRegAgreed);
     }
 
-    document.getElementById('finish-reg-btn').addEventListener('click', async () => {
-        const btn = document.getElementById('finish-reg-btn');
-        btn.disabled = true;
-        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ...`;
-        
-        try {
-            const updateData = { 
-              telegram_id: telegramUserId, 
-              name: document.getElementById('reg-full-name').value.trim(),
-              class: document.getElementById('reg-class-select').value,
-              region: document.getElementById('reg-region-select').value,
-              district: document.getElementById('reg-district-select').value,
-              school: document.getElementById('reg-school-input').value.trim(),
-              research_consent: true // Единое согласие
-            };
-            if (telegramData.photoUrl) updateData.avatar_url = telegramData.photoUrl;
+    const finishRegBtn = document.getElementById('finish-reg-btn');
+    if(finishRegBtn){
+        finishRegBtn.addEventListener('click', async () => {
+            const btn = document.getElementById('finish-reg-btn');
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ...`;
+            
+            try {
+                const updateData = { 
+                  telegram_id: telegramUserId, 
+                  name: document.getElementById('reg-full-name').value.trim(),
+                  class: document.getElementById('reg-class-select').value,
+                  region: document.getElementById('reg-region-select').value,
+                  district: document.getElementById('reg-district-select').value,
+                  school: document.getElementById('reg-school-input').value.trim(),
+                  research_consent: true 
+                };
+                if (telegramData.photoUrl) updateData.avatar_url = telegramData.photoUrl;
 
-            const { data, error } = await supabaseClient.from('users').upsert(updateData, { onConflict: 'telegram_id' }).select().single(); 
-            if(error) throw error;
-            
-            internalDbId = data.id;
-            currentUserData = data;
-            
-            // Загружаем имя на главную
-            document.getElementById('home-user-name').textContent = data.name.split(' ')[0];
-            showScreen('home-screen');
-            checkProfileAndTour();
-        } catch (e) {
-            alert('Error: ' + e.message);
-            btn.disabled = false;
-            btn.innerHTML = t('btn_start');
-        }
-    });
+                const { data, error } = await supabaseClient.from('users').upsert(updateData, { onConflict: 'telegram_id' }).select().single(); 
+                if(error) throw error;
+                
+                internalDbId = data.id;
+                currentUserData = data;
+                
+                document.getElementById('home-user-name').textContent = data.name.split(' ')[0];
+                showScreen('home-screen');
+                checkProfileAndTour();
+            } catch (e) {
+                alert('Error: ' + e.message);
+                btn.disabled = false;
+                btn.innerHTML = t('btn_start');
+            }
+        });
+    }
 
     // === ЛИЧНЫЙ КАБИНЕТ И МЕНЮ ===
     safeAddListener('open-cabinet-btn', 'click', () => document.getElementById('cabinet-modal').classList.remove('hidden'));
@@ -527,11 +553,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Редактирование профиля
     safeAddListener('btn-edit-profile', 'click', () => {
         if(!currentUserData) return;
-        // Заполняем форму
         document.getElementById('edit-full-name').value = currentUserData.name;
         document.getElementById('edit-class-select').value = currentUserData.class;
         document.getElementById('edit-region-select').value = currentUserData.region;
-        // Триггерим подгрузку районов
         const event = new Event('change');
         document.getElementById('edit-region-select').dispatchEvent(event);
         setTimeout(() => {
@@ -543,53 +567,51 @@ document.addEventListener('DOMContentLoaded', function() {
         showScreen('edit-profile-screen');
     });
 
-    // Сохранение редактирования
-    document.getElementById('save-edit-profile').addEventListener('click', async () => {
-        const btn = document.getElementById('save-edit-profile');
-        btn.disabled = true;
-        btn.innerHTML = '...';
-        try {
-            const updateData = { 
-                name: document.getElementById('edit-full-name').value.trim(),
-                class: document.getElementById('edit-class-select').value,
-                region: document.getElementById('edit-region-select').value,
-                district: document.getElementById('edit-district-select').value,
-                school: document.getElementById('edit-school-input').value.trim()
-            };
-            const { error } = await supabaseClient.from('users').update(updateData).eq('id', internalDbId);
-            if(error) throw error;
-            
-            // Обновляем локально
-            currentUserData = { ...currentUserData, ...updateData };
-            document.getElementById('home-user-name').textContent = currentUserData.name.split(' ')[0];
-            document.getElementById('cabinet-user-name').textContent = currentUserData.name;
-            
-            showScreen('home-screen');
-        } catch (e) {
-            alert(e.message);
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = t('btn_save');
-        }
-    });
+    const saveEditBtn = document.getElementById('save-edit-profile');
+    if(saveEditBtn){
+        saveEditBtn.addEventListener('click', async () => {
+            const btn = document.getElementById('save-edit-profile');
+            btn.disabled = true;
+            btn.innerHTML = '...';
+            try {
+                const updateData = { 
+                    name: document.getElementById('edit-full-name').value.trim(),
+                    class: document.getElementById('edit-class-select').value,
+                    region: document.getElementById('edit-region-select').value,
+                    district: document.getElementById('edit-district-select').value,
+                    school: document.getElementById('edit-school-input').value.trim()
+                };
+                const { error } = await supabaseClient.from('users').update(updateData).eq('id', internalDbId);
+                if(error) throw error;
+                
+                currentUserData = { ...currentUserData, ...updateData };
+                document.getElementById('home-user-name').textContent = currentUserData.name.split(' ')[0];
+                document.getElementById('cabinet-user-name').textContent = currentUserData.name;
+                
+                showScreen('home-screen');
+            } catch (e) {
+                alert(e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = t('btn_save');
+            }
+        });
+    }
 
     // Язык
     safeAddListener('btn-lang-switch', 'click', () => {
         document.getElementById('cabinet-modal').classList.add('hidden');
         showScreen('lang-screen');
-        // Обновить галочки
         document.querySelectorAll('.lang-item i').forEach(i => i.classList.add('hidden'));
         document.querySelector(`.check-${currentLang}`).classList.remove('hidden');
     });
 
     // Работа над ошибками (С ЗАЩИТОЙ)
     safeAddListener('btn-error-review', 'click', async () => {
-        // 1. Проверяем, прошел ли тур
         if(!tourCompleted) {
-            alert("Siz hali turni tugatmadingiz."); 
+            alert(t('alert_soon')); 
             return;
         }
-        // 2. Проверяем время (ЗАЩИТА ОТ СПИСЫВАНИЯ)
         const now = new Date();
         if(tourEndDate && now < tourEndDate) {
             alert(t('alert_review_locked') + ` (${tourEndDate.toLocaleString()})`);
@@ -601,7 +623,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const container = document.getElementById('error-list-container');
         container.innerHTML = `<p style="text-align:center; margin-top:20px;">${t('btn_loading')}</p>`;
 
-        // 3. Загружаем вопросы и ответы
         const { data: answers } = await supabaseClient.from('user_answers').select('question_id, answer, is_correct').eq('user_id', internalDbId);
         const { data: questionsFull } = await supabaseClient.from('questions').select('id, question_text, correct_answer').eq('tour_id', currentTourId);
 
@@ -634,11 +655,70 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         if(wrongCount === 0) {
-            container.innerHTML = `<div style="text-align:center; padding:40px;"><h3>100% natija!</h3><p>Xatolar yo'q.</p></div>`;
+            container.innerHTML = `<div style="text-align:center; padding:40px;"><h3>100% ${t('stat_correct')}!</h3></div>`;
         }
     });
 
     // === ТУР И ВОПРОСЫ (С АНАЛИТИКОЙ) ===
+    async function handleStartClick() {
+        const btn = document.getElementById('main-action-btn');
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('btn_loading')}`;
+        const { data } = await supabaseClient.from('questions').select('time_limit_seconds').eq('tour_id', currentTourId).limit(50);
+        let totalSeconds = 0;
+        let count = 0;
+        if(data) {
+            data.forEach(q => totalSeconds += (q.time_limit_seconds || 60));
+            count = Math.min(data.length, 15);
+        }
+        const mins = Math.ceil(totalSeconds / 60);
+        
+        const rawText = t('warn_full');
+        const finalText = rawText.replace('{time}', `${mins} min`).replace('{count}', count);
+        document.getElementById('warning-text-dynamic').innerHTML = finalText;
+        
+        updateMainButton('start');
+        document.getElementById('warning-modal').classList.remove('hidden');
+    }
+
+    function updateMainButton(state, title = "") {
+        const btn = document.getElementById('main-action-btn');
+        const certCard = document.getElementById('home-cert-btn'); 
+        if (!btn) return;
+        
+        updateMainButton.lastState = state;
+
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+        const activeBtn = document.getElementById('main-action-btn');
+        
+        if (state === 'inactive') {
+            activeBtn.innerHTML = `<i class="fa-solid fa-calendar-xmark"></i> ${t('btn_no_tours')}`;
+            activeBtn.disabled = true;
+            activeBtn.className = 'btn-primary'; 
+            activeBtn.style.background = "#8E8E93";
+            if (certCard) certCard.classList.add('hidden'); 
+        } else if (state === 'completed') {
+            activeBtn.innerHTML = `<i class="fa-solid fa-check"></i> ${t('btn_completed')}`;
+            activeBtn.className = 'btn-success-clickable';
+            activeBtn.disabled = false;
+            activeBtn.style.background = ""; 
+            if (certCard) certCard.classList.remove('hidden'); 
+            activeBtn.addEventListener('click', () => document.getElementById('tour-info-modal').classList.remove('hidden'));
+        } else {
+            activeBtn.innerHTML = `<i class="fa-solid fa-play"></i> ${t('btn_start_tour')}`;
+            activeBtn.className = 'btn-primary';
+            activeBtn.disabled = false;
+            activeBtn.style.background = "";
+            if (certCard) certCard.classList.add('hidden'); 
+            activeBtn.addEventListener('click', handleStartClick);
+        }
+    }
+
+    safeAddListener('confirm-start', 'click', async () => {
+      document.getElementById('warning-modal').classList.add('hidden');
+      await startTour();
+    });
+
     async function startTour() {
       if (!currentTourId) return;
       const { data, error } = await supabaseClient
@@ -658,8 +738,21 @@ document.addEventListener('DOMContentLoaded', function() {
       showQuestion();
     }
 
+    function startTimer(seconds) {
+      let timeLeft = seconds;
+      const timerEl = document.getElementById('timer');
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        const mins = Math.floor(timeLeft / 60);
+        const secs = timeLeft % 60;
+        timerEl.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        if (timeLeft <= 0) { clearInterval(timerInterval); finishTour(); }
+        timeLeft--;
+      }, 1000);
+    }
+
     function showQuestion() {
-      questionStartTime = Date.now(); // Засекаем время
+      questionStartTime = Date.now();
       const q = questions[currentQuestionIndex];
       document.getElementById('question-number').textContent = currentQuestionIndex + 1;
       document.getElementById('total-q-count').textContent = questions.length;
@@ -676,7 +769,6 @@ document.addEventListener('DOMContentLoaded', function() {
       selectedAnswer = null;
       const optionsText = (q.options_text || '').trim();
       
-      // Рендер вариантов (как раньше) ...
       if (optionsText !== '') {
         const options = optionsText.split('\n');
         const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
@@ -712,12 +804,9 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
     
-    // ОТПРАВКА ОТВЕТА (С АНАЛИТИКОЙ ВРЕМЕНИ)
     safeAddListener('next-button', 'click', async () => {
       const nextBtn = document.getElementById('next-button');
       nextBtn.disabled = true;
-      
-      const timeSpent = Math.round((Date.now() - questionStartTime) / 1000); // Секунды
       
       const q = questions[currentQuestionIndex];
       const questionIdNumber = Number(q.id);
@@ -731,14 +820,11 @@ document.addEventListener('DOMContentLoaded', function() {
       if (finalIsCorrect) correctCount++;
       
       try {
-          // Отправляем ответ + метаданные о времени (если структура таблицы позволяет, иначе просто ответ)
-          // Для простоты пока пишем в answer, но в идеале нужно поле metadata
           const { error } = await supabaseClient.from('user_answers').upsert({
               user_id: internalDbId, 
               question_id: q.id, 
               answer: selectedAnswer, 
               is_correct: finalIsCorrect
-              // created_at запишется сам, по разнице с предыдущим можно понять время
             }, { onConflict: 'user_id,question_id' });
           
           if (error) throw error;
@@ -752,16 +838,144 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
 
-    // ... (Остальные функции: finishTour, startTimer, updateMainButton, generatePDF - остаются как были, но с исправленным stat_total) ...
-    // В renderLeaderboardUI добавляем усечение имени:
-    // const displayName = player.name.split(' ').slice(0, 2).join(' '); 
-    // Вместо player.name ставим displayName
+    async function finishTour() {
+      clearInterval(timerInterval);
+      tourCompleted = true;
+      const percent = Math.round((correctCount / questions.length) * 100);
+      showScreen('result-screen');
+      document.getElementById('res-tour-title').textContent = "1";
+      document.getElementById('res-total').textContent = questions.length;
+      document.getElementById('res-correct').textContent = correctCount;
+      document.getElementById('result-percent').textContent = `${percent}%`;
+      const circle = document.getElementById('result-circle');
+      if (circle) circle.style.background = `conic-gradient(var(--primary) 0% ${percent}%, #E5E5EA ${percent}% 100%)`;
+      updateMainButton('completed');
+      fetchStatsData(); 
+    }
 
-    // === КОНЕЦ ===
-    // Вставьте сюда остальные функции (startTimer, finishTour, PDF) из предыдущего скрипта, 
-    // они не изменились логически, только тексты.
-    // Я не стал дублировать 500 строк, чтобы не засорять чат, 
-    // но если нужно - напишите, я скину полный файл.
+    // === PDF GENERATION ===
+    const CERT_TEMPLATE_URL = 'https://fgwnqxumukkgtzentlxr.supabase.co/storage/v1/object/public/assets/certificate_template.pdf'; 
+    const FONT_URL = 'https://fgwnqxumukkgtzentlxr.supabase.co/storage/v1/object/public/assets/Roboto-Bold.ttf';
+
+    async function generateAndDownloadPDF() {
+        const btn = document.getElementById('download-cert-action-btn') || document.getElementById('download-certificate-res-btn');
+        if(!btn) return;
+        const originalText = btn.innerHTML;
+        
+        try {
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ...`;
+            btn.disabled = true;
+
+            const [templateBytes, fontBytes] = await Promise.all([
+                fetch(CERT_TEMPLATE_URL).then(res => { if(!res.ok) throw new Error('Шаблон не найден'); return res.arrayBuffer() }),
+                fetch(FONT_URL).then(res => { if(!res.ok) throw new Error('Шрифт не найден'); return res.arrayBuffer() })
+            ]);
+
+            const { PDFDocument, rgb } = PDFLib;
+            const pdfDoc = await PDFDocument.load(templateBytes);
+            pdfDoc.registerFontkit(fontkit);
+            const customFont = await pdfDoc.embedFont(fontBytes);
+
+            const pages = pdfDoc.getPages();
+            const firstPage = pages[0];
+            const { width, height } = firstPage.getSize();
+
+            const name = currentUserData?.name || 'Участник';
+            const scoreVal = (typeof correctCount !== 'undefined') ? correctCount : 0;
+            const scoreText = `${scoreVal}`;
+
+            const nameSize = 30;
+            const nameWidth = customFont.widthOfTextAtSize(name, nameSize);
+            
+            firstPage.drawText(name, {
+                x: (width - nameWidth) / 2,
+                y: 400, 
+                size: nameSize,
+                font: customFont,
+                color: rgb(0, 0, 0),
+            });
+
+            firstPage.drawText(scoreText, {
+                x: 135,
+                y: 240, 
+                size: 36,
+                font: customFont,
+                color: rgb(0, 0, 0), 
+            });
+
+            const pdfBytes = await pdfDoc.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Certificate_${name}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            btn.innerHTML = `<i class="fa-solid fa-check"></i> OK`;
+
+        } catch (e) {
+            console.error(e);
+            alert('Ошибка создания PDF: ' + e.message);
+            btn.innerHTML = 'Error';
+        } finally {
+            setTimeout(() => {
+                if(btn) { btn.disabled = false; btn.innerHTML = originalText; }
+            }, 3000);
+        }
+    }
+
+    window.showCertsModal = function() {
+        const container = document.getElementById('certs-list-container');
+        const isCompleted = tourCompleted || (currentUserData && updateMainButton.lastState === 'completed');
+        
+        if (isCompleted) {
+            container.innerHTML = `
+                <div class="cert-card">
+                    <div class="cert-icon" style="background:#E8F5E9; color:#34C759"><i class="fa-solid fa-file-pdf"></i></div>
+                    <div class="cert-info">
+                        <h4>${t('cert_title')}</h4>
+                        <p>Tur №1 • ${new Date().toLocaleDateString()}</p>
+                    </div>
+                    <button id="download-cert-action-btn" class="btn-primary" style="width:auto; padding: 8px 12px; font-size:12px;">
+                        <i class="fa-solid fa-download"></i> PDF
+                    </button>
+                </div>
+            `;
+            setTimeout(() => {
+                const dlBtn = document.getElementById('download-cert-action-btn');
+                if(dlBtn) dlBtn.onclick = generateAndDownloadPDF;
+            }, 100);
+        } else {
+             container.innerHTML = `
+                <div style="text-align:center; padding: 20px;">
+                    <i class="fa-solid fa-lock" style="font-size:30px; color:#ccc; margin-bottom:10px;"></i>
+                    <p style="color:#666;">${t('warn_cant_repeat')}</p>
+                </div>`;
+        }
+        document.getElementById('certs-modal').classList.remove('hidden');
+    }
+
+    // === LISTENERS ===
+    safeAddListener('leaderboard-btn', 'click', () => {
+        showScreen('leaderboard-screen');
+        setLeaderboardFilter('republic');
+    });
+    safeAddListener('lb-back', 'click', () => showScreen('home-screen'));
+    safeAddListener('about-btn', 'click', () => document.getElementById('about-modal').classList.remove('hidden'));
+    safeAddListener('close-about', 'click', () => document.getElementById('about-modal').classList.add('hidden'));
+    safeAddListener('exit-app-btn', 'click', () => window.Telegram && Telegram.WebApp ? Telegram.WebApp.close() : alert("Только в Telegram"));
+    safeAddListener('home-cert-btn', 'click', () => showCertsModal());
+    safeAddListener('download-certificate-res-btn', 'click', () => {
+        if(tourCompleted) generateAndDownloadPDF();
+        else alert('Finish tour first');
+    });
+    safeAddListener('cancel-start', 'click', () => document.getElementById('warning-modal').classList.add('hidden'));
+    safeAddListener('back-home', 'click', () => showScreen('home-screen'));
+    safeAddListener('back-home-x', 'click', () => showScreen('home-screen'));
+    safeAddListener('profile-locked-btn', 'click', () => document.getElementById('profile-info-modal').classList.remove('hidden'));
+    safeAddListener('profile-back-btn', 'click', () => showScreen('home-screen'));
+
     applyTranslations();
     checkProfileAndTour();
 });
