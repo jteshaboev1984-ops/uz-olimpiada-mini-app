@@ -59,8 +59,11 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 
 /* NEW CABINET SCREEN */
 .cabinet-hero { background: linear-gradient(135deg, #007AFF 0%, #0056b3 100%); padding: 20px 20px 50px; color: white; border-radius: 0 0 30px 30px; position: relative; text-align: center; }
-.cabinet-top-nav { display: flex; justify-content: flex-end; margin-bottom: 10px; }
-.close-icon-white { width: 32px; height: 32px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.cabinet-top-nav { display: flex; justify-content: flex-start; margin-bottom: 15px; } /* Changed to flex-start */
+/* NEW GLASSY BUTTON */
+.nav-back-btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 6px; cursor: pointer; backdrop-filter: blur(5px); transition: 0.2s; }
+.nav-back-btn:active { background: rgba(255,255,255,0.4); }
+
 .hero-avatar { width: 90px; height: 90px; border-radius: 50%; border: 4px solid rgba(255,255,255,0.3); margin: 0 auto 15px; overflow: hidden; background: white; }
 .hero-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .hero-content h2 { font-size: 24px; font-weight: 800; margin-bottom: 5px; }
