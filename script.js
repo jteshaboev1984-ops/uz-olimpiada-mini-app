@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v61.1 (Fix: Quiz Variables Restored)');
+    console.log('App Started: v62.0 (New Cabinet + Delete Account)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -11,8 +11,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let userAnswersCache = [];
     let currentLbFilter = 'republic'; 
     let currentLang = 'uz'; // Default language is Uzbek
+    let tourCompleted = false;
 
-    // === ПЕРЕМЕННЫЕ ТЕСТА (Добавлены обратно) ===
+    // === ПЕРЕМЕННЫЕ ТЕСТА ===
     let questions = [];
     let currentQuestionIndex = 0;
     let correctCount = 0;
@@ -28,8 +29,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // === СЛОВАРЬ ПЕРЕВОДОВ ===
     const translations = {
         uz: {
-            profile_title: "Profil",
-            profile_subtitle: "Ishtirokchi ma'lumotlari",
+            reg_title: "Ro'yxatdan o'tish",
+            reg_subtitle: "Ma'lumotlaringizni kiriting",
             participant_label: "Ishtirokchi",
             label_class: "Sinf",
             label_region: "Viloyat",
@@ -38,8 +39,9 @@ document.addEventListener('DOMContentLoaded', function() {
             consent_title: "Ma'lumotlarni qayta ishlashga rozilik",
             consent_desc: "Reyting uchun.",
             btn_save: "Saqlash",
-            profile_locked: "Profil to'ldirilgan",
+            profile_locked_msg: "O'zgartirish vaqtincha yopiq",
             btn_to_main: "Bosh sahifaga",
+            btn_cancel: "Bekor qilish",
             greeting_hi: "Salom",
             greeting_sub: "Olimpiadaga xush kelibsiz.",
             btn_leaderboard: "Reyting",
@@ -82,20 +84,19 @@ document.addEventListener('DOMContentLoaded', function() {
             lb_score: "BALL",
             you: "Siz",
             lb_points: "BALL",
+            lb_rank: "O'rin",
+            stat_tours: "Turlar",
             warn_title: "Diqqat",
             warn_msg_1: "Sizda",
             warn_msg_2: "ta savol uchun",
             warn_msg_3: "daqiqa vaqt bor.",
             warn_hint: "Turni qayta ishlash imkonsiz.",
             btn_start: "Boshlash",
-            btn_cancel: "Bekor qilish",
             btn_close: "Yopish",
             my_certs: "Mening sertifikatlarim",
             tour_passed_title: "Tur yakunlangan!",
             tour_passed_msg: "Siz ushbu bosqich javoblarini topshirgansiz. Natijalar Reyting bo'limida.",
             btn_channel: "Kanalga o'tish",
-            profile_locked_title: "Profil to'ldirilgan",
-            profile_locked_msg: "Reyting to'g'ri shakllanishi uchun ma'lumotlar saqlab qo'yilgan.",
             locked_alert_title: "O'zgartirish imkonsiz",
             locked_alert_desc: "Olimpiada yakunlanguncha tahrirlash o'chirilgan.",
             btn_understood: "Tushunarli",
@@ -127,11 +128,23 @@ document.addEventListener('DOMContentLoaded', function() {
             saving_ans: "Saqlash...",
             repeat: "Qayta urinish",
             error: "Xatolik",
-            answer_placeholder: "Javobni kiriting..."
+            answer_placeholder: "Javobni kiriting...",
+            menu_my_data: "Ma'lumotlarim",
+            menu_my_data_desc: "Sinf, maktab, hudud",
+            menu_lang: "Til / Язык",
+            menu_certs: "Sertifikatlar",
+            menu_certs_desc: "Yutuqlar arxivi",
+            menu_support: "Yordam",
+            menu_support_desc: "Admin bilan aloqa",
+            btn_delete_account: "Hisobni o'chirish",
+            del_title: "Hisobni o'chirish?",
+            del_msg: "Barcha natijalaringiz va reytingdagi o'rningiz o'chib ketadi. Qayta tiklab bo'lmaydi.",
+            btn_delete_confirm: "O'chirish",
+            del_error_active_tour: "Joriy tur topshirilganligi sababli hisobni o'chirish mumkin emas. Iltimos, tur yakunlanishini kuting."
         },
         ru: {
-            profile_title: "Профиль",
-            profile_subtitle: "Данные участника",
+            reg_title: "Регистрация",
+            reg_subtitle: "Введите данные",
             participant_label: "Участник",
             label_class: "Класс",
             label_region: "Регион",
@@ -140,8 +153,9 @@ document.addEventListener('DOMContentLoaded', function() {
             consent_title: "Согласие на обработку",
             consent_desc: "Для рейтинга.",
             btn_save: "Сохранить",
-            profile_locked: "Профиль заполнен",
+            profile_locked_msg: "Редактирование закрыто",
             btn_to_main: "На главную",
+            btn_cancel: "Отмена",
             greeting_hi: "Привет",
             greeting_sub: "Добро пожаловать на олимпиаду.",
             btn_leaderboard: "Рейтинг",
@@ -184,20 +198,19 @@ document.addEventListener('DOMContentLoaded', function() {
             lb_score: "БАЛЛЫ",
             you: "Вы",
             lb_points: "БАЛЛЫ",
+            lb_rank: "Место",
+            stat_tours: "Туров",
             warn_title: "Предупреждение",
             warn_msg_1: "У вас будет",
             warn_msg_2: "на",
             warn_msg_3: "вопросов.",
             warn_hint: "Повтор тура невозможен.",
             btn_start: "Начать",
-            btn_cancel: "Отмена",
             btn_close: "Закрыть",
             my_certs: "Мои сертификаты",
             tour_passed_title: "Тур уже пройден!",
             tour_passed_msg: "Вы уже сдали ответы на текущий этап. Результаты доступны в Лидерборде.",
             btn_channel: "Перейти в канал",
-            profile_locked_title: "Профиль заполнен",
-            profile_locked_msg: "Данные участника зафиксированы для формирования рейтинга.",
             locked_alert_title: "Изменение невозможно",
             locked_alert_desc: "До окончания олимпиады редактирование данных отключено.",
             btn_understood: "Понятно",
@@ -229,11 +242,23 @@ document.addEventListener('DOMContentLoaded', function() {
             saving_ans: "Сохранение...",
             repeat: "Повторить",
             error: "Ошибка",
-            answer_placeholder: "Введите ответ..."
+            answer_placeholder: "Введите ответ...",
+            menu_my_data: "Мои данные",
+            menu_my_data_desc: "Класс, школа, регион",
+            menu_lang: "Til / Язык",
+            menu_certs: "Сертификаты",
+            menu_certs_desc: "Архив достижений",
+            menu_support: "Помощь",
+            menu_support_desc: "Связь с админом",
+            btn_delete_account: "Удалить аккаунт",
+            del_title: "Удалить аккаунт?",
+            del_msg: "Все ваши результаты и место в рейтинге будут удалены безвозвратно.",
+            btn_delete_confirm: "Удалить",
+            del_error_active_tour: "Удаление невозможно, так как вы уже сдали текущий тур. Дождитесь его завершения."
         },
         en: {
-            profile_title: "Profile",
-            profile_subtitle: "Participant Data",
+            reg_title: "Registration",
+            reg_subtitle: "Enter your details",
             participant_label: "Participant",
             label_class: "Grade",
             label_region: "Region",
@@ -242,8 +267,9 @@ document.addEventListener('DOMContentLoaded', function() {
             consent_title: "Data Processing Consent",
             consent_desc: "For leaderboard ranking.",
             btn_save: "Save",
-            profile_locked: "Profile Completed",
+            profile_locked_msg: "Editing is locked",
             btn_to_main: "Go to Home",
+            btn_cancel: "Cancel",
             greeting_hi: "Hi",
             greeting_sub: "Welcome to the Olympiad.",
             btn_leaderboard: "Leaderboard",
@@ -286,20 +312,19 @@ document.addEventListener('DOMContentLoaded', function() {
             lb_score: "SCORE",
             you: "You",
             lb_points: "POINTS",
+            lb_rank: "Rank",
+            stat_tours: "Tours",
             warn_title: "Warning",
             warn_msg_1: "You have",
             warn_msg_2: "for",
             warn_msg_3: "questions.",
             warn_hint: "Retaking the tour is not possible.",
             btn_start: "Start",
-            btn_cancel: "Cancel",
             btn_close: "Close",
             my_certs: "My Certificates",
             tour_passed_title: "Tour Completed!",
             tour_passed_msg: "You have already submitted answers. Check the Leaderboard.",
             btn_channel: "Go to Channel",
-            profile_locked_title: "Profile Locked",
-            profile_locked_msg: "Participant data is locked for ranking accuracy.",
             locked_alert_title: "Editing Disabled",
             locked_alert_desc: "Changes are not allowed until Olympiad ends.",
             btn_understood: "Understood",
@@ -331,29 +356,37 @@ document.addEventListener('DOMContentLoaded', function() {
             saving_ans: "Saving...",
             repeat: "Retry",
             error: "Error",
-            answer_placeholder: "Enter answer..."
+            answer_placeholder: "Enter answer...",
+            menu_my_data: "My Details",
+            menu_my_data_desc: "Grade, school, region",
+            menu_lang: "Language",
+            menu_certs: "Certificates",
+            menu_certs_desc: "Archive",
+            menu_support: "Support",
+            menu_support_desc: "Contact Admin",
+            btn_delete_account: "Delete Account",
+            del_title: "Delete Account?",
+            del_msg: "All your results and ranking will be lost permanently.",
+            btn_delete_confirm: "Delete",
+            del_error_active_tour: "Cannot delete account while you have submitted the current tour. Please wait."
         }
     };
 
-    // Helper function to get translation
     function t(key) {
         return translations[currentLang][key] || key;
     }
 
     function setLanguage(lang) {
-        if (!translations[lang]) lang = 'uz'; // Fallback to Uzbek
+        if (!translations[lang]) lang = 'uz'; 
         currentLang = lang;
-        document.getElementById('lang-switcher').value = lang;
+        if(document.getElementById('lang-switcher-cab')) document.getElementById('lang-switcher-cab').value = lang;
         
-        // Update all data-i18n elements
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
             if (translations[lang][key]) {
-                el.innerHTML = translations[lang][key]; // innerHTML to support <b> tags
+                el.innerHTML = translations[lang][key]; 
             }
         });
-
-        // Update selects placeholders
         updateSelectPlaceholders();
     }
 
@@ -368,10 +401,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (classSel && classSel.options.length > 0) classSel.options[0].textContent = t('select_class');
     }
 
-    document.getElementById('lang-switcher').addEventListener('change', (e) => {
-        setLanguage(e.target.value);
-        localStorage.setItem('user_lang', e.target.value);
-    });
+    if(document.getElementById('lang-switcher-cab')) {
+        document.getElementById('lang-switcher-cab').addEventListener('change', (e) => {
+            setLanguage(e.target.value);
+            localStorage.setItem('user_lang', e.target.value);
+        });
+    }
 
     // === ИНИЦИАЛИЗАЦИЯ TELEGRAM & LANGUAGE ===
     if (window.Telegram && window.Telegram.WebApp) {
@@ -387,19 +422,21 @@ document.addEventListener('DOMContentLoaded', function() {
         if (user.photo_url) telegramData.photoUrl = user.photo_url;
         telegramData.languageCode = user.language_code;
 
-        document.getElementById('profile-user-name').textContent = telegramData.firstName + ' ' + (telegramData.lastName || '');
+        document.getElementById('reg-user-name').textContent = telegramData.firstName + ' ' + (telegramData.lastName || '');
         document.getElementById('home-user-name').textContent = telegramData.firstName || t('lb_participant');
+        if(telegramData.photoUrl) {
+            document.getElementById('cab-avatar-img').src = telegramData.photoUrl;
+        }
       } else {
         console.warn("No Telegram user found. Running in Test Mode.");
         if (!localStorage.getItem('test_user_id')) {
              localStorage.setItem('test_user_id', Math.floor(Math.random() * 1000000000));
         }
         telegramUserId = Number(localStorage.getItem('test_user_id'));
-        document.getElementById('profile-user-name').textContent = 'Test User';
+        document.getElementById('reg-user-name').textContent = 'Test User';
       }
     }
 
-    // Determine Language Priority: LocalStorage -> Telegram -> Default (UZ)
     const savedLang = localStorage.getItem('user_lang');
     if (savedLang) {
         setLanguage(savedLang);
@@ -411,7 +448,7 @@ document.addEventListener('DOMContentLoaded', function() {
         setLanguage('uz');
     }
   
-    // === ДАННЫЕ РЕГИОНОВ (OFFICIAL UZBEK - FULL LIST) ===
+    // === ДАННЫЕ РЕГИОНОВ ===
     const regions = {
         "Toshkent shahri": ["Bektemir tumani", "Chilonzor tumani", "Mirobod tumani", "Mirzo Ulug'bek tumani", "Olmazor tumani", "Sergeli tumani", "Shayxontohur tumani", "Uchtepa tumani", "Yakkasaroy tumani", "Yangihayot tumani", "Yashnobod tumani", "Yunusobod tumani"],
         "Andijon viloyati": ["Andijon shahri", "Xonobod shahri", "Andijon tumani", "Asaka tumani", "Baliqchi tumani", "Bo'z tumani", "Buloqboshi tumani", "Izboskan tumani", "Jalaquduq tumani", "Marhamat tumani", "Oltinko'l tumani", "Paxtaobod tumani", "Qo'rg'ontepa tumani", "Shahrixon tumani", "Ulug'nor tumani", "Xo'jaobod tumani"],
@@ -485,6 +522,11 @@ document.addEventListener('DOMContentLoaded', function() {
                   currentUserData.name = tgName; 
               }
           }
+          // Update Cabinet Info
+          document.getElementById('cab-name').textContent = currentUserData.name;
+          document.getElementById('cab-id').textContent = String(telegramUserId).slice(-6); // last 6 digits as dummy ID
+          if(currentUserData.avatar_url) document.getElementById('cab-avatar-img').src = currentUserData.avatar_url;
+
       } else {
           // Если юзера нет - создаем
           let fullName = telegramData.firstName ? (telegramData.firstName + (telegramData.lastName ? ' ' + telegramData.lastName : '')).trim() : 'Foydalanuvchi';
@@ -511,7 +553,7 @@ document.addEventListener('DOMContentLoaded', function() {
               if (progress) {
                   tourCompleted = true;
                   updateMainButton('completed');
-                  document.getElementById('subjects-title').textContent = t('curr_tour'); // Or results title
+                  document.getElementById('subjects-title').textContent = t('curr_tour'); 
               } else {
                   tourCompleted = false;
                   updateMainButton('start', tourData.title);
@@ -523,8 +565,9 @@ document.addEventListener('DOMContentLoaded', function() {
       const isProfileComplete = currentUserData && currentUserData.class && currentUserData.region && currentUserData.district && currentUserData.school;
       
       if (!currentUserData || !isProfileComplete) {
-        showScreen('profile-screen');
+        showScreen('reg-screen');
         unlockProfileForm();
+        document.getElementById('reg-back-btn').classList.add('hidden'); // Cannot cancel reg
       } else {
         fillProfileForm(currentUserData);
         showScreen('home-screen');
@@ -545,10 +588,12 @@ document.addEventListener('DOMContentLoaded', function() {
             'Matematika': 'math', 'Ingliz tili': 'eng', 'Fizika': 'phys',
             'Kimyo': 'chem', 'Biologiya': 'bio', 'Informatika': 'it',
             'Iqtisodiyot': 'eco', 'SAT': 'sat', 'IELTS': 'ielts',
-            // Mappings for RU/EN fallback just in case data comes differently
             'Математика': 'math', 'Английский': 'eng', 'Физика': 'phys', 
             'Химия': 'chem', 'Биология': 'bio', 'Информатика': 'it', 'Экономика': 'eco'
         };
+        let totalCorrect = 0;
+        let totalTours = 0; // Simple stub logic: if stats > 0 then 1 tour
+        
         for (const [subjName, prefix] of Object.entries(subjectMap)) {
             const stats = calculateSubjectStats(subjName);
             let percent = 0;
@@ -557,11 +602,15 @@ document.addEventListener('DOMContentLoaded', function() {
             if (percentEl) percentEl.textContent = `${percent}%`;
             const barEl = document.getElementById(`${prefix}-bar`);
             if (barEl) barEl.style.width = `${percent}%`;
+            totalCorrect += stats.correct;
         }
+        
+        document.getElementById('cab-score').textContent = totalCorrect;
+        if(tourCompleted) totalTours = 1;
+        document.getElementById('cab-tours').textContent = totalTours;
     }
 
     function calculateSubjectStats(subjectName) {
-        // Simple text matching
         const subjectQuestions = tourQuestionsCache.filter(q => q.subject && q.subject.toLowerCase().includes(subjectName.toLowerCase()));
         if (subjectQuestions.length === 0) return { total: 0, correct: 0 };
         let correct = 0;
@@ -575,34 +624,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     window.openSubjectStats = function(prefix) {
-        // prefix comes from onClick 'math', 'eng' etc.
-        // We need to map prefix back to possible DB subject names or just show generic
         const modal = document.getElementById('subject-details-modal');
         const content = document.getElementById('sd-content');
         const title = document.getElementById('sd-title');
         
-        // Find subject translation
         let subjTitle = t('subj_' + prefix);
         if(!subjTitle) subjTitle = prefix.toUpperCase();
 
         if (modal && content) {
             title.textContent = subjTitle;
-            
-            // Try to calc stats by name in current Lang or hardcoded keys
-            // This is tricky if DB has 'Matematika' but we are in EN.
-            // Ideally questions in DB should have a 'subject_code'.
-            // For now, we try to match the translated name OR the known russian/uzbek names.
-            
             let stats = { total: 0, correct: 0};
-            // Try matching common names
             ['Matematika', 'Математика', 'Math', 'Ingliz', 'Английский', 'English', 'Fizika', 'Физика', 'Physics'].forEach(n => {
                 if (t('subj_' + prefix).includes(n) || n.toLowerCase().includes(prefix)) {
                     let s = calculateSubjectStats(n);
                     if (s.total > stats.total) stats = s;
                 }
             });
-
-            // If still 0, try exact translation
             if(stats.total === 0) stats = calculateSubjectStats(subjTitle);
 
             const html = `
@@ -809,6 +846,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if(currentUserData) document.getElementById('my-class-val').textContent = `${currentUserData.class} ${t('class_s')}`;
             document.getElementById('my-score-val').textContent = me.score;
             stickyEl.classList.remove('hidden');
+            // Update Cabinet Rank
+            document.getElementById('cab-rank').textContent = myRank === "50+" ? ">50" : `#${myRank}`;
         } else {
             stickyEl.classList.add('hidden');
         }
@@ -858,9 +897,10 @@ document.addEventListener('DOMContentLoaded', function() {
           internalDbId = data.id;
           currentUserData = data;
           
-          lockProfileForm();
+          // If came from cabinet, go back to cabinet (or update UI and go home)
+          // For simplicity -> Go Home
           showScreen('home-screen');
-          checkProfileAndTour();
+          checkProfileAndTour(); // Refresh data
       } catch (e) {
           alert(t('error') + ': ' + e.message);
           btn.disabled = false;
@@ -870,16 +910,15 @@ document.addEventListener('DOMContentLoaded', function() {
   
     function lockProfileForm() {
         document.getElementById('save-profile').classList.add('hidden');
-        document.getElementById('profile-back-btn').classList.remove('hidden');
-        document.getElementById('profile-locked-btn').classList.remove('hidden');
-        document.querySelectorAll('#profile-screen input, #profile-screen select').forEach(el => el.disabled = true);
-        document.getElementById('lang-switcher').disabled = false; // Allow changing lang
+        document.getElementById('reg-back-btn').classList.remove('hidden');
+        document.getElementById('reg-locked-msg').classList.remove('hidden');
+        document.querySelectorAll('#reg-screen input, #reg-screen select').forEach(el => el.disabled = true);
     }
     function unlockProfileForm() {
         document.getElementById('save-profile').classList.remove('hidden');
-        document.getElementById('profile-back-btn').classList.add('hidden');
-        document.getElementById('profile-locked-btn').classList.add('hidden');
-        document.querySelectorAll('#profile-screen input, #profile-screen select').forEach(el => el.disabled = false);
+        document.getElementById('reg-back-btn').classList.add('hidden');
+        document.getElementById('reg-locked-msg').classList.add('hidden');
+        document.querySelectorAll('#reg-screen input, #reg-screen select').forEach(el => el.disabled = false);
     }
     const requiredFields = document.querySelectorAll('#class-select, #region-select, #district-select, #school-input');
     requiredFields.forEach(field => {
@@ -888,6 +927,36 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('save-profile').disabled = !allFilled;
       });
     });
+    
+    // === ЛОГИКА УДАЛЕНИЯ АККАУНТА ===
+    safeAddListener('delete-account-btn', 'click', () => {
+        if(tourCompleted) {
+            alert(t('del_error_active_tour'));
+        } else {
+            document.getElementById('delete-confirm-modal').classList.remove('hidden');
+        }
+    });
+
+    safeAddListener('confirm-delete-btn', 'click', async () => {
+        const btn = document.getElementById('confirm-delete-btn');
+        btn.disabled = true;
+        btn.innerHTML = '...';
+        
+        try {
+            const { error } = await supabaseClient.from('users').delete().eq('id', internalDbId);
+            if(error) throw error;
+            
+            // Clear local data
+            localStorage.clear();
+            location.reload(); 
+        } catch (e) {
+            alert(t('error') + ': ' + e.message);
+            btn.disabled = false;
+            btn.innerHTML = t('btn_delete_confirm');
+        }
+    });
+
+    // === QUIZ LOGIC ===
     async function handleStartClick() {
         const btn = document.getElementById('main-action-btn');
         btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('loading')}`;
@@ -1085,9 +1154,21 @@ document.addEventListener('DOMContentLoaded', function() {
         const el = document.getElementById(id);
         if (el) el.addEventListener(event, handler);
     }
-    safeAddListener('open-profile-btn', 'click', () => { showScreen('profile-screen'); lockProfileForm(); });
-    safeAddListener('profile-back-btn', 'click', () => showScreen('home-screen'));
-    safeAddListener('profile-locked-btn', 'click', () => document.getElementById('profile-info-modal').classList.remove('hidden'));
+    safeAddListener('open-cabinet-btn', 'click', () => { 
+        showScreen('cabinet-screen'); 
+        // Update rank dynamically if needed
+        loadLeaderboard(); // to update sticky rank cache
+    });
+    safeAddListener('close-cabinet', 'click', () => showScreen('home-screen'));
+    
+    // Меню кабинета:
+    safeAddListener('btn-edit-profile', 'click', () => {
+        showScreen('reg-screen');
+        if(tourCompleted) lockProfileForm(); else unlockProfileForm();
+        document.getElementById('reg-back-btn').classList.remove('hidden'); // Allow cancel
+    });
+    safeAddListener('reg-back-btn', 'click', () => showScreen('cabinet-screen'));
+
     safeAddListener('leaderboard-btn', 'click', () => {
         showScreen('leaderboard-screen');
         setLeaderboardFilter('republic');
@@ -1095,7 +1176,18 @@ document.addEventListener('DOMContentLoaded', function() {
     safeAddListener('lb-back', 'click', () => showScreen('home-screen'));
     safeAddListener('about-btn', 'click', () => document.getElementById('about-modal').classList.remove('hidden'));
     safeAddListener('close-about', 'click', () => document.getElementById('about-modal').classList.add('hidden'));
-    safeAddListener('exit-app-btn', 'click', () => window.Telegram && Telegram.WebApp ? Telegram.WebApp.close() : alert("Только в Telegram"));
+    
+    // Логика ВЫХОДА (Браузер)
+    safeAddListener('exit-app-btn', 'click', () => {
+        if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) {
+            Telegram.WebApp.close();
+        } else {
+            // Browser reset logic
+            localStorage.clear();
+            location.reload();
+        }
+    });
+
     safeAddListener('home-cert-btn', 'click', () => showCertsModal());
     safeAddListener('download-certificate-res-btn', 'click', () => showCertsModal());
     safeAddListener('cancel-start', 'click', () => document.getElementById('warning-modal').classList.add('hidden'));
