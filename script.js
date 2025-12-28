@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v70.0 (Multilang + Latin Regions + PDF Fix)');
+    console.log('App Started: v80.0 (Correct Auth + Full Latin Regions + Respectful Greetings)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -17,24 +17,25 @@ document.addEventListener('DOMContentLoaded', function() {
     let tourCompleted = false;
     let selectedAnswer = null;
 
-    // === НАСТРОЙКИ SUPABASE ===
+    // === НАСТРОЙКИ SUPABASE (ВАШИ РАБОЧИЕ КЛЮЧИ) ===
     const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
     const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI';
     const { createClient } = supabase;
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
 
     // === СИСТЕМА ПЕРЕВОДОВ ===
-    let currentLang = localStorage.getItem('app_lang') || 'uz'; // По умолчанию узбекский
+    let currentLang = localStorage.getItem('app_lang') || 'uz';
     
     const translations = {
         ru: {
+            greeting_prefix: "Здравствуйте",
             profile_title: "Профиль",
             profile_subtitle: "Данные участника",
             label_fullname: "Фамилия и Имя",
             warn_real_name: "Внимание: Введите реальное имя для Сертификата.",
             label_class: "Класс",
             label_region: "Регион",
-            label_district: "Район",
+            label_district: "Район / Город",
             label_school: "Школа",
             label_consent: "Согласие на обработку",
             label_consent_sub: "Для рейтинга",
@@ -71,8 +72,7 @@ document.addEventListener('DOMContentLoaded', function() {
             col_score: "БАЛЛЫ",
             me_label: "Вы",
             warn_title: "Предупреждение",
-            warn_desc_1: "У вас будет",
-            warn_desc_2: "на",
+            warn_full: "На выполнение заданий отводится <b>{time}</b>. Всего вопросов: <b>{count}</b>.",
             warn_cant_repeat: "Повтор тура невозможен.",
             btn_cancel: "Отмена",
             btn_close: "Закрыть",
@@ -88,16 +88,18 @@ document.addEventListener('DOMContentLoaded', function() {
             subj_bio: "Биология", subj_it: "Информатика", subj_eco: "Экономика",
             cert_modal_title: "Мои сертификаты",
             ph_name: "Например: Азизов Сардор",
-            ph_school: "№ школы"
+            ph_school: "№ школы",
+            btn_exit: "Выход"
         },
         uz: {
+            greeting_prefix: "Assalomu alaykum",
             profile_title: "Profil",
             profile_subtitle: "Ishtirokchi ma'lumotlari",
             label_fullname: "Familiya va Ism",
             warn_real_name: "Diqqat: Sertifikat uchun haqiqiy ismingizni yozing.",
             label_class: "Sinf",
             label_region: "Viloyat",
-            label_district: "Tuman",
+            label_district: "Tuman / Shahar",
             label_school: "Maktab",
             label_consent: "Qayta ishlashga rozilik",
             label_consent_sub: "Reyting uchun",
@@ -134,8 +136,7 @@ document.addEventListener('DOMContentLoaded', function() {
             col_score: "BALL",
             me_label: "Siz",
             warn_title: "Diqqat",
-            warn_desc_1: "Sizda",
-            warn_desc_2: "vaqt bor:",
+            warn_full: "Imtihon uchun ajratilgan vaqt: <b>{time}</b>. Jami savollar soni: <b>{count}</b>.",
             warn_cant_repeat: "Turni qayta ishlash mumkin emas.",
             btn_cancel: "Bekor qilish",
             btn_close: "Yopish",
@@ -151,16 +152,18 @@ document.addEventListener('DOMContentLoaded', function() {
             subj_bio: "Biologiya", subj_it: "Informatika", subj_eco: "Iqtisodiyot",
             cert_modal_title: "Mening sertifikatlarim",
             ph_name: "Masalan: Azizov Sardor",
-            ph_school: "Maktab №"
+            ph_school: "Maktab №",
+            btn_exit: "Chiqish"
         },
         en: {
+            greeting_prefix: "Hello",
             profile_title: "Profile",
             profile_subtitle: "Participant Data",
             label_fullname: "Full Name",
             warn_real_name: "Note: Enter real name for Certificate.",
             label_class: "Grade",
             label_region: "Region",
-            label_district: "District",
+            label_district: "District / City",
             label_school: "School",
             label_consent: "Data Consent",
             label_consent_sub: "For leaderboard",
@@ -197,8 +200,7 @@ document.addEventListener('DOMContentLoaded', function() {
             col_score: "SCORE",
             me_label: "You",
             warn_title: "Warning",
-            warn_desc_1: "You will have",
-            warn_desc_2: "for",
+            warn_full: "You will have <b>{time}</b> to complete <b>{count}</b> questions.",
             warn_cant_repeat: "Retake is not allowed.",
             btn_cancel: "Cancel",
             btn_close: "Close",
@@ -214,7 +216,8 @@ document.addEventListener('DOMContentLoaded', function() {
             subj_bio: "Biology", subj_it: "IT", subj_eco: "Economics",
             cert_modal_title: "My Certificates",
             ph_name: "Ex: Azizov Sardor",
-            ph_school: "School #"
+            ph_school: "School #",
+            btn_exit: "Exit"
         }
     };
 
@@ -248,6 +251,7 @@ document.addEventListener('DOMContentLoaded', function() {
         telegramData.firstName = user.first_name;
         telegramData.lastName = user.last_name;
         if (user.photo_url) telegramData.photoUrl = user.photo_url;
+        // Обновляем имя в приветствии, но сохраняем префикс
         document.getElementById('home-user-name').textContent = telegramData.firstName || 'User';
       } else {
         console.warn("No Telegram user found. Running in Test Mode.");
@@ -258,22 +262,23 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
   
-    // === ДАННЫЕ РЕГИОНОВ (UZBEK LATIN - ONLY) ===
+    // === ДАННЫЕ РЕГИОНОВ (FULL UZBEK LATIN) ===
+    // Включая крупные города
     const regions = {
         "Toshkent shahri": ["Olmazor", "Bektemir", "Mirobod", "Mirzo Ulug'bek", "Sergeli", "Uchtepa", "Chilonzor", "Shayxontohur", "Yunusobod", "Yakkasaroy", "Yashnobod", "Yangihayot"],
-        "Andijon viloyati": ["Andijon shahri", "Andijon tumani", "Asaka", "Baliqchi", "Bo'z", "Buloqboshi", "Jalaquduq", "Izboskan", "Qo'rg'ontepa", "Marhamat", "Paxtaobod", "Ulug'nor", "Xo'jaobod", "Shahrixon"],
-        "Buxoro viloyati": ["Buxoro shahri", "Olot", "Buxoro tumani", "Vobkent", "G'ijduvon", "Jondor", "Kogon", "Qorako'l", "Qorovulbozor", "Peshku", "Romitan", "Shofirkon"],
+        "Andijon viloyati": ["Andijon shahri", "Xonobod shahri", "Andijon tumani", "Asaka", "Baliqchi", "Bo'ston (Bo'z)", "Buloqboshi", "Jalaquduq", "Izboskan", "Qo'rg'ontepa", "Marhamat", "Paxtaobod", "Ulug'nor", "Xo'jaobod", "Shahrixon"],
+        "Buxoro viloyati": ["Buxoro shahri", "Kogon shahri", "Olot", "Buxoro tumani", "Vobkent", "G'ijduvon", "Jondor", "Kogon tumani", "Qorako'l", "Qorovulbozor", "Peshku", "Romitan", "Shofirkon"],
         "Jizzax viloyati": ["Jizzax shahri", "Arnasoy", "Baxmal", "G'allaorol", "Jizzax tumani", "Do'stlik", "Zomin", "Zarbdor", "Zafarobod", "Mirzacho'l", "Paxtakor", "Forish", "Yangiobod"],
-        "Qashqadaryo viloyati": ["Qarshi shahri", "G'uzor", "Dehqonobod", "Qamashi", "Qarshi tumani", "Koson", "Kitob", "Mirishkor", "Muborak", "Nishon", "Chiroqchi", "Shahrisabz", "Yakkabog'"],
-        "Navoiy viloyati": ["Navoiy shahri", "Konimex", "Karmana", "Qiziltepa", "Navbahor", "Nurota", "Tomdi", "Uchquduq", "Xatirchi"],
-        "Namangan viloyati": ["Namangan shahri", "Kosonsoy", "Mingbuloq", "Namangan tumani", "Norin", "Pop", "To'raqo'rg'on", "Uychi", "Uchqo'rg'on", "Chortoq", "Chust", "Yangiqo'rg'on"],
-        "Samarqand viloyati": ["Samarqand shahri", "Oqdaryo", "Bulung'ur", "Jomboy", "Ishtixon", "Kattaqo'rg'on", "Qo'shrabot", "Narpay", "Nurobod", "Pastdarg'om", "Paxtachi", "Payariq", "Samarqand tumani", "Toyloq", "Urgut"],
-        "Surxondaryo viloyati": ["Termiz shahri", "Oltinsoy", "Angor", "Boysun", "Denov", "Jarqo'rg'on", "Qumqo'rg'on", "Qiziriq", "Muzrabot", "Sariosiyo", "Termiz tumani", "Uzun", "Sherobod", "Sho'rchi"],
-        "Sirdaryo viloyati": ["Guliston shahri", "Oqoltin", "Boyovut", "Guliston tumani", "Mirzaobod", "Sayxunobod", "Sardoba", "Sirdaryo tumani", "Xovos"],
-        "Toshkent viloyati": ["Oqqo'rg'on", "Ohangaron", "Bekobod", "Bo'stonliq", "Bo'ka", "Zangiota", "Qibray", "Quyichirchiq", "Parkent", "Piskent", "Toshkent tumani", "O'rtachirchiq", "Chinoz", "Yuqorichirchiq", "Yangiyo'l"],
-        "Farg'ona viloyati": ["Farg'ona shahri", "Oltiariq", "Bag'dod", "Beshariq", "Buvayda", "Dang'ara", "Quva", "Rishton", "So'x", "Toshloq", "O'zbekiston", "Uchko'prik", "Farg'ona tumani", "Furqat", "Yozyovon"],
-        "Xorazm viloyati": ["Urganch shahri", "Bog'ot", "Gurlan", "Qo'shko'pir", "Urganch tumani", "Hazorasp", "Xonqa", "Xiva", "Shovot", "Yangioriq", "Yangibozor"],
-        "Qoraqalpog'iston Respublikasi": ["Nukus shahri", "Amudaryo", "Beruniy", "Qanliko'l", "Qorao'zak", "Kegeyli", "Qo'ng'irot", "Mo'ynoq", "Nukus tumani", "Taxtako'pir", "To'rtko'l", "Xo'jayli", "Chimboy", "Shumanay", "Ellikqal'a"]
+        "Qashqadaryo viloyati": ["Qarshi shahri", "Shahrisabz shahri", "G'uzor", "Dehqonobod", "Qamashi", "Qarshi tumani", "Koson", "Kitob", "Mirishkor", "Muborak", "Nishon", "Chiroqchi", "Shahrisabz tumani", "Yakkabog'", "Ko'kdala"],
+        "Navoiy viloyati": ["Navoiy shahri", "Zarafshon shahri", "G'ozg'on shahri", "Konimex", "Karmana", "Qiziltepa", "Navbahor", "Nurota", "Tomdi", "Uchquduq", "Xatirchi"],
+        "Namangan viloyati": ["Namangan shahri", "Kosonsoy", "Mingbuloq", "Namangan tumani", "Norin", "Pop", "To'raqo'rg'on", "Uychi", "Uchqo'rg'on", "Chortoq", "Chust", "Yangiqo'rg'on", "Davlatobod", "Yangi Namangan"],
+        "Samarqand viloyati": ["Samarqand shahri", "Kattaqo'rg'on shahri", "Oqdaryo", "Bulung'ur", "Jomboy", "Ishtixon", "Kattaqo'rg'on tumani", "Qo'shrabot", "Narpay", "Nurobod", "Pastdarg'om", "Paxtachi", "Payariq", "Samarqand tumani", "Toyloq", "Urgut"],
+        "Surxondaryo viloyati": ["Termiz shahri", "Oltinsoy", "Angor", "Boysun", "Denov", "Jarqo'rg'on", "Qumqo'rg'on", "Qiziriq", "Muzrabot", "Sariosiyo", "Termiz tumani", "Uzun", "Sherobod", "Sho'rchi", "Bandixon"],
+        "Sirdaryo viloyati": ["Guliston shahri", "Shirin shahri", "Yangiyer shahri", "Oqoltin", "Boyovut", "Guliston tumani", "Mirzaobod", "Sayxunobod", "Sardoba", "Sirdaryo tumani", "Xovos"],
+        "Toshkent viloyati": ["Angren shahri", "Bekobod shahri", "Olmaliq shahri", "Ohangaron shahri", "Chirchiq shahri", "Yangiyo'l shahri", "Nurafshon shahri", "Oqqo'rg'on", "Ohangaron tumani", "Bekobod tumani", "Bo'stonliq", "Bo'ka", "Zangiota", "Qibray", "Quyichirchiq", "Parkent", "Piskent", "Toshkent tumani", "O'rtachirchiq", "Chinoz", "Yuqorichirchiq", "Yangiyo'l tumani"],
+        "Farg'ona viloyati": ["Farg'ona shahri", "Marg'ilon shahri", "Qo'qon shahri", "Quvasoy shahri", "Oltiariq", "Bag'dod", "Beshariq", "Buvayda", "Dang'ara", "Quva", "Rishton", "So'x", "Toshloq", "O'zbekiston", "Uchko'prik", "Farg'ona tumani", "Furqat", "Yozyovon"],
+        "Xorazm viloyati": ["Urganch shahri", "Xiva shahri", "Bog'ot", "Gurlan", "Qo'shko'pir", "Urganch tumani", "Hazorasp", "Xonqa", "Xiva tumani", "Shovot", "Yangioriq", "Yangibozor", "Tuproqqal'a"],
+        "Qoraqalpog'iston Respublikasi": ["Nukus shahri", "Amudaryo", "Beruniy", "Qanliko'l", "Qorao'zak", "Kegeyli", "Qo'ng'irot", "Mo'ynoq", "Nukus tumani", "Taxtako'pir", "To'rtko'l", "Xo'jayli", "Chimboy", "Shumanay", "Ellikqal'a", "Taxiatosh", "Bo'zatov"]
     };
   
     // Настройка селектов
@@ -555,7 +560,7 @@ document.addEventListener('DOMContentLoaded', function() {
         top3.forEach((player, i) => {
             if (player) {
                 const avatarHtml = player.avatarUrl 
-                    ? `<img src="${player.avatarUrl}" class="winner-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">`
+                    ? `<img src="${player.avatarUrl}" class="winner-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1077/1077114.png'">`
                     : `<div class="winner-img" style="background:#E1E1E6; display:flex; align-items:center; justify-content:center; font-size:24px; color:#666;">${player.name[0]}</div>`;
 
                 let html = `
@@ -631,9 +636,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (nameInput) {
             nameInput.value = data.name || (telegramData.firstName + ' ' + (telegramData.lastName || '')).trim();
         }
+        
+        // Если у пользователя есть фото из телеграм - ставим его, иначе нейтральный аватар
         const avatarImg = document.getElementById('profile-avatar-img');
-        if (avatarImg && data.avatar_url) {
-            avatarImg.src = data.avatar_url;
+        if (avatarImg) {
+            if (data.avatar_url) avatarImg.src = data.avatar_url;
+            else avatarImg.src = "https://cdn-icons-png.flaticon.com/512/1077/1077114.png";
         }
 
         document.getElementById('class-select').value = data.class;
@@ -686,6 +694,7 @@ document.addEventListener('DOMContentLoaded', function() {
               school: school, 
               research_consent: consent 
           };
+          // Сохраняем фото только если оно пришло из Телеграм, иначе база будет пустой (и это ок, покажется дефолт)
           if (telegramData.photoUrl) updateData.avatar_url = telegramData.photoUrl;
           
           const { data, error } = await supabaseClient.from('users').upsert(updateData, { onConflict: 'telegram_id' }).select().single(); 
@@ -730,8 +739,12 @@ document.addEventListener('DOMContentLoaded', function() {
             count = Math.min(data.length, 15);
         }
         const mins = Math.ceil(totalSeconds / 60);
-        document.getElementById('warn-time-val').textContent = `${mins} min`;
-        document.getElementById('warn-q-val').textContent = `${count} quest`;
+        
+        // Красивое предупреждение с заменой переменных
+        const rawText = t('warn_full');
+        const finalText = rawText.replace('{time}', `${mins} min`).replace('{count}', count);
+        document.getElementById('warning-text-dynamic').innerHTML = finalText;
+        
         updateMainButton('start');
         document.getElementById('warning-modal').classList.remove('hidden');
     }
@@ -937,7 +950,8 @@ document.addEventListener('DOMContentLoaded', function() {
     safeAddListener('back-home', 'click', () => showScreen('home-screen'));
     safeAddListener('back-home-x', 'click', () => showScreen('home-screen'));
     
-    // === ГЕНЕРАЦИЯ СЕРТИФИКАТА PDF (ОБНОВЛЕННАЯ ПОД ДИЗАЙН) ===
+    // === ГЕНЕРАЦИЯ СЕРТИФИКАТА PDF ===
+    // Замените на реальные ссылки после загрузки файлов
     const CERT_TEMPLATE_URL = 'https://fgwnqxumukkgtzentlxr.supabase.co/storage/v1/object/public/assets/certificate_template.pdf'; 
     const FONT_URL = 'https://fgwnqxumukkgtzentlxr.supabase.co/storage/v1/object/public/assets/Roboto-Bold.ttf';
 
@@ -966,8 +980,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const name = currentUserData?.name || 'Участник';
             const scoreVal = (typeof correctCount !== 'undefined') ? correctCount : 0;
-            // Рассчитываем итоговый балл (например, x10 или как задумано)
-            // Здесь просто выводим количество правильных ответов
             const scoreText = `${scoreVal}`;
 
             const nameSize = 30;
@@ -1067,4 +1079,3 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     });
 });
-
