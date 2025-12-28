@@ -1,33 +1,8 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v92.0 (Fixed: showScreen + All Logic)');
+    console.log('App Started: v96.0 (Final: Correct Declarations + Fixes)');
   
-    // === ПЕРЕМЕННЫЕ ===
-    let telegramUserId; 
-    let telegramData = { firstName: null, lastName: null, photoUrl: null };
-    let internalDbId = null; 
-    let currentTourId = null;
-    let tourEndDate = null; 
-    let currentUserData = null;
-    let tourQuestionsCache = [];
-    let userAnswersCache = [];
-    let currentLbFilter = 'republic'; 
-    let questions = [];
-    let currentQuestionIndex = 0;
-    let correctCount = 0;
-    let timerInterval = null;
-    let tourCompleted = false;
-    let selectedAnswer = null;
-    let questionStartTime = 0;
-
-    // === НАСТРОЙКИ SUPABASE ===
-    const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
-    const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI';
-    const { createClient } = supabase;
-    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
-
-    // === ФУНКЦИИ-ПОМОЩНИКИ (UI) ===
+    // === 1. ГЛОБАЛЬНЫЕ ФУНКЦИИ-ПОМОЩНИКИ (САМОЕ ВАЖНОЕ: В НАЧАЛЕ!) ===
     
-    // Функция переключения экранов (которую я забыл в прошлый раз)
     function showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
         const screen = document.getElementById(screenId);
@@ -51,7 +26,31 @@ document.addEventListener('DOMContentLoaded', function() {
         else window.open(url, '_blank');
     }
 
-    // === СИСТЕМА ПЕРЕВОДОВ ===
+    // === 2. ПЕРЕМЕННЫЕ И НАСТРОЙКИ ===
+    let telegramUserId; 
+    let telegramData = { firstName: null, lastName: null, photoUrl: null };
+    let internalDbId = null; 
+    let currentTourId = null;
+    let tourEndDate = null; 
+    let currentUserData = null;
+    let tourQuestionsCache = [];
+    let userAnswersCache = [];
+    let currentLbFilter = 'republic'; 
+    let questions = [];
+    let currentQuestionIndex = 0;
+    let correctCount = 0;
+    let timerInterval = null;
+    let tourCompleted = false;
+    let selectedAnswer = null;
+    let questionStartTime = 0;
+
+    // ВАШИ КЛЮЧИ (УЖЕ ВСТАВЛЕНЫ)
+    const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
+    const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI';
+    const { createClient } = supabase;
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+
+    // === 3. ПЕРЕВОДЫ ===
     let currentLang = localStorage.getItem('app_lang') || 'uz';
     
     const translations = {
@@ -72,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
             btn_start: "Начать",
             btn_save: "Сохранить",
             status_locked: "Профиль заполнен",
-            desc_locked: "Редактирование отключено.",
+            desc_locked: "Редактирование отключено для корректности рейтинга.",
             btn_home: "На главную",
             home_subtitle: "Добро пожаловать на олимпиаду.",
             btn_leaderboard: "Лидерборд",
@@ -114,8 +113,6 @@ document.addEventListener('DOMContentLoaded', function() {
             res_video_sub: "Разборы задач",
             res_channel: "Канал",
             res_channel_sub: "Новости",
-            res_chat: "Чат",
-            res_chat_sub: "Обсуждение",
             about_platform: "О платформе",
             about_desc: "Уникальная платформа для школьников Узбекистана.",
             subj_math: "Математика", subj_eng: "Английский", subj_phys: "Физика", subj_chem: "Химия", 
@@ -194,8 +191,6 @@ document.addEventListener('DOMContentLoaded', function() {
             res_video_sub: "Masalalar tahlili",
             res_channel: "Kanal",
             res_channel_sub: "Yangiliklar",
-            res_chat: "Chat",
-            res_chat_sub: "Muhokama",
             about_platform: "Platforma haqida",
             about_desc: "O'zbekiston o'quvchilari uchun maxsus.",
             subj_math: "Matematika", subj_eng: "Ingliz tili", subj_phys: "Fizika", subj_chem: "Kimyo", 
@@ -274,8 +269,6 @@ document.addEventListener('DOMContentLoaded', function() {
             res_video_sub: "Analysis",
             res_channel: "Channel",
             res_channel_sub: "News",
-            res_chat: "Chat",
-            res_chat_sub: "Discussion",
             about_platform: "About",
             about_desc: "Unique platform for Uzbekistan.",
             subj_math: "Math", subj_eng: "English", subj_phys: "Physics", subj_chem: "Chemistry", 
@@ -340,7 +333,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('lang-screen').classList.add('hidden'); 
     }
   
-    // === ИНИЦИАЛИЗАЦИЯ TELEGRAM ===
+    // === 4. ИНИЦИАЛИЗАЦИЯ TELEGRAM ===
     if (window.Telegram && window.Telegram.WebApp) {
       Telegram.WebApp.ready();
       Telegram.WebApp.expand();
@@ -360,7 +353,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
   
-    // === ДАННЫЕ РЕГИОНОВ ===
+    // === 5. ДАННЫЕ РЕГИОНОВ ===
     const regions = {
         "Toshkent shahri": ["Olmazor", "Bektemir", "Mirobod", "Mirzo Ulug'bek", "Sergeli", "Uchtepa", "Chilonzor", "Shayxontohur", "Yunusobod", "Yakkasaroy", "Yashnobod", "Yangihayot"],
         "Andijon viloyati": ["Andijon shahri", "Xonobod shahri", "Andijon tumani", "Asaka", "Baliqchi", "Bo'ston (Bo'z)", "Buloqboshi", "Jalaquduq", "Izboskan", "Qo'rg'ontepa", "Marhamat", "Paxtaobod", "Ulug'nor", "Xo'jaobod", "Shahrixon"],
@@ -415,9 +408,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     setupRegionSelects('reg');
     setupRegionSelects('edit');
-    setupRegionSelects(''); 
+    setupRegionSelects('');
 
-    // === ГЛАВНАЯ ЛОГИКА ===
+    // === 6. ЛОГИКА ТУРА И ПРОФИЛЯ ===
     async function checkProfileAndTour() {
       // 1. Проверяем пользователя
       const { data: userData } = await supabaseClient.from('users').select('*').eq('telegram_id', telegramUserId).maybeSingle();
@@ -506,7 +499,33 @@ document.addEventListener('DOMContentLoaded', function() {
         return { total, correct };
     }
 
-    // === РЕГИСТРАЦИЯ ===
+    window.openSubjectStats = function(subject) {
+        const modal = document.getElementById('subject-details-modal');
+        const content = document.getElementById('sd-content');
+        const title = document.getElementById('sd-title');
+        if (modal && content) {
+            // Перевод названия предмета
+            let displaySubj = subject;
+            if(subject === 'Математика') displaySubj = t('subj_math');
+            if(subject === 'Английский') displaySubj = t('subj_eng');
+            // ... (остальные)
+            title.textContent = displaySubj;
+            const stats = calculateSubjectStats(subject);
+            
+            // ИСПРАВЛЕННЫЙ ВЫВОД ПЕРЕВОДА
+            const html = `
+                <div class="stat-list-item">
+                    <div class="stat-list-info"><h4>${t('stat_tour')}</h4><p>${t('stat_total')}: ${stats.total}</p></div>
+                    <div class="stat-list-value" style="color:${stats.correct > 0 ? 'var(--success)' : 'var(--text-sec)'}">
+                        ${stats.correct} ${t('stat_correct')}
+                    </div>
+                </div>`;
+            content.innerHTML = stats.total === 0 ? `<p style="color:#8E8E93;text-align:center;padding:20px;">...</p>` : html;
+            modal.classList.remove('hidden');
+        }
+    }
+
+    // === 7. РЕГИСТРАЦИЯ ===
     const regAgreementBox = document.getElementById('reg-agreement-box');
     let isRegAgreed = false;
     if(regAgreementBox){
@@ -563,11 +582,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // === ЛИЧНЫЙ КАБИНЕТ И МЕНЮ ===
+    // === 8. ЛИЧНЫЙ КАБИНЕТ (С БЛОКИРОВКОЙ) ===
     safeAddListener('open-cabinet-btn', 'click', () => document.getElementById('cabinet-modal').classList.remove('hidden'));
     
     safeAddListener('btn-edit-profile', 'click', () => {
         if(!currentUserData) return;
+        
+        // ВАЖНО: ЗАПОЛНЯЕМ И БЛОКИРУЕМ
         document.getElementById('edit-full-name').value = currentUserData.name;
         document.getElementById('edit-class-select').value = currentUserData.class;
         document.getElementById('edit-region-select').value = currentUserData.region;
@@ -578,40 +599,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 100);
         document.getElementById('edit-school-input').value = currentUserData.school;
         
+        // БЛОКИРУЕМ ПОЛЯ
+        document.querySelectorAll('#edit-profile-screen input, #edit-profile-screen select').forEach(el => el.disabled = true);
+        
         document.getElementById('cabinet-modal').classList.add('hidden');
         showScreen('edit-profile-screen');
+        
+        // Показываем пояснение
+        alert(t('desc_locked')); 
     });
-
-    const saveEditBtn = document.getElementById('save-edit-profile');
-    if(saveEditBtn){
-        saveEditBtn.addEventListener('click', async () => {
-            const btn = document.getElementById('save-edit-profile');
-            btn.disabled = true;
-            btn.innerHTML = '...';
-            try {
-                const updateData = { 
-                    name: document.getElementById('edit-full-name').value.trim(),
-                    class: document.getElementById('edit-class-select').value,
-                    region: document.getElementById('edit-region-select').value,
-                    district: document.getElementById('edit-district-select').value,
-                    school: document.getElementById('edit-school-input').value.trim()
-                };
-                const { error } = await supabaseClient.from('users').update(updateData).eq('id', internalDbId);
-                if(error) throw error;
-                
-                currentUserData = { ...currentUserData, ...updateData };
-                document.getElementById('home-user-name').textContent = currentUserData.name.split(' ')[0];
-                document.getElementById('cabinet-user-name').textContent = currentUserData.name;
-                
-                showScreen('home-screen');
-            } catch (e) {
-                alert(e.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = t('btn_save');
-            }
-        });
-    }
 
     safeAddListener('btn-lang-switch', 'click', () => {
         document.getElementById('cabinet-modal').classList.add('hidden');
@@ -620,7 +616,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelector(`.check-${currentLang}`).classList.remove('hidden');
     });
 
-    // Работа над ошибками
+    // Работа над ошибками (С ЗАЩИТОЙ)
     safeAddListener('btn-error-review', 'click', async () => {
         if(!tourCompleted) {
             alert(t('alert_soon')); 
@@ -628,7 +624,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         const now = new Date();
         if(tourEndDate && now < tourEndDate) {
-            alert(t('alert_review_locked') + ` (${tourEndDate.toLocaleString()})`);
+            alert(t('alert_review_locked'));
             return;
         }
 
@@ -673,7 +669,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // === ТУР ===
+    // === 9. ТУР И ВОПРОСЫ ===
     async function handleStartClick() {
         const btn = document.getElementById('main-action-btn');
         btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('btn_loading')}`;
@@ -822,9 +818,6 @@ document.addEventListener('DOMContentLoaded', function() {
       const nextBtn = document.getElementById('next-button');
       nextBtn.disabled = true;
       
-      // Аналитика: считаем время ответа (в секундах)
-      const timeSpent = Math.round((Date.now() - questionStartTime) / 1000); 
-      
       const q = questions[currentQuestionIndex];
       const questionIdNumber = Number(q.id);
 
@@ -837,8 +830,6 @@ document.addEventListener('DOMContentLoaded', function() {
       if (finalIsCorrect) correctCount++;
       
       try {
-          // Отправляем ответ в базу. 
-          // Если бы было поле metadata, отправили бы { time_spent: timeSpent }
           const { error } = await supabaseClient.from('user_answers').upsert({
               user_id: internalDbId, 
               question_id: q.id, 
@@ -872,8 +863,7 @@ document.addEventListener('DOMContentLoaded', function() {
       fetchStatsData(); 
     }
 
-    // === PDF GENERATION ===
-    // Замените на ваши ссылки!
+    // === 10. PDF GENERATION ===
     const CERT_TEMPLATE_URL = 'https://fgwnqxumukkgtzentlxr.supabase.co/storage/v1/object/public/assets/certificate_template.pdf'; 
     const FONT_URL = 'https://fgwnqxumukkgtzentlxr.supabase.co/storage/v1/object/public/assets/Roboto-Bold.ttf';
 
@@ -907,7 +897,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const nameSize = 30;
             const nameWidth = customFont.widthOfTextAtSize(name, nameSize);
             
-            // Настройка координат для вашего дизайна
             firstPage.drawText(name, {
                 x: (width - nameWidth) / 2,
                 y: 400, 
