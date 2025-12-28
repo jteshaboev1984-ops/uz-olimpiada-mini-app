@@ -9,7 +9,7 @@
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=100">
+    <link rel="stylesheet" href="style.css?v=101">
 </head>
 <body>
 
@@ -39,7 +39,7 @@
                     <input type="text" id="full-name-input" placeholder="Azizov Sardor">
                     <i class="fa-solid fa-user-pen icon-right"></i>
                 </div>
-                <div style="font-size: 11px; color: #FF9500; margin-top: 6px; line-height: 1.3; background: #FFF8E1; padding: 10px; border-radius: 8px;">
+                <div id="name-warning" style="font-size: 11px; color: #FF9500; margin-top: 6px; line-height: 1.3; background: #FFF8E1; padding: 10px; border-radius: 8px;">
                     <i class="fa-solid fa-triangle-exclamation"></i> 
                     <span data-lang="warn_real_name">Sertifikat uchun haqiqiy ismingizni yozing.</span>
                 </div>
@@ -83,8 +83,8 @@
             </div>
 
             <div id="error-review-btn-container" class="hidden" style="margin-top: 10px;">
-                <div class="card" onclick="openErrorReview()" style="display:flex; align-items:center; gap:15px; cursor:pointer; background:#FFF3E0;">
-                    <div class="menu-icon orange" style="background:white; color:#FF9500; width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-bug"></i></div>
+                <div class="card" onclick="openErrorReviewModal()" style="display:flex; align-items:center; gap:15px; cursor:pointer; background:#FFF3E0; border:1px solid #FFE0B2;">
+                    <div class="menu-icon orange" style="background:white; color:#FF9500; width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px;"><i class="fa-solid fa-bug"></i></div>
                     <div style="flex:1;">
                         <h4 style="font-size:15px; margin-bottom:2px;" data-lang="menu_errors">Xatolar tahlili</h4>
                         <p style="font-size:12px; color:#8E8E93;" data-lang="menu_errors_sub">Javoblarni ko'rish</p>
@@ -95,10 +95,12 @@
         </div>
         
         <div class="bottom-fixed column">
-            <button id="save-profile" class="btn-primary" data-lang="btn_save">Saqlash</button>
+            <button id="save-profile" class="btn-primary" data-lang="btn_start">Boshlash</button>
+            
             <div id="profile-locked-msg" class="locked-status-btn hidden">
                 <i class="fa-solid fa-lock"></i> <span data-lang="status_locked">Profil to'ldirilgan</span>
             </div>
+            
             <button id="profile-back-btn" class="btn-secondary hidden" data-lang="btn_home">Bosh sahifa</button>
         </div>
     </div>
@@ -106,7 +108,9 @@
     <div class="screen hidden" id="home-screen">
         <div class="top-bar">
             <div class="logo-area"><div class="logo-icon"><i class="fa-solid fa-graduation-cap"></i></div><span>Smart Olympiad</span></div>
-            <div class="profile-icon-btn" id="open-profile-btn"><i class="fa-regular fa-user"></i></div>
+            <div class="profile-icon-btn" id="open-profile-btn">
+                <img id="header-avatar" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png">
+            </div>
         </div>
 
         <div class="container pb-home">
@@ -280,13 +284,16 @@
         </div>
     </div>
 
-    <div class="screen hidden" id="error-review-full-screen">
-        <div class="header-simple sticky-header">
-            <div class="close-icon" onclick="showScreen('profile-screen');"><i class="fa-solid fa-times"></i></div>
-            <h3 data-lang="menu_errors">Xatolar tahlili</h3>
-        </div>
-        <div class="container pb-large" id="error-list-container">
+    <div class="modal hidden" id="error-review-modal">
+        <div class="modal-card full-height" style="max-width: 500px; width: 100%;">
+            <div class="modal-header-custom">
+                <h3 data-lang="menu_errors">Xatolar tahlili</h3>
+                <div class="close-icon-btn" onclick="document.getElementById('error-review-modal').classList.add('hidden')"><i class="fa-solid fa-times"></i></div>
             </div>
+            <div id="error-list-container" style="flex:1; overflow-y:auto; text-align:left; padding-bottom:20px;">
+                </div>
+            <button class="btn-primary" onclick="document.getElementById('error-review-modal').classList.add('hidden')" data-lang="btn_close">Yopish</button>
+        </div>
     </div>
 
     <div class="modal hidden" id="warning-modal">
@@ -346,6 +353,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=100"></script>
+    <script src="script.js?v=101"></script>
 </body>
 </html>
