@@ -1,12 +1,12 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v64.0 (Mistake Review Lock + Neutral Avatar)');
+    console.log('App Started: v65.0 (Lang Menu Fix + Stats Fix)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
     let telegramData = { firstName: null, lastName: null, photoUrl: null, languageCode: null };
     let internalDbId = null; 
     let currentTourId = null;
-    let currentTourEndDate = null; // New variable
+    let currentTourEndDate = null; 
     let currentUserData = null;
     let tourQuestionsCache = [];
     let userAnswersCache = [];
@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', function() {
             answer_placeholder: "Javobni kiriting...",
             menu_my_data: "Ma'lumotlarim",
             menu_my_data_desc: "Sinf, maktab, hudud",
-            menu_lang: "Til / Язык",
+            menu_lang: "Til",
             menu_certs: "Sertifikatlar",
             menu_certs_desc: "Yutuqlar arxivi",
             menu_support: "Yordam",
@@ -251,7 +251,7 @@ document.addEventListener('DOMContentLoaded', function() {
             answer_placeholder: "Введите ответ...",
             menu_my_data: "Мои данные",
             menu_my_data_desc: "Класс, школа, регион",
-            menu_lang: "Til / Язык",
+            menu_lang: "Язык",
             menu_certs: "Сертификаты",
             menu_certs_desc: "Архив достижений",
             menu_support: "Помощь",
@@ -563,7 +563,7 @@ document.addEventListener('DOMContentLoaded', function() {
           updateMainButton('inactive');
       } else {
           currentTourId = tourData.id;
-          currentTourEndDate = tourData.end_date; // SAVE END DATE FOR LOCK CHECK
+          currentTourEndDate = tourData.end_date; 
           
           if (internalDbId && currentTourId) {
               await fetchStatsData(); 
@@ -602,35 +602,53 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateDashboardStats() {
-        const subjectMap = {
-            'Matematika': 'math', 'Ingliz tili': 'eng', 'Fizika': 'phys',
-            'Kimyo': 'chem', 'Biologiya': 'bio', 'Informatika': 'it',
-            'Iqtisodiyot': 'eco', 'SAT': 'sat', 'IELTS': 'ielts',
-            'Математика': 'math', 'Английский': 'eng', 'Физика': 'phys', 
-            'Химия': 'chem', 'Биология': 'bio', 'Информатика': 'it', 'Экономика': 'eco'
-        };
+        // Список префиксов, по которым мы будем считать
+        const subjectPrefixes = ['math', 'eng', 'phys', 'chem', 'bio', 'it', 'eco', 'sat', 'ielts'];
         let totalCorrect = 0;
         let totalTours = 0; 
         
-        for (const [subjName, prefix] of Object.entries(subjectMap)) {
-            const stats = calculateSubjectStats(subjName);
+        subjectPrefixes.forEach(prefix => {
+            const stats = calculateSubjectStats(prefix);
             let percent = 0;
             if (stats.total > 0) percent = Math.round((stats.correct / stats.total) * 100);
+            
             const percentEl = document.getElementById(`${prefix}-percent`);
             if (percentEl) percentEl.textContent = `${percent}%`;
             const barEl = document.getElementById(`${prefix}-bar`);
             if (barEl) barEl.style.width = `${percent}%`;
+            
             totalCorrect += stats.correct;
-        }
+        });
         
         document.getElementById('cab-score').textContent = totalCorrect;
         if(tourCompleted) totalTours = 1;
         document.getElementById('cab-tours').textContent = totalTours;
     }
 
-    function calculateSubjectStats(subjectName) {
-        const subjectQuestions = tourQuestionsCache.filter(q => q.subject && q.subject.toLowerCase().includes(subjectName.toLowerCase()));
+    function calculateSubjectStats(prefix) {
+        // Словарь всех возможных вариантов написания предметов в базе данных
+        const keywords = {
+            'math': ['matematika', 'математика', 'math'],
+            'eng': ['ingliz', 'английский', 'english'],
+            'phys': ['fizika', 'физика', 'physics'],
+            'chem': ['kimyo', 'химия', 'chemistry'],
+            'bio': ['biologiya', 'биология', 'biology'],
+            'it': ['informatika', 'информатика', 'computer', 'it'],
+            'eco': ['iqtisodiyot', 'экономика', 'economics'],
+            'sat': ['sat'],
+            'ielts': ['ielts']
+        };
+
+        const targetKeywords = keywords[prefix] || [prefix];
+
+        const subjectQuestions = tourQuestionsCache.filter(q => {
+            if(!q.subject) return false;
+            const s = q.subject.toLowerCase();
+            return targetKeywords.some(k => s.includes(k));
+        });
+
         if (subjectQuestions.length === 0) return { total: 0, correct: 0 };
+        
         let correct = 0;
         let total = 0;
         subjectQuestions.forEach(q => {
@@ -646,19 +664,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const content = document.getElementById('sd-content');
         const title = document.getElementById('sd-title');
         
+        // Получаем название для заголовка (из перевода или UpperCase)
         let subjTitle = t('subj_' + prefix);
-        if(!subjTitle) subjTitle = prefix.toUpperCase();
+        if(!subjTitle || subjTitle === ('subj_' + prefix)) subjTitle = prefix.toUpperCase();
 
         if (modal && content) {
             title.textContent = subjTitle;
-            let stats = { total: 0, correct: 0};
-            ['Matematika', 'Математика', 'Math', 'Ingliz', 'Английский', 'English', 'Fizika', 'Физика', 'Physics'].forEach(n => {
-                if (t('subj_' + prefix).includes(n) || n.toLowerCase().includes(prefix)) {
-                    let s = calculateSubjectStats(n);
-                    if (s.total > stats.total) stats = s;
-                }
-            });
-            if(stats.total === 0) stats = calculateSubjectStats(subjTitle);
+            
+            // Используем новую универсальную функцию подсчета
+            let stats = calculateSubjectStats(prefix);
 
             const html = `
                 <div class="stat-list-item">
@@ -979,7 +993,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const now = new Date();
         const end = currentTourEndDate ? new Date(currentTourEndDate) : null;
         
-        // ЕСЛИ ТУР ЕЩЕ ИДЕТ (ИЛИ ДАТА НЕИЗВЕСТНА) - БЛОКИРУЕМ
+        // ЕСЛИ ТУР ЕЩЕ ИДЕТ - БЛОКИРУЕМ
         if (end && now < end) {
             document.getElementById('review-unlock-date').textContent = end.toLocaleDateString() + ' ' + end.toLocaleTimeString().slice(0,5);
             document.getElementById('review-lock-modal').classList.remove('hidden');
