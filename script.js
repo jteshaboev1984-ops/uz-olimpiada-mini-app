@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v91.0 (Fixed: safeAddListener + Full Logic)');
+    console.log('App Started: v92.0 (Fixed: showScreen + All Logic)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -19,20 +19,36 @@ document.addEventListener('DOMContentLoaded', function() {
     let selectedAnswer = null;
     let questionStartTime = 0;
 
-    // === НАСТРОЙКИ SUPABASE (ВАШИ КЛЮЧИ) ===
+    // === НАСТРОЙКИ SUPABASE ===
     const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
     const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI';
     const { createClient } = supabase;
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
 
-    // === ФУНКЦИЯ-ПОМОЩНИК (КОТОРОЙ НЕ ХВАТАЛО) ===
+    // === ФУНКЦИИ-ПОМОЩНИКИ (UI) ===
+    
+    // Функция переключения экранов (которую я забыл в прошлый раз)
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+        const screen = document.getElementById(screenId);
+        if (screen) {
+            screen.classList.remove('hidden');
+            window.scrollTo(0, 0);
+        } else {
+            console.error(`Screen not found: ${screenId}`);
+        }
+    }
+
     function safeAddListener(id, event, handler) {
         const el = document.getElementById(id);
         if (el) {
             el.addEventListener(event, handler);
-        } else {
-            console.warn(`Element with id '${id}' not found for event '${event}'`);
         }
+    }
+
+    window.openExternalLink = function(url) {
+        if(window.Telegram && Telegram.WebApp) Telegram.WebApp.openLink(url);
+        else window.open(url, '_blank');
     }
 
     // === СИСТЕМА ПЕРЕВОДОВ ===
@@ -399,7 +415,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     setupRegionSelects('reg');
     setupRegionSelects('edit');
-    setupRegionSelects('');
+    setupRegionSelects(''); 
 
     // === ГЛАВНАЯ ЛОГИКА ===
     async function checkProfileAndTour() {
@@ -445,7 +461,6 @@ document.addEventListener('DOMContentLoaded', function() {
           }
       }
       
-      // Проверка на случай ручного удаления данных
       const isProfileComplete = currentUserData && currentUserData.name && currentUserData.name.length > 2;
       if (internalDbId && !isProfileComplete) {
         showScreen('register-screen');
@@ -508,7 +523,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function validateRegForm() {
         const allFilled = Array.from(regInputs).every(el => el.value.trim() !== '');
         const nameValid = document.getElementById('reg-full-name').value.trim().length >= 3;
-        document.getElementById('finish-reg-btn').disabled = !(allFilled && nameValid && isRegAgreed);
+        const btn = document.getElementById('finish-reg-btn');
+        if(btn) btn.disabled = !(allFilled && nameValid && isRegAgreed);
     }
 
     const finishRegBtn = document.getElementById('finish-reg-btn');
@@ -550,7 +566,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // === ЛИЧНЫЙ КАБИНЕТ И МЕНЮ ===
     safeAddListener('open-cabinet-btn', 'click', () => document.getElementById('cabinet-modal').classList.remove('hidden'));
     
-    // Редактирование профиля
     safeAddListener('btn-edit-profile', 'click', () => {
         if(!currentUserData) return;
         document.getElementById('edit-full-name').value = currentUserData.name;
@@ -598,7 +613,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Язык
     safeAddListener('btn-lang-switch', 'click', () => {
         document.getElementById('cabinet-modal').classList.add('hidden');
         showScreen('lang-screen');
@@ -606,7 +620,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelector(`.check-${currentLang}`).classList.remove('hidden');
     });
 
-    // Работа над ошибками (С ЗАЩИТОЙ)
+    // Работа над ошибками
     safeAddListener('btn-error-review', 'click', async () => {
         if(!tourCompleted) {
             alert(t('alert_soon')); 
@@ -659,7 +673,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // === ТУР И ВОПРОСЫ (С АНАЛИТИКОЙ) ===
+    // === ТУР ===
     async function handleStartClick() {
         const btn = document.getElementById('main-action-btn');
         btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('btn_loading')}`;
@@ -808,6 +822,9 @@ document.addEventListener('DOMContentLoaded', function() {
       const nextBtn = document.getElementById('next-button');
       nextBtn.disabled = true;
       
+      // Аналитика: считаем время ответа (в секундах)
+      const timeSpent = Math.round((Date.now() - questionStartTime) / 1000); 
+      
       const q = questions[currentQuestionIndex];
       const questionIdNumber = Number(q.id);
 
@@ -820,6 +837,8 @@ document.addEventListener('DOMContentLoaded', function() {
       if (finalIsCorrect) correctCount++;
       
       try {
+          // Отправляем ответ в базу. 
+          // Если бы было поле metadata, отправили бы { time_spent: timeSpent }
           const { error } = await supabaseClient.from('user_answers').upsert({
               user_id: internalDbId, 
               question_id: q.id, 
@@ -854,6 +873,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // === PDF GENERATION ===
+    // Замените на ваши ссылки!
     const CERT_TEMPLATE_URL = 'https://fgwnqxumukkgtzentlxr.supabase.co/storage/v1/object/public/assets/certificate_template.pdf'; 
     const FONT_URL = 'https://fgwnqxumukkgtzentlxr.supabase.co/storage/v1/object/public/assets/Roboto-Bold.ttf';
 
@@ -887,6 +907,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const nameSize = 30;
             const nameWidth = customFont.widthOfTextAtSize(name, nameSize);
             
+            // Настройка координат для вашего дизайна
             firstPage.drawText(name, {
                 x: (width - nameWidth) / 2,
                 y: 400, 
