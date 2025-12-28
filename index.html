@@ -7,7 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=63">
+    <link rel="stylesheet" href="style.css?v=64">
 </head>
 <body>
 
@@ -20,7 +20,7 @@
         <div class="container pb-large">
             <div class="card profile-info-card">
                 <div class="avatar-circle">
-                    <img src="https://cdn-icons-png.flaticon.com/512/4140/4140048.png" alt="User">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="User">
                     <div class="verified-badge"><i class="fa-solid fa-check"></i></div>
                 </div>
                 <div class="profile-text">
@@ -83,7 +83,7 @@
             
             <div class="hero-content">
                 <div class="hero-avatar">
-                    <img src="https://cdn-icons-png.flaticon.com/512/4140/4140048.png" id="cab-avatar-img">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" id="cab-avatar-img">
                 </div>
                 <h2 id="cab-name">Ishtirokchi</h2>
                 <div class="id-badge">ID: <span id="cab-id">...</span></div>
@@ -142,6 +142,15 @@
                     <i class="fa-solid fa-chevron-right arrow"></i>
                 </div>
 
+                <div class="settings-item" id="btn-mistakes">
+                    <div class="set-icon red"><i class="fa-solid fa-clipboard-check"></i></div>
+                    <div class="set-text">
+                        <h4 data-i18n="menu_mistakes">Xatolar tahlili</h4>
+                        <p data-i18n="menu_mistakes_desc">Javoblarni ko'rish</p>
+                    </div>
+                    <i class="fa-solid fa-lock" id="mistake-lock-icon" style="font-size:12px; color:#C7C7CC;"></i>
+                </div>
+
                 <div class="settings-item" onclick="openExternalLink('https://t.me/your_admin')">
                     <div class="set-icon gray"><i class="fa-regular fa-circle-question"></i></div>
                     <div class="set-text">
@@ -153,7 +162,7 @@
             </div>
 
             <div class="footer-info">
-                <p>Smart Olympiad v63.0</p>
+                <p>Smart Olympiad v64.0</p>
                 <button class="btn-danger-box" id="delete-account-btn" style="margin-top: 15px;" data-i18n="btn_delete_account">Hisobni o'chirish</button>
             </div>
         </div>
@@ -422,13 +431,28 @@
         </div>
     </div>
 
+    <div class="modal hidden" id="review-lock-modal">
+        <div class="modal-card">
+            <div class="modal-icon-big" style="background:#FFF2F2; color:var(--danger);"><i class="fa-solid fa-lock"></i></div>
+            <h2 data-i18n="lock_review_title">Tahlil yopiq</h2>
+            <p style="color:#666; font-size:14px; margin-bottom:15px;" data-i18n="lock_review_msg">Adolatli raqobat uchun xatolar tahlili olimpiada yakunlangandan so'ng ochiladi.</p>
+            <div class="alert-box">
+                <i class="fa-regular fa-calendar"></i>
+                <div style="text-align:left;">
+                    <strong><span data-i18n="btn_close">Yopish</span>: <span id="review-unlock-date">...</span></strong>
+                </div>
+            </div>
+            <button class="btn-primary" onclick="document.getElementById('review-lock-modal').classList.add('hidden')" data-i18n="btn_understood">Tushunarli</button>
+        </div>
+    </div>
+
     <div class="modal hidden" id="about-modal">
         <div class="modal-card full-height" style="padding: 0; overflow: hidden; display:flex; flex-direction:column;">
             <div class="about-hero">
                 <div class="close-btn-white" id="close-about"><i class="fa-solid fa-times"></i></div>
                 <div class="logo-icon big"><i class="fa-solid fa-graduation-cap"></i></div>
                 <h1>Smart Olympiad</h1>
-                <div class="version-tag">Version 63.0</div>
+                <div class="version-tag">Version 64.0</div>
             </div>
             <div class="modal-body-scroll" style="padding: 24px; text-align: left; flex:1; overflow-y:auto;">
                 <h3 style="margin-bottom:12px;" data-i18n="about_platform">Platforma haqida</h3>
@@ -451,6 +475,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=63"></script>
+    <script src="script.js?v=64"></script>
 </body>
 </html>
