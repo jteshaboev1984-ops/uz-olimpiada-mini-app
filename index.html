@@ -9,91 +9,89 @@
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=80">
+    <link rel="stylesheet" href="style.css?v=90">
 </head>
 <body>
 
-    <div class="screen hidden" id="profile-screen">
-        <div class="header-profile">
-            <div class="user-avatar-small"><i class="fa-solid fa-user"></i></div>
-            <h1 data-lang="profile_title">Profil</h1>
-            <p data-lang="profile_subtitle">Ishtirokchi ma'lumotlari</p>
-        </div>
-        <div class="container pb-large">
-            <div class="card profile-info-card" style="justify-content: center; padding: 20px; flex-direction: column; gap: 12px; align-items: center;">
-                <div class="avatar-circle" style="width: 80px; height: 80px;">
-                    <img id="profile-avatar-img" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" alt="User" style="border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); filter: grayscale(100%);">
-                    <div class="verified-badge" style="width:24px; height:24px; font-size:14px; bottom:0; right:0;"><i class="fa-solid fa-check"></i></div>
-                </div>
-                <div class="language-switcher">
-                    <select id="language-select">
-                        <option value="uz">🇺🇿 O'zbekcha</option>
-                        <option value="ru">🇷🇺 Русский</option>
-                        <option value="en">🇬🇧 English</option>
-                    </select>
-                </div>
+    <div class="screen hidden" id="register-screen">
+        <div class="container pb-large" style="padding-top: 40px;">
+            <div class="logo-area-big">
+                <div class="logo-icon big-pulse"><i class="fa-solid fa-graduation-cap"></i></div>
+                <h1>Smart Olympiad</h1>
+                <p data-lang="reg_welcome">Xush kelibsiz</p>
             </div>
-            
-            <div class="form-group">
-                <label data-lang="label_fullname">Familiya va Ism <span style="color:red">*</span></label>
-                <div class="input-wrapper">
-                    <input type="text" id="full-name-input" placeholder="Masalan: Azizov Sardor">
-                    <i class="fa-solid fa-user-pen icon-right"></i>
+
+            <div class="card profile-info-card" style="margin-top: 20px;">
+                <div class="form-group">
+                    <label data-lang="label_lang">Tilni tanlang / Язык</label>
+                    <div class="language-switcher-full">
+                        <div class="lang-opt active" onclick="setRegLang('uz', this)">🇺🇿 O'zbek</div>
+                        <div class="lang-opt" onclick="setRegLang('ru', this)">🇷🇺 Русский</div>
+                        <div class="lang-opt" onclick="setRegLang('en', this)">🇬🇧 English</div>
+                    </div>
                 </div>
-                <div style="font-size: 11px; color: #FF9500; margin-top: 6px; line-height: 1.3; background: #FFF8E1; padding: 10px; border-radius: 8px;">
-                    <i class="fa-solid fa-triangle-exclamation"></i> 
-                    <span data-lang="warn_real_name">Diqqat: Sertifikat uchun haqiqiy ismingizni yozing.</span>
+
+                <div class="form-group">
+                    <label data-lang="label_fullname">Familiya va Ism</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="reg-full-name" placeholder="Azizov Sardor">
+                        <i class="fa-solid fa-user icon-right"></i>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="form-group">
-                <label data-lang="label_class">Sinf</label>
-                <div class="input-wrapper">
-                    <select id="class-select"></select>
-                    <i class="fa-solid fa-chevron-down arrow-icon"></i>
+
+                <div class="form-group">
+                    <label data-lang="label_class">Sinf</label>
+                    <div class="input-wrapper">
+                        <select id="reg-class-select"></select>
+                        <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                    </div>
                 </div>
-            </div>
-            <div class="form-group">
-                <label data-lang="label_region">Viloyat</label>
-                <div class="input-wrapper">
-                    <select id="region-select"></select>
-                    <i class="fa-solid fa-location-dot icon-right"></i>
+
+                <div class="form-group">
+                    <label data-lang="label_region">Viloyat</label>
+                    <div class="input-wrapper">
+                        <select id="reg-region-select"></select>
+                        <i class="fa-solid fa-map-location-dot icon-right"></i>
+                    </div>
                 </div>
-            </div>
-            <div class="form-group">
-                <label data-lang="label_district">Tuman / Shahar</label>
-                <div class="input-wrapper">
-                    <select id="district-select" disabled></select>
-                    <i class="fa-solid fa-map icon-right"></i>
+
+                <div class="form-group">
+                    <label data-lang="label_district">Tuman / Shahar</label>
+                    <div class="input-wrapper">
+                        <select id="reg-district-select" disabled></select>
+                        <i class="fa-solid fa-map-pin icon-right"></i>
+                    </div>
                 </div>
-            </div>
-            <div class="form-group">
-                <label data-lang="label_school">Maktab</label>
-                <div class="input-wrapper">
-                    <input type="text" id="school-input" placeholder="№">
-                    <i class="fa-solid fa-graduation-cap icon-right"></i>
+                
+                <div class="form-group">
+                    <label data-lang="label_school">Maktab</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="reg-school-input" placeholder="№">
+                        <i class="fa-solid fa-school icon-right"></i>
+                    </div>
                 </div>
             </div>
 
-            <div class="card checkbox-card">
-                <input type="checkbox" id="research-consent">
-                <div class="checkbox-text"><strong data-lang="label_consent">Rozilik</strong><span data-lang="label_consent_sub">Reyting uchun</span></div>
+            <div class="agreement-box" id="reg-agreement-box">
+                <div class="check-circle" id="reg-check-circle"><i class="fa-solid fa-check"></i></div>
+                <div class="agreement-text">
+                    <strong data-lang="agree_main">Reyting va tadqiqotda qatnashaman</strong>
+                    <span data-lang="agree_sub">Qoidalar va natijalarni olishga roziman</span>
+                </div>
             </div>
-        </div>
-        
-        <div class="bottom-fixed column">
-            <button id="save-profile" class="btn-primary" data-lang="btn_save">Saqlash</button>
-            <div id="profile-locked-btn" class="locked-status-btn hidden">
-                <i class="fa-solid fa-lock"></i> <span data-lang="status_locked">Profil to'ldirilgan</span>
-            </div>
-            <button id="profile-back-btn" class="btn-primary hidden" data-lang="btn_home">Bosh sahifa</button>
+
+            <button id="finish-reg-btn" class="btn-primary" style="margin-top: 20px;" disabled>
+                <span data-lang="btn_start">Boshlash</span> <i class="fa-solid fa-arrow-right"></i>
+            </button>
         </div>
     </div>
 
     <div class="screen hidden" id="home-screen">
         <div class="top-bar">
             <div class="logo-area"><div class="logo-icon"><i class="fa-solid fa-graduation-cap"></i></div><span>Smart Olympiad</span></div>
-            <div class="profile-icon-btn" id="open-profile-btn"><i class="fa-regular fa-user"></i></div>
+            <div class="profile-icon-btn" id="open-cabinet-btn">
+                <img id="header-avatar" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png">
+            </div>
         </div>
 
         <div class="container pb-home">
@@ -181,11 +179,6 @@
                     <div class="res-info"><h4 data-lang="res_channel">Kanal</h4><p data-lang="res_channel_sub">Yangiliklar</p></div>
                     <i class="fa-solid fa-chevron-right arrow"></i>
                 </div>
-                <div class="resource-card" onclick="openExternalLink('https://t.me/your_group')">
-                    <div class="res-icon group"><i class="fa-solid fa-users"></i></div>
-                    <div class="res-info"><h4 data-lang="res_chat">Chat</h4><p data-lang="res_chat_sub">Muhokama</p></div>
-                    <i class="fa-solid fa-chevron-right arrow"></i>
-                </div>
             </div>
         </div> 
 
@@ -193,7 +186,103 @@
             <div id="main-btn-container" style="width: 100%;">
                 <button id="main-action-btn" class="btn-primary">Loading...</button>
             </div>
-            <button id="exit-app-btn" class="btn-danger-box" data-lang="btn_exit">Chiqish</button>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="cabinet-modal">
+        <div class="modal-card full-height">
+            <div class="modal-header-custom">
+                <h3 data-lang="cabinet_title">Shaxsiy kabinet</h3>
+                <div class="close-icon-btn" onclick="document.getElementById('cabinet-modal').classList.add('hidden')"><i class="fa-solid fa-times"></i></div>
+            </div>
+            
+            <div class="cabinet-menu">
+                <div class="menu-item" id="btn-edit-profile">
+                    <div class="menu-icon blue"><i class="fa-solid fa-user-pen"></i></div>
+                    <div class="menu-text">
+                        <h4 data-lang="menu_data">Mening ma'lumotlarim</h4>
+                        <p id="cabinet-user-name">...</p>
+                    </div>
+                    <i class="fa-solid fa-chevron-right arrow"></i>
+                </div>
+
+                <div class="menu-item" id="btn-lang-switch">
+                    <div class="menu-icon purple"><i class="fa-solid fa-language"></i></div>
+                    <div class="menu-text">
+                        <h4 data-lang="menu_lang">Til / Язык</h4>
+                        <p id="current-lang-display">O'zbekcha</p>
+                    </div>
+                    <i class="fa-solid fa-chevron-right arrow"></i>
+                </div>
+
+                <div class="menu-item" id="btn-error-review">
+                    <div class="menu-icon orange"><i class="fa-solid fa-bug"></i></div>
+                    <div class="menu-text">
+                        <h4 data-lang="menu_errors">Xatolar tahlili</h4>
+                        <p data-lang="menu_errors_sub">Javoblarni ko'rish</p>
+                    </div>
+                    <i class="fa-solid fa-lock" id="error-lock-icon" style="color:#ccc; font-size:14px;"></i>
+                </div>
+
+                <div class="menu-item" onclick="alert(t('alert_soon'))">
+                    <div class="menu-icon green"><i class="fa-solid fa-bell"></i></div>
+                    <div class="menu-text">
+                        <h4 data-lang="menu_notif">Xabarlar</h4>
+                        <p data-lang="menu_notif_sub">Botni ulash</p>
+                    </div>
+                    <i class="fa-solid fa-chevron-right arrow"></i>
+                </div>
+            </div>
+
+            <div style="margin-top: auto; padding-top: 20px;">
+                <p style="font-size: 11px; color: #ccc;">ID: <span id="user-db-id">--</span></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="screen hidden" id="edit-profile-screen">
+        <div class="header-simple sticky-header">
+            <div class="close-icon" onclick="showScreen('home-screen'); document.getElementById('cabinet-modal').classList.remove('hidden')"><i class="fa-solid fa-arrow-left"></i></div>
+            <h3 data-lang="profile_title">Profil</h3>
+        </div>
+        <div class="container pb-large">
+            <div class="card profile-info-card">
+                <div class="form-group">
+                    <label data-lang="label_fullname">Familiya va Ism</label>
+                    <div class="input-wrapper"><input type="text" id="edit-full-name"><i class="fa-solid fa-pen icon-right"></i></div>
+                </div>
+                <div class="form-group">
+                    <label data-lang="label_class">Sinf</label>
+                    <div class="input-wrapper"><select id="edit-class-select"></select><i class="fa-solid fa-chevron-down arrow-icon"></i></div>
+                </div>
+                <div class="form-group">
+                    <label data-lang="label_region">Viloyat</label>
+                    <div class="input-wrapper"><select id="edit-region-select"></select><i class="fa-solid fa-map-location-dot icon-right"></i></div>
+                </div>
+                <div class="form-group">
+                    <label data-lang="label_district">Tuman / Shahar</label>
+                    <div class="input-wrapper"><select id="edit-district-select"></select><i class="fa-solid fa-map-pin icon-right"></i></div>
+                </div>
+                <div class="form-group">
+                    <label data-lang="label_school">Maktab</label>
+                    <div class="input-wrapper"><input type="text" id="edit-school-input"><i class="fa-solid fa-school icon-right"></i></div>
+                </div>
+            </div>
+            <button id="save-edit-profile" class="btn-primary" data-lang="btn_save">Saqlash</button>
+        </div>
+    </div>
+
+    <div class="screen hidden" id="lang-screen">
+        <div class="header-simple sticky-header">
+            <div class="close-icon" onclick="showScreen('home-screen'); document.getElementById('cabinet-modal').classList.remove('hidden')"><i class="fa-solid fa-arrow-left"></i></div>
+            <h3 data-lang="menu_lang">Til</h3>
+        </div>
+        <div class="container">
+            <div class="lang-list">
+                <div class="lang-item" onclick="changeAppLang('uz')"><span>🇺🇿 O'zbekcha</span> <i class="fa-solid fa-check check-uz hidden"></i></div>
+                <div class="lang-item" onclick="changeAppLang('ru')"><span>🇷🇺 Русский</span> <i class="fa-solid fa-check check-ru hidden"></i></div>
+                <div class="lang-item" onclick="changeAppLang('en')"><span>🇬🇧 English</span> <i class="fa-solid fa-check check-en hidden"></i></div>
+            </div>
         </div>
     </div>
 
@@ -221,34 +310,19 @@
             <div class="close-icon" id="back-home-x"><i class="fa-solid fa-times"></i></div>
             <h3 data-lang="res_verdict">Tur natijasi</h3>
         </div>
-
         <div class="container result-content pb-large">
             <div class="result-chart-wrapper">
                 <div class="circular-chart" id="result-circle">
-                    <div class="inner-circle">
-                        <span class="percent-text" id="result-percent">0%</span>
-                    </div>
+                    <div class="inner-circle"><span class="percent-text" id="result-percent">0%</span></div>
                 </div>
                 <h2 data-lang="res_completed">Tur yakunlandi!</h2>
                 <p style="color: #8E8E93; margin-top: 5px;" data-lang="res_saved">Natija saqlandi</p>
             </div>
-
             <div class="stats-row-strict">
                 <div class="col-left"><span class="lbl" data-lang="stat_tour">TUR</span><span class="val" id="res-tour-title">1</span></div>
                 <div class="col-center"><span class="lbl" data-lang="stat_total">JAMI</span><span class="val" id="res-total">15</span></div>
                 <div class="col-right"><span class="lbl" data-lang="stat_correct">TO'G'RI</span><span class="val green-text" id="res-correct">0</span></div>
             </div>
-
-            <div class="section-header"><h3 data-lang="title_review">Xatolar ustida ishlash</h3></div>
-            <div class="card error-review-card">
-                <div class="review-item">
-                    <div class="review-header"><i class="fa-solid fa-circle-check" style="color:var(--success)"></i> <span data-lang="status_saved">Ma'lumot saqlandi</span></div>
-                    <p style="font-size:13px; margin-top:5px; color:#666;" data-lang="desc_review">Batafsil tahlil natijalar e'lon qilingandan so'ng ochiladi.</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="bottom-fixed column">
             <button class="btn-secondary" id="download-certificate-res-btn"><i class="fa-solid fa-download"></i> <span data-lang="cert_desc">PDF yuklab olish</span></button>
             <button class="btn-primary" id="back-home" data-lang="btn_home">Bosh sahifa</button>
         </div>
@@ -268,31 +342,27 @@
                 </div>
             </div>
         </div>
-
-        <div class="lb-podium-container">
-            <div id="lb-podium" class="top-three"></div>
-        </div>
-
+        <div class="lb-podium-container"><div id="lb-podium" class="top-three"></div></div>
         <div class="container" style="padding:0;">
             <div class="list-header" style="padding: 0 16px; margin-bottom: 10px;">
                 <span data-lang="col_student">ISHTIROKCHI</span><span data-lang="col_score">BALL</span>
             </div>
             <div id="lb-list" class="lb-list-scroll"></div>
         </div>
-
         <div id="lb-user-sticky" class="lb-sticky-footer hidden">
             <div class="my-rank-badge" id="my-rank-val">#--</div>
-            <div class="my-info">
-                <span class="my-name" data-lang="me_label">Siz</span>
-                <span class="my-sub" id="my-class-val">--</span>
-            </div>
-            <div class="my-stats">
-                <div class="stat-group">
-                    <span class="stat-val" id="my-score-val">0</span>
-                    <span class="stat-lbl" data-lang="col_score">BALL</span>
-                </div>
-            </div>
+            <div class="my-info"><span class="my-name" data-lang="me_label">Siz</span><span class="my-sub" id="my-class-val">--</span></div>
+            <div class="my-stats"><div class="stat-group"><span class="stat-val" id="my-score-val">0</span><span class="stat-lbl" data-lang="col_score">BALL</span></div></div>
         </div>
+    </div>
+
+    <div class="screen hidden" id="error-review-full-screen">
+        <div class="header-simple sticky-header">
+            <div class="close-icon" onclick="showScreen('home-screen'); document.getElementById('cabinet-modal').classList.remove('hidden')"><i class="fa-solid fa-times"></i></div>
+            <h3 data-lang="menu_errors">Xatolar tahlili</h3>
+        </div>
+        <div class="container pb-large" id="error-list-container">
+            </div>
     </div>
 
     <div class="modal hidden" id="warning-modal">
@@ -300,7 +370,6 @@
             <div class="modal-icon-big"><i class="fa-solid fa-stopwatch"></i><div class="alert-badge">!</div></div>
             <h2 data-lang="warn_title">Diqqat</h2>
             <p id="warning-text-dynamic" style="line-height:1.5; margin-bottom:20px; color:#666;"></p>
-            
             <div class="alert-box"><i class="fa-solid fa-triangle-exclamation"></i><p data-lang="warn_cant_repeat">Qayta ishlash imkoniyati bo'lmaydi.</p></div>
             <button id="confirm-start" class="btn-primary" data-lang="btn_start">Boshlash</button>
             <button id="cancel-start" class="btn-text" data-lang="btn_cancel">Bekor qilish</button>
@@ -311,9 +380,7 @@
         <div class="modal-card">
             <div class="modal-header-custom">
                 <h3 id="sd-title">Fan</h3>
-                <div class="close-icon-btn" onclick="document.getElementById('subject-details-modal').classList.add('hidden')">
-                    <i class="fa-solid fa-times"></i>
-                </div>
+                <div class="close-icon-btn" onclick="document.getElementById('subject-details-modal').classList.add('hidden')"><i class="fa-solid fa-times"></i></div>
             </div>
             <div id="sd-content" style="padding-bottom: 10px;"></div>
             <button class="btn-primary" onclick="document.getElementById('subject-details-modal').classList.add('hidden')" data-lang="btn_close">Yopish</button>
@@ -324,9 +391,7 @@
         <div class="modal-card">
             <div class="modal-header-custom">
                 <h3 data-lang="cert_modal_title">Mening sertifikatlarim</h3>
-                <div class="close-icon-btn" onclick="document.getElementById('certs-modal').classList.add('hidden')">
-                    <i class="fa-solid fa-times"></i>
-                </div>
+                <div class="close-icon-btn" onclick="document.getElementById('certs-modal').classList.add('hidden')"><i class="fa-solid fa-times"></i></div>
             </div>
             <div style="padding: 10px 0; text-align: left;" id="certs-list-container"><p>Yuklanmoqda...</p></div>
         </div>
@@ -341,35 +406,22 @@
         </div>
     </div>
 
-    <div class="modal hidden" id="profile-info-modal">
-        <div class="modal-card">
-            <div class="modal-icon-big" style="color:var(--danger); background:#FFF2F2;"><i class="fa-solid fa-lock"></i></div>
-            <h2 data-lang="status_locked">Profil to'ldirilgan</h2>
-            <p style="color:#666; font-size:14px; margin-bottom:15px;" data-lang="desc_locked">Reyting aniqligi uchun tahrirlash o'chirildi.</p>
-            <button class="btn-primary" onclick="document.getElementById('profile-info-modal').classList.add('hidden')">OK</button>
-        </div>
-    </div>
-
     <div class="modal hidden" id="about-modal">
         <div class="modal-card full-height" style="padding: 0; overflow: hidden; display:flex; flex-direction:column;">
             <div class="about-hero">
                 <div class="close-btn-white" id="close-about"><i class="fa-solid fa-times"></i></div>
                 <div class="logo-icon big"><i class="fa-solid fa-graduation-cap"></i></div>
                 <h1>Smart Olympiad</h1>
-                <div class="version-tag">Version 1.3</div>
+                <div class="version-tag">Version 2.0</div>
             </div>
             <div class="modal-body-scroll" style="padding: 24px; text-align: left; flex:1; overflow-y:auto;">
                 <h3 style="margin-bottom:12px;" data-lang="about_platform">Platforma haqida</h3>
-                <p style="font-size:14px; line-height:1.5; color:#444; margin-bottom:20px;" data-lang="about_desc">
-                    O'zbekiston o'quvchilari uchun maxsus platforma.
-                </p>
-                <div style="margin-top:30px; text-align:center;">
-                    <p style="font-size:12px; color:#999;">Made with ❤️ in Uzbekistan</p>
-                </div>
+                <p style="font-size:14px; line-height:1.5; color:#444; margin-bottom:20px;" data-lang="about_desc">O'zbekiston o'quvchilari uchun maxsus.</p>
+                <div style="margin-top:30px; text-align:center;"><p style="font-size:12px; color:#999;">Made with ❤️ in Uzbekistan</p></div>
             </div>
         </div>
     </div>
 
-    <script src="script.js?v=80"></script>
+    <script src="script.js?v=90"></script>
 </body>
 </html>
