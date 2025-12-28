@@ -9,7 +9,7 @@
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=90">
+    <link rel="stylesheet" href="style.css?v=96">
 </head>
 <body>
 
@@ -249,27 +249,27 @@
             <div class="card profile-info-card">
                 <div class="form-group">
                     <label data-lang="label_fullname">Familiya va Ism</label>
-                    <div class="input-wrapper"><input type="text" id="edit-full-name"><i class="fa-solid fa-pen icon-right"></i></div>
+                    <div class="input-wrapper"><input type="text" id="edit-full-name"><i class="fa-solid fa-lock icon-right" style="color:#ccc"></i></div>
                 </div>
                 <div class="form-group">
                     <label data-lang="label_class">Sinf</label>
-                    <div class="input-wrapper"><select id="edit-class-select"></select><i class="fa-solid fa-chevron-down arrow-icon"></i></div>
+                    <div class="input-wrapper"><select id="edit-class-select"></select><i class="fa-solid fa-lock arrow-icon" style="color:#ccc"></i></div>
                 </div>
                 <div class="form-group">
                     <label data-lang="label_region">Viloyat</label>
-                    <div class="input-wrapper"><select id="edit-region-select"></select><i class="fa-solid fa-map-location-dot icon-right"></i></div>
+                    <div class="input-wrapper"><select id="edit-region-select"></select><i class="fa-solid fa-lock icon-right" style="color:#ccc"></i></div>
                 </div>
                 <div class="form-group">
                     <label data-lang="label_district">Tuman / Shahar</label>
-                    <div class="input-wrapper"><select id="edit-district-select"></select><i class="fa-solid fa-map-pin icon-right"></i></div>
+                    <div class="input-wrapper"><select id="edit-district-select"></select><i class="fa-solid fa-lock icon-right" style="color:#ccc"></i></div>
                 </div>
                 <div class="form-group">
                     <label data-lang="label_school">Maktab</label>
-                    <div class="input-wrapper"><input type="text" id="edit-school-input"><i class="fa-solid fa-school icon-right"></i></div>
+                    <div class="input-wrapper"><input type="text" id="edit-school-input"><i class="fa-solid fa-lock icon-right" style="color:#ccc"></i></div>
                 </div>
+                <p style="text-align:center; font-size:12px; color:#999; margin-top:10px;" data-lang="desc_locked">Tahrirlash o'chirildi</p>
             </div>
-            <button id="save-edit-profile" class="btn-primary" data-lang="btn_save">Saqlash</button>
-        </div>
+            </div>
     </div>
 
     <div class="screen hidden" id="lang-screen">
@@ -412,7 +412,7 @@
                 <div class="close-btn-white" id="close-about"><i class="fa-solid fa-times"></i></div>
                 <div class="logo-icon big"><i class="fa-solid fa-graduation-cap"></i></div>
                 <h1>Smart Olympiad</h1>
-                <div class="version-tag">Version 2.0</div>
+                <div class="version-tag">Version 2.1</div>
             </div>
             <div class="modal-body-scroll" style="padding: 24px; text-align: left; flex:1; overflow-y:auto;">
                 <h3 style="margin-bottom:12px;" data-lang="about_platform">Platforma haqida</h3>
@@ -422,8 +422,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=92"></script>
+    <script src="script.js?v=96"></script>
 </body>
 </html>
-
-
