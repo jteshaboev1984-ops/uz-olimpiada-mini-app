@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v70.0 (Percentage Fix + Lang Menu Fix)');
+    console.log('App Started: v70.0 (Final Stable: Ladder + Images + Correct Stats)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -485,7 +485,7 @@ document.addEventListener('DOMContentLoaded', function() {
         "Buxoro viloyati": ["Buxoro shahri", "Kogon shahri", "Buxoro tumani", "G'ijduvon tumani", "Jondor tumani", "Kogon tumani", "Olot tumani", "Peshku tumani", "Qorako'l tumani", "Qorovulbozor tumani", "Romitan tumani", "Shofirkon tumani", "Vobkent tumani"],
         "Farg'ona viloyati": ["Farg'ona shahri", "Marg'ilon shahri", "Qo'qon shahri", "Quvasoy shahri", "Bag'dod tumani", "Beshariq tumani", "Buvayda tumani", "Dang'ara tumani", "Farg'ona tumani", "Furqat tumani", "Oltiariq tumani", "Qo'shtepa tumani", "Quva tumani", "Rishton tumani", "So'x tumani", "Toshloq tumani", "Uchko'prik tumani", "O'zbekiston tumani", "Yozyovon tumani"],
         "Jizzax viloyati": ["Jizzax shahri", "Arnasoy tumani", "Baxmal tumani", "Do'stlik tumani", "Forish tumani", "G'allaorol tumani", "Jizzax tumani", "Mirzacho'l tumani", "Paxtakor tumani", "Sharof Rashidov tumani", "Yangiobod tumani", "Zomin tumani", "Zarbdor tumani", "Zafarobod tumani"],
-        "Xorazm viloyati": ["Urganch shahri", "Xiva shahri", "Bog'ot tumani", "Gurlan tumani", "Xiva tumani", "Hazorasp tumani", "Xonqa tumani", "Q'shko'pir tumani", "Shovot tumani", "Urganch tumani", "Yangiariq tumani", "Yangibozor tumani"],
+        "Xorazm viloyati": ["Urganch shahri", "Xiva shahri", "Bog'ot tumani", "Gurlan tumani", "Xiva tumani", "Hazorasp tumani", "Xonqa tumani", "Qo'shko'pir tumani", "Shovot tumani", "Urganch tumani", "Yangiariq tumani", "Yangibozor tumani"],
         "Namangan viloyati": ["Namangan shahri", "Chortoq tumani", "Chust tumani", "Kosonsoy tumani", "Mingbuloq tumani", "Namangan tumani", "Norin tumani", "Pop tumani", "To'raqo'rg'on tumani", "Uchqo'rg'on tumani", "Uychi tumani", "Yangiqo'rg'on tumani"],
         "Navoiy viloyati": ["Navoiy shahri", "Zarafshon shahri", "G'ozg'on shahri", "Konimex tumani", "Karmana tumani", "Qiziltepa tumani", "Xatirchi tumani", "Navbahor tumani", "Nurota tumani", "Tomdi tumani", "Uchquduq tumani"],
         "Qashqadaryo viloyati": ["Qarshi shahri", "Shahrisabz shahri", "Chiroqchi tumani", "Dehqonobod tumani", "G'uzor tumani", "Qamashi tumani", "Qarshi tumani", "Kasbi tumani", "Kitob tumani", "Koson tumani", "Mirishkor tumani", "Muborak tumani", "Nishon tumani", "Shahrisabz tumani", "Yakkabog' tumani", "Ko'kdala tumani"],
@@ -611,11 +611,12 @@ document.addEventListener('DOMContentLoaded', function() {
     async function fetchStatsData() {
         if (!internalDbId || !currentTourId) return;
         
+        // ТЕПЕРЬ ФИЛЬТРУЕМ ПО ЯЗЫКУ
         const { data: qData } = await supabaseClient
             .from('questions')
             .select('id, subject')
             .eq('tour_id', currentTourId)
-            .eq('language', currentLang);
+            .eq('language', currentLang); // <--- ВАЖНОЕ ИЗМЕНЕНИЕ
 
         if (qData) tourQuestionsCache = qData;
         
@@ -625,6 +626,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateDashboardStats() {
+        // Список префиксов
         const subjectPrefixes = ['math', 'eng', 'phys', 'chem', 'bio', 'it', 'eco', 'sat', 'ielts'];
         let totalCorrect = 0;
         let totalTours = 0; 
@@ -652,6 +654,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function calculateSubjectStats(prefix) {
+        // Словарь всех возможных вариантов (на всякий случай, хотя теперь мы фильтруем точнее)
         const keywords = {
             'math': ['matematika', 'математика', 'math'],
             'eng': ['ingliz', 'английский', 'english'],
@@ -688,11 +691,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const content = document.getElementById('sd-content');
         const title = document.getElementById('sd-title');
         
+        // Получаем название для заголовка (из перевода или UpperCase)
         let subjTitle = t('subj_' + prefix);
         if(!subjTitle || subjTitle === ('subj_' + prefix)) subjTitle = prefix.toUpperCase();
 
         if (modal && content) {
             title.textContent = subjTitle;
+            
+            // Используем новую универсальную функцию подсчета
             let stats = calculateSubjectStats(prefix);
 
             const html = `
@@ -707,7 +713,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // === ЛИДЕРБОРД (FIX: Total Score) ===
+    // === ЛИДЕРБОРД ===
     window.setLeaderboardFilter = function(filter) {
         currentLbFilter = filter;
         document.querySelectorAll('.lb-segment').forEach(el => el.classList.remove('active'));
@@ -731,9 +737,6 @@ document.addEventListener('DOMContentLoaded', function() {
         let progressData = [];
 
         try {
-            // FIX: Загружаем Total Score (сумму всех туров)
-            // Но пока у нас 1 тур, берем просто score.
-            // В будущем здесь будет .rpc('get_total_scores')
             if (currentLbFilter === 'republic') {
                 let query = supabaseClient.from('tour_progress').select('user_id, score').order('score', { ascending: false }).limit(50);
                 if (currentTourId) query = query.eq('tour_id', currentTourId);
@@ -802,9 +805,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // (Остальные функции без изменений: renderLeaderboardUI, updateMyStickyBar, fillProfileForm, etc.)
-    // ... (Код ниже идентичен v69, просто копируем)
-    
     function renderLeaderboardUI(list, podiumEl, listEl) {
         podiumEl.innerHTML = '';
         listEl.innerHTML = '';
@@ -822,7 +822,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if ((currentLbFilter === 'republic' || currentLbFilter === 'region') && player.district) {
                 let d = player.district;
-                d = d.replace(' tumani', '').replace(' района', ''); 
+                d = d.replace(' tumani', '').replace(' района', ''); // Shorten
                 parts.push(`<span class="meta-row"><i class="fa-solid fa-map-pin"></i> ${d}</span>`);
             }
             if(player.school) {
@@ -905,17 +905,457 @@ document.addEventListener('DOMContentLoaded', function() {
             if(currentUserData) document.getElementById('my-class-val').textContent = `${currentUserData.class} ${t('class_s')}`;
             document.getElementById('my-score-val').textContent = me.score;
             stickyEl.classList.remove('hidden');
+            // Update Cabinet Rank
             document.getElementById('cab-rank').textContent = myRank === "50+" ? ">50" : `#${myRank}`;
         } else {
             stickyEl.classList.add('hidden');
         }
     }
 
-    // (Остальной код, включая логику теста, копируется из v69.0 без изменений)
-    // ...
-    // Вставьте сюда функции fillProfileForm, обработчики кнопок, startTourLadder и т.д.
+    function fillProfileForm(data) {
+        document.getElementById('class-select').value = data.class;
+        document.getElementById('region-select').value = data.region;
+        const districtSelect = document.getElementById('district-select');
+        districtSelect.innerHTML = `<option value="" disabled selected>${t('select_district')}</option>`;
+        if (regions[data.region]) {
+          regions[data.region].sort().forEach(district => {
+            const option = document.createElement('option');
+            option.value = district;
+            option.textContent = district;
+            districtSelect.appendChild(option);
+          });
+        }
+        districtSelect.value = data.district;
+        document.getElementById('school-input').value = data.school;
+        document.getElementById('research-consent').checked = data.research_consent || false;
+    }
+
+    document.getElementById('save-profile').addEventListener('click', async () => {
+      const classVal = document.getElementById('class-select').value;
+      const region = document.getElementById('region-select').value;
+      const district = document.getElementById('district-select').value;
+      const school = document.getElementById('school-input').value.trim();
+      const consent = document.getElementById('research-consent').checked;
+      
+      if (!classVal || !region || !district || !school) { alert(t('alert_fill')); return; }
+      
+      const btn = document.getElementById('save-profile');
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('save_saving')}`;
+      try {
+          const updateData = { telegram_id: telegramUserId, class: classVal, region: region, district: district, school: school, research_consent: consent };
+          if (telegramData.photoUrl) updateData.avatar_url = telegramData.photoUrl;
+          
+          let fullName = telegramData.firstName + (telegramData.lastName ? ' ' + telegramData.lastName : '');
+          if (fullName.trim()) updateData.name = fullName.trim();
+
+          const { data, error } = await supabaseClient.from('users').upsert(updateData, { onConflict: 'telegram_id' }).select().single(); 
+          if(error) throw error;
+          
+          internalDbId = data.id;
+          currentUserData = data;
+          
+          // If came from cabinet, go back to cabinet (or update UI and go home)
+          // For simplicity -> Go Home
+          showScreen('home-screen');
+          checkProfileAndTour(); // Refresh data
+      } catch (e) {
+          alert(t('error') + ': ' + e.message);
+          btn.disabled = false;
+          btn.innerHTML = originalText;
+      } 
+    });
+  
+    function lockProfileForm() {
+        document.getElementById('save-profile').classList.add('hidden');
+        document.getElementById('reg-back-btn').classList.remove('hidden');
+        document.getElementById('reg-locked-msg').classList.remove('hidden');
+        document.querySelectorAll('#reg-screen input, #reg-screen select').forEach(el => el.disabled = true);
+    }
+    function unlockProfileForm() {
+        document.getElementById('save-profile').classList.remove('hidden');
+        document.getElementById('reg-back-btn').classList.add('hidden');
+        document.getElementById('reg-locked-msg').classList.add('hidden');
+        document.querySelectorAll('#reg-screen input, #reg-screen select').forEach(el => el.disabled = false);
+    }
+    const requiredFields = document.querySelectorAll('#class-select, #region-select, #district-select, #school-input');
+    requiredFields.forEach(field => {
+      field.addEventListener('input', () => {
+        const allFilled = Array.from(requiredFields).every(f => f.value.trim() !== '');
+        document.getElementById('save-profile').disabled = !allFilled;
+      });
+    });
     
-    // ВАЖНО: Вставьте сюда функции fillProfileForm, updateMainButton, handleStartClick, startTourLadder, startTimer, showQuestion, finishTour, showCertsModal и др. из v69.0
-    // Я не дублирую их здесь полностью, чтобы не занимать место, они не менялись.
-    // Единственное изменение - раскомментируйте функции из предыдущего ответа.
+    // === ЛОГИКА УДАЛЕНИЯ АККАУНТА ===
+    safeAddListener('delete-account-btn', 'click', () => {
+        if(tourCompleted) {
+            alert(t('del_error_active_tour'));
+        } else {
+            document.getElementById('delete-confirm-modal').classList.remove('hidden');
+        }
+    });
+
+    safeAddListener('confirm-delete-btn', 'click', async () => {
+        const btn = document.getElementById('confirm-delete-btn');
+        btn.disabled = true;
+        btn.innerHTML = '...';
+        
+        try {
+            const { error } = await supabaseClient.from('users').delete().eq('id', internalDbId);
+            if(error) throw error;
+            
+            // Clear local data
+            localStorage.clear();
+            location.reload(); 
+        } catch (e) {
+            alert(t('error') + ': ' + e.message);
+            btn.disabled = false;
+            btn.innerHTML = t('btn_delete_confirm');
+        }
+    });
+
+    // === ЛОГИКА РАЗБОРА ОШИБОК ===
+    safeAddListener('btn-mistakes', 'click', () => {
+        const now = new Date();
+        const end = currentTourEndDate ? new Date(currentTourEndDate) : null;
+        
+        // ЕСЛИ ТУР ЕЩЕ ИДЕТ - БЛОКИРУЕМ
+        if (end && now < end) {
+            document.getElementById('review-unlock-date').textContent = end.toLocaleDateString() + ' ' + end.toLocaleTimeString().slice(0,5);
+            document.getElementById('review-lock-modal').classList.remove('hidden');
+        } else {
+            // ТУР ЗАКОНЧЕН - ОТКРЫВАЕМ
+            alert("Tahlil uchun ruxsat ochiq (Keyingi yangilanishda bu yerda to'liq tahlil oynasi bo'ladi).");
+        }
+    });
+
+    // === QUIZ LOGIC (NEW LADDER SYSTEM) ===
+    async function handleStartClick() {
+        const btn = document.getElementById('main-action-btn');
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('loading')}`;
+        
+        // Предварительная проверка (есть ли вообще вопросы)
+        const { count } = await supabaseClient
+            .from('questions')
+            .select('*', { count: 'exact', head: true })
+            .eq('tour_id', currentTourId)
+            .eq('language', currentLang);
+
+        if (count === 0) {
+            alert("Ushbu tilda savollar topilmadi / Вопросов на этом языке пока нет.");
+            updateMainButton('start'); 
+            return; 
+        }
+
+        // Обновляем текст предупреждения
+        document.getElementById('warn-q-val').textContent = '15 ' + t('questions');
+        document.getElementById('warn-time-val').textContent = '~15 ' + t('minutes');
+        
+        // Показываем модалку
+        document.getElementById('warning-modal').classList.remove('hidden');
+        updateMainButton('start'); 
+    }
+
+    function updateMainButton(state, title = "") {
+        if(!title) title = t('start_tour_btn');
+        const btn = document.getElementById('main-action-btn');
+        const certCard = document.getElementById('home-cert-btn'); 
+        if (!btn) return;
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+        const activeBtn = document.getElementById('main-action-btn');
+        if (state === 'inactive') {
+            activeBtn.innerHTML = `<i class="fa-solid fa-calendar-xmark"></i> ${t('no_active_tour')}`;
+            activeBtn.disabled = true;
+            activeBtn.className = 'btn-primary'; 
+            activeBtn.style.background = "#8E8E93";
+            if (certCard) certCard.classList.add('hidden'); 
+        } else if (state === 'completed') {
+            activeBtn.innerHTML = `<i class="fa-solid fa-check"></i> ${t('tour_completed_btn')}`;
+            activeBtn.className = 'btn-success-clickable';
+            activeBtn.disabled = false;
+            activeBtn.style.background = ""; 
+            if (certCard) certCard.classList.remove('hidden'); 
+            activeBtn.addEventListener('click', () => document.getElementById('tour-info-modal').classList.remove('hidden'));
+        } else {
+            activeBtn.innerHTML = `<i class="fa-solid fa-play"></i> ${title}`;
+            activeBtn.className = 'btn-primary';
+            activeBtn.disabled = false;
+            activeBtn.style.background = "";
+            if (certCard) certCard.classList.add('hidden'); 
+            activeBtn.addEventListener('click', handleStartClick);
+        }
+    }
+
+    safeAddListener('confirm-start', 'click', async () => {
+      document.getElementById('warning-modal').classList.add('hidden');
+      await startTourLadder(); // <--- NEW FUNCTION
+    });
+
+    async function startTourLadder() {
+      if (!currentTourId) return;
+      
+      // 1. Fetch 8 EASY Questions
+      const { data: easyQ } = await supabaseClient
+          .from('questions')
+          .select('id, subject, question_text, options_text, time_limit_seconds, difficulty, image_url') // Added image_url
+          .eq('tour_id', currentTourId)
+          .eq('language', currentLang)
+          .eq('difficulty', 'Easy')
+          .limit(20); 
+
+      // 2. Fetch 5 MEDIUM Questions
+      const { data: medQ } = await supabaseClient
+          .from('questions')
+          .select('id, subject, question_text, options_text, time_limit_seconds, difficulty, image_url') // Added image_url
+          .eq('tour_id', currentTourId)
+          .eq('language', currentLang)
+          .eq('difficulty', 'Medium')
+          .limit(15);
+
+      // 3. Fetch 2 HARD Questions
+      const { data: hardQ } = await supabaseClient
+          .from('questions')
+          .select('id, subject, question_text, options_text, time_limit_seconds, difficulty, image_url') // Added image_url
+          .eq('tour_id', currentTourId)
+          .eq('language', currentLang)
+          .eq('difficulty', 'Hard')
+          .limit(10);
+
+      // Shuffle and Slice
+      const e = (easyQ || []).sort(() => 0.5 - Math.random()).slice(0, 8);
+      const m = (medQ || []).sort(() => 0.5 - Math.random()).slice(0, 5);
+      const h = (hardQ || []).sort(() => 0.5 - Math.random()).slice(0, 2);
+
+      // Combine into Ladder
+      questions = [...e, ...m, ...h];
+
+      if (questions.length === 0) { 
+          alert('Error: No questions found.'); 
+          return; 
+      }
+      
+      let totalSeconds = 0;
+      questions.forEach(q => totalSeconds += (q.time_limit_seconds || 60));
+      
+      currentQuestionIndex = 0;
+      correctCount = 0;
+      showScreen('quiz-screen');
+      startTimer(totalSeconds);
+      showQuestion();
+    }
+
+    function startTimer(seconds) {
+      let timeLeft = seconds;
+      const timerEl = document.getElementById('timer');
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        const mins = Math.floor(timeLeft / 60);
+        const secs = timeLeft % 60;
+        timerEl.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        if (timeLeft <= 0) { clearInterval(timerInterval); finishTour(); }
+        timeLeft--;
+      }, 1000);
+    }
+
+    function showQuestion() {
+      const q = questions[currentQuestionIndex];
+      document.getElementById('question-number').textContent = currentQuestionIndex + 1;
+      document.getElementById('total-q-count').textContent = questions.length;
+      
+      // Difficulty Badge
+      let diffBadge = '';
+      if(q.difficulty === 'Easy') diffBadge = '🟢 Easy';
+      if(q.difficulty === 'Medium') diffBadge = '🟡 Medium';
+      if(q.difficulty === 'Hard') diffBadge = '🔴 Hard';
+
+      document.getElementById('subject-tag').innerHTML = (q.subject || 'Q') + ' <span style="opacity:0.6; margin-left:5px; font-size:10px;">' + diffBadge + '</span>';
+      
+      // IMAGE HANDLING
+      const imgCont = document.getElementById('q-img-cont');
+      const img = document.getElementById('q-img');
+      const loader = imgCont.querySelector('.img-loader');
+
+      if (q.image_url) {
+          imgCont.classList.remove('hidden');
+          loader.classList.remove('hidden'); // Show spinner
+          img.classList.add('hidden'); // Hide image initially
+          
+          img.onload = () => {
+              loader.classList.add('hidden');
+              img.classList.remove('hidden');
+          };
+          img.onerror = () => {
+              imgCont.classList.add('hidden'); // Hide container if fails
+          };
+          img.src = q.image_url;
+      } else {
+          imgCont.classList.add('hidden');
+          img.src = '';
+      }
+
+      document.getElementById('question-text').innerHTML = q.question_text;
+      const timeForQ = q.time_limit_seconds || 60;
+      document.getElementById('q-time-hint').innerHTML = `<i class="fa-solid fa-hourglass-half"></i> ${timeForQ}s`;
+      document.getElementById('quiz-progress-fill').style.width = `${((currentQuestionIndex + 1) / questions.length) * 100}%`;
+      const container = document.getElementById('options-container');
+      container.innerHTML = '';
+      const nextBtn = document.getElementById('next-button');
+      nextBtn.disabled = true;
+      nextBtn.innerHTML = `${t('btn_next')} <i class="fa-solid fa-arrow-right"></i>`;
+      selectedAnswer = null;
+      const optionsText = (q.options_text || '').trim();
+      if (optionsText !== '') {
+        const options = optionsText.split('\n');
+        const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+        options.forEach((option, index) => {
+          if (option.trim()) {
+            const letter = letters[index] || '';
+            const btn = document.createElement('div');
+            btn.className = 'option-card';
+            btn.innerHTML = `<div class="option-circle">${letter}</div><div class="option-text">${option.trim()}</div>`;
+            btn.onclick = () => {
+              document.querySelectorAll('.option-card').forEach(b => b.classList.remove('selected'));
+              btn.classList.add('selected');
+              const optText = option.trim();
+              const isLetterOption = optText.match(/^[A-DА-Г][)\.\s]/i);
+              selectedAnswer = isLetterOption ? optText.charAt(0).toUpperCase() : optText;
+              if (!selectedAnswer && letter) selectedAnswer = letter;
+              if (!selectedAnswer) selectedAnswer = optText;
+              nextBtn.disabled = false;
+            };
+            container.appendChild(btn);
+          }
+        });
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.className = 'answer-input';
+        textarea.placeholder = t('answer_placeholder');
+        textarea.rows = 2;
+        textarea.addEventListener('input', () => {
+          selectedAnswer = textarea.value.trim();
+          nextBtn.disabled = selectedAnswer.length === 0;
+        });
+        container.appendChild(textarea);
+      }
+    }
+    
+    // === ЗАЩИЩЕННАЯ ОТПРАВКА ОТВЕТА ===
+    safeAddListener('next-button', 'click', async () => {
+      const nextBtn = document.getElementById('next-button');
+      nextBtn.disabled = true;
+      nextBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('saving_ans')}`;
+      
+      if (!internalDbId) {
+          const { data } = await supabaseClient.from('users').select('id').eq('telegram_id', telegramUserId).maybeSingle();
+          if(data) internalDbId = data.id;
+      }
+      
+      const q = questions[currentQuestionIndex];
+      const questionIdNumber = Number(q.id);
+
+      const { data: isCorrect, error: rpcError } = await supabaseClient.rpc('check_user_answer', {
+          p_question_id: questionIdNumber,
+          p_user_answer: selectedAnswer
+      });
+      
+      const finalIsCorrect = (isCorrect === true);
+      if (finalIsCorrect) correctCount++;
+      
+      try {
+          const { error } = await supabaseClient.from('user_answers').upsert({
+              user_id: internalDbId, question_id: q.id, answer: selectedAnswer, is_correct: finalIsCorrect
+            }, { onConflict: 'user_id,question_id' });
+          if (error) throw error;
+          
+          currentQuestionIndex++;
+          if (currentQuestionIndex < questions.length) showQuestion();
+          else finishTour();
+      } catch (e) {
+          alert('Error: ' + e.message);
+          nextBtn.disabled = false;
+          nextBtn.innerHTML = t('repeat');
+      }
+    });
+
+    async function finishTour() {
+      clearInterval(timerInterval);
+      tourCompleted = true;
+      const percent = Math.round((correctCount / questions.length) * 100);
+      showScreen('result-screen');
+      document.getElementById('res-tour-title').textContent = "1-Tur";
+      document.getElementById('res-total').textContent = questions.length;
+      document.getElementById('res-correct').textContent = correctCount;
+      document.getElementById('result-percent').textContent = `${percent}%`;
+      const circle = document.getElementById('result-circle');
+      if (circle) circle.style.background = `conic-gradient(var(--primary) 0% ${percent}%, #E5E5EA ${percent}% 100%)`;
+      updateMainButton('completed');
+      document.getElementById('subjects-title').textContent = t('curr_tour'); // "Results"
+      fetchStatsData(); 
+    }
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+        document.getElementById(screenId).classList.remove('hidden');
+        window.scrollTo(0, 0);
+    }
+    window.openExternalLink = function(url) {
+        if(window.Telegram && Telegram.WebApp) Telegram.WebApp.openLink(url);
+        else window.open(url, '_blank');
+    }
+    function safeAddListener(id, event, handler) {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener(event, handler);
+    }
+    safeAddListener('open-cabinet-btn', 'click', () => { 
+        showScreen('cabinet-screen'); 
+        // Update rank dynamically if needed
+        loadLeaderboard(); // to update sticky rank cache
+    });
+    safeAddListener('close-cabinet', 'click', () => showScreen('home-screen'));
+    
+    // Меню кабинета:
+    safeAddListener('btn-edit-profile', 'click', () => {
+        showScreen('reg-screen');
+        if(tourCompleted) lockProfileForm(); else unlockProfileForm();
+        document.getElementById('reg-back-btn').classList.remove('hidden'); // Allow cancel
+    });
+    safeAddListener('reg-back-btn', 'click', () => showScreen('cabinet-screen'));
+
+    safeAddListener('leaderboard-btn', 'click', () => {
+        showScreen('leaderboard-screen');
+        setLeaderboardFilter('republic');
+    });
+    safeAddListener('lb-back', 'click', () => showScreen('home-screen'));
+    safeAddListener('about-btn', 'click', () => document.getElementById('about-modal').classList.remove('hidden'));
+    safeAddListener('close-about', 'click', () => document.getElementById('about-modal').classList.add('hidden'));
+    
+    // Логика ВЫХОДА (Браузер)
+    safeAddListener('exit-app-btn', 'click', () => {
+        if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) {
+            Telegram.WebApp.close();
+        } else {
+            // Browser reset logic
+            localStorage.clear();
+            location.reload();
+        }
+    });
+
+    safeAddListener('home-cert-btn', 'click', () => showCertsModal());
+    safeAddListener('download-certificate-res-btn', 'click', () => showCertsModal());
+    safeAddListener('btn-open-certs-cab', 'click', () => showCertsModal()); // Added listener for cabinet
+    safeAddListener('cancel-start', 'click', () => document.getElementById('warning-modal').classList.add('hidden'));
+    safeAddListener('back-home', 'click', () => showScreen('home-screen'));
+    safeAddListener('back-home-x', 'click', () => showScreen('home-screen'));
+    function showCertsModal() {
+        const container = document.getElementById('certs-list-container');
+        container.innerHTML = `
+            <div class="cert-card">
+                <div class="cert-icon"><i class="fa-solid fa-file-pdf"></i></div>
+                <div class="cert-info"><h4>${t('cert_title')}</h4><p>${new Date().toLocaleDateString()}</p></div>
+                <div class="cert-action"><span class="badge-soon">Soon</span></div>
+            </div>`;
+        document.getElementById('certs-modal').classList.remove('hidden');
+    }
+    checkProfileAndTour();
 });
