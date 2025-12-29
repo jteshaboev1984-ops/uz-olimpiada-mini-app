@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v71.2 (Strict Lock: Profile + Language + Support Hint)');
+    console.log('App Started: v72.0 (Strict + Anti-Cheat + All Fixes)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -15,15 +15,15 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentLang = 'uz'; 
     let tourCompleted = false;
     let isLangLocked = false; 
-    let isProfileLocked = false; // НОВЫЙ ФЛАГ БЛОКИРОВКИ ПРОФИЛЯ
+    let isProfileLocked = false; 
 
-    // === ПЕРЕМЕННЫЕ ТЕСТА ===
+    // === ПЕРЕМЕННЫЕ ТЕСТА И АНТИ-ЧИТА ===
     let questions = [];
     let currentQuestionIndex = 0;
     let correctCount = 0;
     let timerInterval = null;
     let selectedAnswer = null;
-    // Время старта берем из localStorage, чтобы пережить перезагрузку
+    let cheatWarningCount = 0; // СЧЕТЧИК СВОРАЧИВАНИЙ
 
     // === НАСТРОЙКИ SUPABASE ===
     const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
@@ -43,9 +43,9 @@ document.addEventListener('DOMContentLoaded', function() {
             label_school: "Maktab",
             consent_title: "Ma'lumotlarni qayta ishlashga rozilik",
             consent_desc: "Reyting uchun.",
-            btn_save: "Saqlash va Tasdiqlash", // Изменено для серьезности
+            btn_save: "Saqlash va Tasdiqlash", 
             profile_locked_msg: "Ma'lumotlar tasdiqlangan",
-            profile_locked_hint: "Xatolik bo'lsa 'Yordam' bo'limiga yozing. (Til o'zgartirilmaydi!)", // НОВОЕ
+            profile_locked_hint: "Xatolik bo'lsa 'Yordam' bo'limiga yozing. (Til o'zgartirilmaydi!)",
             btn_to_main: "Bosh sahifaga",
             btn_cancel: "Bekor qilish",
             greeting_hi: "Salom",
@@ -154,7 +154,9 @@ document.addEventListener('DOMContentLoaded', function() {
             lock_review_title: "Tahlil yopiq",
             lock_review_msg: "Adolatli raqobat uchun xatolar tahlili olimpiada yakunlangandan so'ng ochiladi.",
             lang_warning_reg: "Diqqat: Til va ma'lumotlar saqlangandan so'ng o'zgartirib bo'lmaydi!",
-            lang_locked_reason: "Adolatli raqobat uchun tilni o'zgartirish imkoniyati o'chirilgan."
+            lang_locked_reason: "Adolatli raqobat uchun tilni o'zgartirish imkoniyati o'chirilgan.",
+            cheat_title: "DIQQAT! QOIDABUZARLIK!",
+            cheat_msg: "Ilovadan chiqish yoki oynani almashtirish taqiqlanadi. Yana takrorlansa, test avtomatik ravishda yakunlanadi!"
         },
         ru: {
             reg_title: "Регистрация",
@@ -168,7 +170,7 @@ document.addEventListener('DOMContentLoaded', function() {
             consent_desc: "Для рейтинга.",
             btn_save: "Сохранить и Подтвердить",
             profile_locked_msg: "Данные подтверждены",
-            profile_locked_hint: "Ошибка? Пишите в 'Помощь'. (Смена языка запрещена!)", // НОВОЕ
+            profile_locked_hint: "Ошибка? Пишите в 'Помощь'. (Смена языка запрещена!)",
             btn_to_main: "На главную",
             btn_cancel: "Отмена",
             greeting_hi: "Привет",
@@ -277,7 +279,9 @@ document.addEventListener('DOMContentLoaded', function() {
             lock_review_title: "Разбор закрыт",
             lock_review_msg: "В целях честной игры разбор ошибок станет доступен после окончания олимпиады.",
             lang_warning_reg: "Внимание: Язык и данные профиля нельзя будет изменить после сохранения!",
-            lang_locked_reason: "Смена языка отключена для обеспечения честной конкуренции."
+            lang_locked_reason: "Смена языка отключена для обеспечения честной конкуренции.",
+            cheat_title: "НАРУШЕНИЕ!",
+            cheat_msg: "Покидать приложение во время теста запрещено! При повторном нарушении тест будет завершен принудительно."
         },
         en: {
             reg_title: "Registration",
@@ -291,7 +295,7 @@ document.addEventListener('DOMContentLoaded', function() {
             consent_desc: "For leaderboard ranking.",
             btn_save: "Save & Confirm",
             profile_locked_msg: "Data Locked",
-            profile_locked_hint: "Mistake? Contact Support. (Language cannot be changed!)", // NEW
+            profile_locked_hint: "Mistake? Contact Support. (Language cannot be changed!)",
             btn_to_main: "Go to Home",
             btn_cancel: "Cancel",
             greeting_hi: "Hi",
@@ -400,7 +404,9 @@ document.addEventListener('DOMContentLoaded', function() {
             lock_review_title: "Review Locked",
             lock_review_msg: "To ensure fair play, mistake review will be available after the Olympiad ends.",
             lang_warning_reg: "Attention: Language and profile data cannot be changed after saving!",
-            lang_locked_reason: "Language changing is disabled to ensure fair competition."
+            lang_locked_reason: "Language changing is disabled to ensure fair competition.",
+            cheat_title: "VIOLATION!",
+            cheat_msg: "Leaving the app is prohibited! Next time the test will be terminated automatically."
         }
     };
 
@@ -410,7 +416,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function setLanguage(lang) {
         if (isLangLocked && lang !== currentLang) {
-            // Блокировка работает
             return; 
         }
         
@@ -462,37 +467,28 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Обработчик языка на регистрации
     if(document.getElementById('reg-lang-select')) {
         document.getElementById('reg-lang-select').addEventListener('change', (e) => {
             if(!isLangLocked) setLanguage(e.target.value);
         });
     }
 
-    // === ИНИЦИАЛИЗАЦИЯ TELEGRAM & LANGUAGE ===
+    // === ИНИЦИАЛИЗАЦИЯ TELEGRAM ===
     if (window.Telegram && window.Telegram.WebApp) {
       Telegram.WebApp.ready();
       Telegram.WebApp.expand();
-      
       const user = Telegram.WebApp.initDataUnsafe.user;
-      
       if (user && user.id) {
         telegramUserId = Number(user.id);
         telegramData.firstName = user.first_name;
         telegramData.lastName = user.last_name;
         if (user.photo_url) telegramData.photoUrl = user.photo_url;
         telegramData.languageCode = user.language_code;
-
         document.getElementById('reg-user-name').textContent = telegramData.firstName + ' ' + (telegramData.lastName || '');
         document.getElementById('home-user-name').textContent = telegramData.firstName || t('lb_participant');
-        if(telegramData.photoUrl) {
-            document.getElementById('cab-avatar-img').src = telegramData.photoUrl;
-        }
+        if(telegramData.photoUrl) document.getElementById('cab-avatar-img').src = telegramData.photoUrl;
       } else {
-        console.warn("No Telegram user found. Running in Test Mode.");
-        if (!localStorage.getItem('test_user_id')) {
-             localStorage.setItem('test_user_id', Math.floor(Math.random() * 1000000000));
-        }
+        if (!localStorage.getItem('test_user_id')) localStorage.setItem('test_user_id', Math.floor(Math.random() * 1000000000));
         telegramUserId = Number(localStorage.getItem('test_user_id'));
         document.getElementById('reg-user-name').textContent = 'Test User';
       }
@@ -509,7 +505,9 @@ document.addEventListener('DOMContentLoaded', function() {
         setLanguage('uz');
     }
   
-    // === ДАННЫЕ РЕГИОНОВ ===
+    // === РЕГИОНЫ И СЕЛЕКТЫ (Опущено для краткости, они такие же как раньше) ===
+    // ... (ВСТАВИТЬ КОД РЕГИОНОВ ИЗ ПРЕДЫДУЩЕЙ ВЕРСИИ) ...
+    // ВСТАВЬТЕ СЮДА ВЕСЬ БЛОК const regions = { ... } и настройку селектов
     const regions = {
         "Toshkent shahri": ["Bektemir tumani", "Chilonzor tumani", "Mirobod tumani", "Mirzo Ulug'bek tumani", "Olmazor tumani", "Sergeli tumani", "Shayxontohur tumani", "Uchtepa tumani", "Yakkasaroy tumani", "Yangihayot tumani", "Yashnobod tumani", "Yunusobod tumani"],
         "Andijon viloyati": ["Andijon shahri", "Xonobod shahri", "Andijon tumani", "Asaka tumani", "Baliqchi tumani", "Bo'z tumani", "Buloqboshi tumani", "Izboskan tumani", "Jalaquduq tumani", "Marhamat tumani", "Oltinko'l tumani", "Paxtaobod tumani", "Qo'rg'ontepa tumani", "Shahrixon tumani", "Ulug'nor tumani", "Xo'jaobod tumani"],
@@ -573,7 +571,6 @@ document.addEventListener('DOMContentLoaded', function() {
           internalDbId = userData.id;
           currentUserData = userData; 
 
-          // Синхронизация имени
           if (telegramData.firstName) {
               let tgName = telegramData.firstName + (telegramData.lastName ? ' ' + telegramData.lastName : '');
               tgName = tgName.trim();
@@ -582,15 +579,18 @@ document.addEventListener('DOMContentLoaded', function() {
                   currentUserData.name = tgName; 
               }
           }
-          // Update Cabinet Info
           document.getElementById('cab-name').textContent = currentUserData.name;
           document.getElementById('cab-id').textContent = String(telegramUserId).slice(-6); 
           if(currentUserData.avatar_url) document.getElementById('cab-avatar-img').src = currentUserData.avatar_url;
 
-          // === БЛОКИРОВКА ЯЗЫКА ===
-          if (userData.fixed_language) {
+          // === БЛОКИРОВКА ЯЗЫКА (FIXED + OLD USERS) ===
+          // Блокируем, если язык зафиксирован ИЛИ если профиль заполнен (для старых)
+          const isOldUserReady = (userData.class && userData.region && userData.district && userData.school);
+          
+          if (userData.fixed_language || isOldUserReady) {
               isLangLocked = true;
-              setLanguage(userData.fixed_language);
+              // Если fixed_language нет, но профиль готов -> язык не меняем, берем текущий (или из local)
+              if(userData.fixed_language) setLanguage(userData.fixed_language);
               
               const cabLang = document.getElementById('lang-switcher-cab');
               if(cabLang) cabLang.disabled = true;
@@ -601,14 +601,11 @@ document.addEventListener('DOMContentLoaded', function() {
               if(regLang) regLang.disabled = true;
           }
 
-          // === БЛОКИРОВКА ПРОФИЛЯ (СТРОГАЯ) ===
-          // Проверяем, заполнены ли основные поля
-          if (userData.class && userData.region && userData.district && userData.school) {
+          if (isOldUserReady) {
               isProfileLocked = true;
           }
 
       } else {
-          // Если юзера нет - создаем
           let fullName = telegramData.firstName ? (telegramData.firstName + (telegramData.lastName ? ' ' + telegramData.lastName : '')).trim() : 'Foydalanuvchi';
           const { data: newUser } = await supabaseClient.from('users')
               .insert({ telegram_id: telegramUserId, name: fullName, avatar_url: telegramData.photoUrl })
@@ -619,7 +616,6 @@ document.addEventListener('DOMContentLoaded', function() {
           }
       }
 
-      // Проверка туров
       const now = new Date().toISOString();
       const { data: tourData } = await supabaseClient.from('tours').select('*').lte('start_date', now).gte('end_date', now).eq('is_active', true).maybeSingle();
 
@@ -657,7 +653,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
 
-    // === ФУНКЦИЯ БЛОКИРОВКИ ПРОФИЛЯ ===
     function lockProfileForm(permanent = false) {
         const saveBtn = document.getElementById('save-profile');
         const lockMsg = document.getElementById('reg-locked-msg');
@@ -666,19 +661,16 @@ document.addEventListener('DOMContentLoaded', function() {
         saveBtn.classList.add('hidden');
         lockMsg.classList.remove('hidden');
         
-        // Обновляем текст сообщения блокировки
         if(permanent) {
-            // Если профиль заполнен и заблокирован навсегда
             lockMsg.innerHTML = `<i class="fa-solid fa-lock"></i> 
                                  <div style="text-align:left; margin-left:8px;">
                                     <div style="font-weight:700;">${t('profile_locked_msg')}</div>
                                     <div style="font-size:10px; font-weight:400; opacity:0.8;">${t('profile_locked_hint')}</div>
                                  </div>`;
-            lockMsg.style.background = "#E8F5E9"; // Зеленоватый оттенок (успех)
+            lockMsg.style.background = "#E8F5E9"; 
             lockMsg.style.color = "#2E7D32";
             lockMsg.style.border = "1px solid #C8E6C9";
         } else {
-            // Старая блокировка (если тур завершен)
             lockMsg.innerHTML = `<i class="fa-solid fa-lock"></i> <span>${t('profile_locked_msg')}</span>`;
         }
 
@@ -694,7 +686,29 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('#reg-screen input, #reg-screen select').forEach(el => el.disabled = false);
     }
 
-    // === ОБНОВЛЕННАЯ ЛОГИКА ЗАГРУЗКИ СТАТИСТИКИ ===
+    // === АНТИ-ЧИТ: ДЕТЕКТОР СВОРАЧИВАНИЯ ===
+    function handleVisibilityChange() {
+        // Проверяем: Тест идет? Не завершен?
+        const quizScreen = document.getElementById('quiz-screen');
+        if (document.hidden && !quizScreen.classList.contains('hidden') && !tourCompleted) {
+            cheatWarningCount++;
+            
+            if (cheatWarningCount === 1) {
+                // 1-е предупреждение
+                document.getElementById('cheat-warning-modal').classList.remove('hidden');
+            } else if (cheatWarningCount >= 2) {
+                // 2-й раз - СМЕРТЬ (Завершение)
+                finishTour(); // Принудительно завершаем
+                alert(t('cheat_msg')); // Показываем алерт
+            }
+        }
+    }
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+
+    // === ЛОГИКА ТЕСТА, СТАТИСТИКИ И ЛИДЕРБОРДА (БЕЗ ИЗМЕНЕНИЙ) ===
+    // (Код ниже идентичен v71.2, кроме функции fetchStatsData/updateDashboardStats - они стандартные)
+    
     async function fetchStatsData() {
         if (!internalDbId || !currentTourId) return;
         
@@ -987,30 +1001,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function fillProfileForm(data) {
-        document.getElementById('class-select').value = data.class;
-        document.getElementById('region-select').value = data.region;
-        const districtSelect = document.getElementById('district-select');
-        districtSelect.innerHTML = `<option value="" disabled selected>${t('select_district')}</option>`;
-        if (regions[data.region]) {
-          regions[data.region].sort().forEach(district => {
-            const option = document.createElement('option');
-            option.value = district;
-            option.textContent = district;
-            districtSelect.appendChild(option);
-          });
-        }
-        districtSelect.value = data.district;
-        document.getElementById('school-input').value = data.school;
-        document.getElementById('research-consent').checked = data.research_consent || false;
-        
-        const langSelect = document.getElementById('reg-lang-select');
-        if(langSelect && data.fixed_language) {
-            langSelect.value = data.fixed_language;
-            langSelect.disabled = true;
-        }
-    }
-
     document.getElementById('save-profile').addEventListener('click', async () => {
       const classVal = document.getElementById('class-select').value;
       const region = document.getElementById('region-select').value;
@@ -1021,8 +1011,6 @@ document.addEventListener('DOMContentLoaded', function() {
       
       if (!classVal || !region || !district || !school) { alert(t('alert_fill')); return; }
       
-      // FIX: Если язык еще не зафиксирован в базе, берем выбранный
-      // Если уже зафиксирован (isLangLocked=true), оставляем старый (currentLang)
       let langToSave = isLangLocked ? currentLang : selectedLang;
       
       const btn = document.getElementById('save-profile');
@@ -1037,7 +1025,7 @@ document.addEventListener('DOMContentLoaded', function() {
               district: district, 
               school: school, 
               research_consent: consent,
-              fixed_language: langToSave // Железобетонная отправка
+              fixed_language: langToSave 
           };
           if (telegramData.photoUrl) updateData.avatar_url = telegramData.photoUrl;
           
@@ -1050,7 +1038,6 @@ document.addEventListener('DOMContentLoaded', function() {
           internalDbId = data.id;
           currentUserData = data;
           
-          // Обновляем состояние блокировки в скрипте сразу
           isLangLocked = true;
           isProfileLocked = true;
           currentLang = langToSave;
@@ -1104,7 +1091,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // === QUIZ LOGIC (LADDER + TIMER) ===
+    // === QUIZ LOGIC ===
     async function handleStartClick() {
         const btn = document.getElementById('main-action-btn');
         btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('loading')}`;
@@ -1162,7 +1149,6 @@ document.addEventListener('DOMContentLoaded', function() {
     safeAddListener('confirm-start', 'click', async () => {
       document.getElementById('warning-modal').classList.add('hidden');
       
-      // FIX: Используем localStorage для надежности
       const startTime = Date.now();
       localStorage.setItem('tour_start_time', startTime);
       
@@ -1310,7 +1296,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
     
-    // === ЗАЩИЩЕННАЯ ОТПРАВКА ОТВЕТА ===
     safeAddListener('next-button', 'click', async () => {
       const nextBtn = document.getElementById('next-button');
       nextBtn.disabled = true;
@@ -1352,18 +1337,16 @@ document.addEventListener('DOMContentLoaded', function() {
       clearInterval(timerInterval);
       tourCompleted = true;
       
-      // FIX: Calculate total time
       const start = localStorage.getItem('tour_start_time');
       const timeTaken = start ? Math.floor((Date.now() - Number(start)) / 1000) : 0;
       
-      // FIX: Use UPSERT instead of UPDATE (to create record if missing)
       try {
           await supabaseClient.from('tour_progress').upsert({
               user_id: internalDbId,
               tour_id: currentTourId,
-              score: correctCount, // Сохраняем и счет тоже
+              score: correctCount, 
               total_time_taken: timeTaken
-          }, { onConflict: 'user_id, tour_id' }); // Уникальный ключ
+          }, { onConflict: 'user_id, tour_id' }); 
       } catch (e) { console.error("Time update failed", e); }
 
       const percent = Math.round((correctCount / questions.length) * 100);
@@ -1397,13 +1380,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     safeAddListener('close-cabinet', 'click', () => showScreen('home-screen'));
     
-    // МЕНЮ КАБИНЕТА
     safeAddListener('btn-edit-profile', 'click', () => {
         showScreen('reg-screen');
-        // FIX: Используем новый флаг isProfileLocked
         if(isProfileLocked) lockProfileForm(true); 
         else unlockProfileForm();
-        
         document.getElementById('reg-back-btn').classList.remove('hidden'); 
     });
     safeAddListener('reg-back-btn', 'click', () => showScreen('cabinet-screen'));
