@@ -57,23 +57,20 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .checkbox-text span { font-size: 11px; color: var(--text-sec); }
 .locked-status-btn { text-align: center; color: var(--text-sec); font-weight: 600; font-size: 14px; padding: 10px; background: #F9F9F9; border-radius: 12px; margin-bottom: 10px; border: 1px solid #EEE; display:flex; align-items:center; justify-content:center; gap:8px; }
 
-/* NEW CABINET SCREEN */
+/* CABINET */
 .cabinet-hero { background: linear-gradient(135deg, #007AFF 0%, #0056b3 100%); padding: 20px 20px 50px; color: white; border-radius: 0 0 30px 30px; position: relative; text-align: center; }
 .cabinet-top-nav { display: flex; justify-content: flex-start; margin-bottom: 15px; } 
 .nav-back-btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 6px; cursor: pointer; backdrop-filter: blur(5px); transition: 0.2s; }
 .nav-back-btn:active { background: rgba(255,255,255,0.4); }
-
 .hero-avatar { width: 90px; height: 90px; border-radius: 50%; border: 4px solid rgba(255,255,255,0.3); margin: 0 auto 15px; overflow: hidden; background: white; }
 .hero-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .hero-content h2 { font-size: 24px; font-weight: 800; margin-bottom: 5px; }
 .id-badge { background: rgba(255,255,255,0.2); display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 13px; font-weight: 600; letter-spacing: 0.5px; }
-
 .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
 .stat-box { background: white; padding: 15px 10px; border-radius: 18px; text-align: center; box-shadow: var(--shadow); display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .stat-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; margin-bottom: 8px; }
 .stat-val { font-size: 18px; font-weight: 800; color: #000; line-height: 1.2; }
 .stat-label { font-size: 11px; color: var(--text-sec); font-weight: 600; margin-top: 2px; }
-
 .settings-list { background: white; border-radius: 18px; padding: 0 16px; box-shadow: var(--shadow); display: flex; flex-direction: column; }
 .settings-item { display: flex; align-items: center; padding: 16px 0; border-bottom: 1px solid #F2F2F7; cursor: pointer; transition: 0.2s; }
 .settings-item:last-child { border-bottom: none; }
@@ -154,6 +151,36 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .option-circle { width: 28px; height: 28px; border-radius: 50%; background: #F2F2F7; color: #8E8E93; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0; margin-top: 2px; }
 .option-card.selected .option-circle { background: var(--primary); color: white; }
 .option-text { font-size: 16px; line-height: 1.4; color: #333; }
+
+/* NEW: QUESTION IMAGE STYLES */
+.quiz-image-container {
+    width: 100%;
+    margin-bottom: 15px;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    background: #f0f0f0;
+    min-height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.quiz-image-container img {
+    width: 100%;
+    height: auto;
+    display: block;
+    max-height: 300px; /* Limit height for large screens */
+    object-fit: contain;
+}
+.img-loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 24px;
+    color: var(--primary);
+    z-index: 1;
+}
 
 /* RESULT */
 .header-simple { text-align: center; padding: 16px; background: white; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 20; }
