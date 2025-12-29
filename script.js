@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v68.0 (Ladder Logic: 8E/5M/2H)');
+    console.log('App Started: v69.0 (Image Support + Ladder)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -485,7 +485,7 @@ document.addEventListener('DOMContentLoaded', function() {
         "Buxoro viloyati": ["Buxoro shahri", "Kogon shahri", "Buxoro tumani", "G'ijduvon tumani", "Jondor tumani", "Kogon tumani", "Olot tumani", "Peshku tumani", "Qorako'l tumani", "Qorovulbozor tumani", "Romitan tumani", "Shofirkon tumani", "Vobkent tumani"],
         "Farg'ona viloyati": ["Farg'ona shahri", "Marg'ilon shahri", "Qo'qon shahri", "Quvasoy shahri", "Bag'dod tumani", "Beshariq tumani", "Buvayda tumani", "Dang'ara tumani", "Farg'ona tumani", "Furqat tumani", "Oltiariq tumani", "Qo'shtepa tumani", "Quva tumani", "Rishton tumani", "So'x tumani", "Toshloq tumani", "Uchko'prik tumani", "O'zbekiston tumani", "Yozyovon tumani"],
         "Jizzax viloyati": ["Jizzax shahri", "Arnasoy tumani", "Baxmal tumani", "Do'stlik tumani", "Forish tumani", "G'allaorol tumani", "Jizzax tumani", "Mirzacho'l tumani", "Paxtakor tumani", "Sharof Rashidov tumani", "Yangiobod tumani", "Zomin tumani", "Zarbdor tumani", "Zafarobod tumani"],
-        "Xorazm viloyati": ["Urganch shahri", "Xiva shahri", "Bog'ot tumani", "Gurlan tumani", "Xiva tumani", "Hazorasp tumani", "Xonqa tumani", "Qo'shko'pir tumani", "Shovot tumani", "Urganch tumani", "Yangiariq tumani", "Yangibozor tumani"],
+        "Xorazm viloyati": ["Urganch shahri", "Xiva shahri", "Bog'ot tumani", "Gurlan tumani", "Xiva tumani", "Hazorasp tumani", "Xonqa tumani", "Q'shko'pir tumani", "Shovot tumani", "Urganch tumani", "Yangiariq tumani", "Yangibozor tumani"],
         "Namangan viloyati": ["Namangan shahri", "Chortoq tumani", "Chust tumani", "Kosonsoy tumani", "Mingbuloq tumani", "Namangan tumani", "Norin tumani", "Pop tumani", "To'raqo'rg'on tumani", "Uchqo'rg'on tumani", "Uychi tumani", "Yangiqo'rg'on tumani"],
         "Navoiy viloyati": ["Navoiy shahri", "Zarafshon shahri", "G'ozg'on shahri", "Konimex tumani", "Karmana tumani", "Qiziltepa tumani", "Xatirchi tumani", "Navbahor tumani", "Nurota tumani", "Tomdi tumani", "Uchquduq tumani"],
         "Qashqadaryo viloyati": ["Qarshi shahri", "Shahrisabz shahri", "Chiroqchi tumani", "Dehqonobod tumani", "G'uzor tumani", "Qamashi tumani", "Qarshi tumani", "Kasbi tumani", "Kitob tumani", "Koson tumani", "Mirishkor tumani", "Muborak tumani", "Nishon tumani", "Shahrisabz tumani", "Yakkabog' tumani", "Ko'kdala tumani"],
@@ -1096,16 +1096,16 @@ document.addEventListener('DOMContentLoaded', function() {
       // 1. Fetch 8 EASY Questions
       const { data: easyQ } = await supabaseClient
           .from('questions')
-          .select('id, subject, question_text, options_text, time_limit_seconds, difficulty')
+          .select('id, subject, question_text, options_text, time_limit_seconds, difficulty, image_url') // Added image_url
           .eq('tour_id', currentTourId)
           .eq('language', currentLang)
           .eq('difficulty', 'Easy')
-          .limit(20); // Fetch extra to shuffle
+          .limit(20); 
 
       // 2. Fetch 5 MEDIUM Questions
       const { data: medQ } = await supabaseClient
           .from('questions')
-          .select('id, subject, question_text, options_text, time_limit_seconds, difficulty')
+          .select('id, subject, question_text, options_text, time_limit_seconds, difficulty, image_url') // Added image_url
           .eq('tour_id', currentTourId)
           .eq('language', currentLang)
           .eq('difficulty', 'Medium')
@@ -1114,7 +1114,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // 3. Fetch 2 HARD Questions
       const { data: hardQ } = await supabaseClient
           .from('questions')
-          .select('id, subject, question_text, options_text, time_limit_seconds, difficulty')
+          .select('id, subject, question_text, options_text, time_limit_seconds, difficulty, image_url') // Added image_url
           .eq('tour_id', currentTourId)
           .eq('language', currentLang)
           .eq('difficulty', 'Hard')
@@ -1161,7 +1161,7 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('question-number').textContent = currentQuestionIndex + 1;
       document.getElementById('total-q-count').textContent = questions.length;
       
-      // Add difficulty badge to UI
+      // Difficulty Badge
       let diffBadge = '';
       if(q.difficulty === 'Easy') diffBadge = '🟢 Easy';
       if(q.difficulty === 'Medium') diffBadge = '🟡 Medium';
@@ -1169,6 +1169,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
       document.getElementById('subject-tag').innerHTML = (q.subject || 'Q') + ' <span style="opacity:0.6; margin-left:5px; font-size:10px;">' + diffBadge + '</span>';
       
+      // IMAGE HANDLING
+      const imgCont = document.getElementById('q-img-cont');
+      const img = document.getElementById('q-img');
+      const loader = imgCont.querySelector('.img-loader');
+
+      if (q.image_url) {
+          imgCont.classList.remove('hidden');
+          loader.classList.remove('hidden'); // Show spinner
+          img.classList.add('hidden'); // Hide image initially
+          
+          img.onload = () => {
+              loader.classList.add('hidden');
+              img.classList.remove('hidden');
+          };
+          img.onerror = () => {
+              imgCont.classList.add('hidden'); // Hide container if fails
+          };
+          img.src = q.image_url;
+      } else {
+          imgCont.classList.add('hidden');
+          img.src = '';
+      }
+
       document.getElementById('question-text').innerHTML = q.question_text;
       const timeForQ = q.time_limit_seconds || 60;
       document.getElementById('q-time-hint').innerHTML = `<i class="fa-solid fa-hourglass-half"></i> ${timeForQ}s`;
