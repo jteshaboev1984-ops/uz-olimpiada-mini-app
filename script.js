@@ -1,12 +1,12 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v66.0 (Fix: Button Lang Update + Unified Certs)');
+    console.log('App Started: v68.0 (Ladder Logic: 8E/5M/2H)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
     let telegramData = { firstName: null, lastName: null, photoUrl: null, languageCode: null };
     let internalDbId = null; 
     let currentTourId = null;
-    let currentTourTitle = ""; // New: Store tour title for lang switching
+    let currentTourTitle = ""; 
     let currentTourEndDate = null; 
     let currentUserData = null;
     let tourQuestionsCache = [];
@@ -92,7 +92,8 @@ document.addEventListener('DOMContentLoaded', function() {
             warn_msg_1: "Sizda",
             warn_msg_2: "ta savol uchun",
             warn_msg_3: "daqiqa vaqt bor.",
-            warn_hint: "Turni qayta ishlash imkonsiz.",
+            warn_hint: "Savollar oddiydan qiyinga qarab boradi.",
+            warn_hint_2: "Orqaga qaytish imkonsiz!",
             btn_start: "Boshlash",
             btn_close: "Yopish",
             my_certs: "Mening sertifikatlarim",
@@ -211,7 +212,8 @@ document.addEventListener('DOMContentLoaded', function() {
             warn_msg_1: "У вас будет",
             warn_msg_2: "на",
             warn_msg_3: "вопросов.",
-            warn_hint: "Повтор тура невозможен.",
+            warn_hint: "Вопросы идут от простых к сложным.",
+            warn_hint_2: "Вернуться назад нельзя!",
             btn_start: "Начать",
             btn_close: "Закрыть",
             my_certs: "Мои сертификаты",
@@ -330,7 +332,8 @@ document.addEventListener('DOMContentLoaded', function() {
             warn_msg_1: "You have",
             warn_msg_2: "for",
             warn_msg_3: "questions.",
-            warn_hint: "Retaking the tour is not possible.",
+            warn_hint: "Questions go from Easy to Hard.",
+            warn_hint_2: "You cannot go back!",
             btn_start: "Start",
             btn_close: "Close",
             my_certs: "My Certificates",
@@ -406,14 +409,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         updateSelectPlaceholders();
         
-        // FIX: Update main button state immediately
         if (tourCompleted) {
             updateMainButton('completed');
         } else if (currentTourId) {
-            updateMainButton('start', currentTourTitle); // Use saved title
+            updateMainButton('start', currentTourTitle); 
         } else {
             updateMainButton('inactive');
         }
+        
+        if(currentTourId) fetchStatsData();
     }
 
     function updateSelectPlaceholders() {
@@ -603,45 +607,72 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
 
+    // === ОБНОВЛЕННАЯ ЛОГИКА ЗАГРУЗКИ СТАТИСТИКИ (ПО ЯЗЫКУ) ===
     async function fetchStatsData() {
         if (!internalDbId || !currentTourId) return;
-        const { data: qData } = await supabaseClient.from('questions').select('id, subject').eq('tour_id', currentTourId);
+        
+        // ТЕПЕРЬ ФИЛЬТРУЕМ ПО ЯЗЫКУ
+        const { data: qData } = await supabaseClient
+            .from('questions')
+            .select('id, subject')
+            .eq('tour_id', currentTourId)
+            .eq('language', currentLang); // <--- ВАЖНОЕ ИЗМЕНЕНИЕ
+
         if (qData) tourQuestionsCache = qData;
+        
         const { data: aData } = await supabaseClient.from('user_answers').select('question_id, is_correct').eq('user_id', internalDbId);
         if (aData) userAnswersCache = aData;
         updateDashboardStats();
     }
 
     function updateDashboardStats() {
-        const subjectMap = {
-            'Matematika': 'math', 'Ingliz tili': 'eng', 'Fizika': 'phys',
-            'Kimyo': 'chem', 'Biologiya': 'bio', 'Informatika': 'it',
-            'Iqtisodiyot': 'eco', 'SAT': 'sat', 'IELTS': 'ielts',
-            'Математика': 'math', 'Английский': 'eng', 'Физика': 'phys', 
-            'Химия': 'chem', 'Биология': 'bio', 'Информатика': 'it', 'Экономика': 'eco'
-        };
+        // Список префиксов
+        const subjectPrefixes = ['math', 'eng', 'phys', 'chem', 'bio', 'it', 'eco', 'sat', 'ielts'];
         let totalCorrect = 0;
         let totalTours = 0; 
         
-        for (const [subjName, prefix] of Object.entries(subjectMap)) {
-            const stats = calculateSubjectStats(subjName);
+        subjectPrefixes.forEach(prefix => {
+            const stats = calculateSubjectStats(prefix);
             let percent = 0;
             if (stats.total > 0) percent = Math.round((stats.correct / stats.total) * 100);
+            
             const percentEl = document.getElementById(`${prefix}-percent`);
             if (percentEl) percentEl.textContent = `${percent}%`;
             const barEl = document.getElementById(`${prefix}-bar`);
             if (barEl) barEl.style.width = `${percent}%`;
+            
             totalCorrect += stats.correct;
-        }
+        });
         
         document.getElementById('cab-score').textContent = totalCorrect;
         if(tourCompleted) totalTours = 1;
         document.getElementById('cab-tours').textContent = totalTours;
     }
 
-    function calculateSubjectStats(subjectName) {
-        const subjectQuestions = tourQuestionsCache.filter(q => q.subject && q.subject.toLowerCase().includes(subjectName.toLowerCase()));
+    function calculateSubjectStats(prefix) {
+        // Словарь всех возможных вариантов (на всякий случай, хотя теперь мы фильтруем точнее)
+        const keywords = {
+            'math': ['matematika', 'математика', 'math'],
+            'eng': ['ingliz', 'английский', 'english'],
+            'phys': ['fizika', 'физика', 'physics'],
+            'chem': ['kimyo', 'химия', 'chemistry'],
+            'bio': ['biologiya', 'биология', 'biology'],
+            'it': ['informatika', 'информатика', 'computer', 'it'],
+            'eco': ['iqtisodiyot', 'экономика', 'economics'],
+            'sat': ['sat'],
+            'ielts': ['ielts']
+        };
+
+        const targetKeywords = keywords[prefix] || [prefix];
+
+        const subjectQuestions = tourQuestionsCache.filter(q => {
+            if(!q.subject) return false;
+            const s = q.subject.toLowerCase();
+            return targetKeywords.some(k => s.includes(k));
+        });
+
         if (subjectQuestions.length === 0) return { total: 0, correct: 0 };
+        
         let correct = 0;
         let total = 0;
         subjectQuestions.forEach(q => {
@@ -657,19 +688,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const content = document.getElementById('sd-content');
         const title = document.getElementById('sd-title');
         
+        // Получаем название для заголовка (из перевода или UpperCase)
         let subjTitle = t('subj_' + prefix);
-        if(!subjTitle) subjTitle = prefix.toUpperCase();
+        if(!subjTitle || subjTitle === ('subj_' + prefix)) subjTitle = prefix.toUpperCase();
 
         if (modal && content) {
             title.textContent = subjTitle;
-            let stats = { total: 0, correct: 0};
-            ['Matematika', 'Математика', 'Math', 'Ingliz', 'Английский', 'English', 'Fizika', 'Физика', 'Physics'].forEach(n => {
-                if (t('subj_' + prefix).includes(n) || n.toLowerCase().includes(prefix)) {
-                    let s = calculateSubjectStats(n);
-                    if (s.total > stats.total) stats = s;
-                }
-            });
-            if(stats.total === 0) stats = calculateSubjectStats(subjTitle);
+            
+            // Используем новую универсальную функцию подсчета
+            let stats = calculateSubjectStats(prefix);
 
             const html = `
                 <div class="stat-list-item">
@@ -1000,23 +1027,33 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // === QUIZ LOGIC ===
+    // === QUIZ LOGIC (NEW LADDER SYSTEM) ===
     async function handleStartClick() {
         const btn = document.getElementById('main-action-btn');
         btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('loading')}`;
-        const { data } = await supabaseClient.from('questions').select('time_limit_seconds').eq('tour_id', currentTourId).limit(50);
-        let totalSeconds = 0;
-        let count = 0;
-        if(data) {
-            data.forEach(q => totalSeconds += (q.time_limit_seconds || 60));
-            count = Math.min(data.length, 15);
+        
+        // Предварительная проверка (есть ли вообще вопросы)
+        const { count } = await supabaseClient
+            .from('questions')
+            .select('*', { count: 'exact', head: true })
+            .eq('tour_id', currentTourId)
+            .eq('language', currentLang);
+
+        if (count === 0) {
+            alert("Ushbu tilda savollar topilmadi / Вопросов на этом языке пока нет.");
+            updateMainButton('start'); 
+            return; 
         }
-        const mins = Math.ceil(totalSeconds / 60);
-        document.getElementById('warn-time-val').textContent = `${mins} ${t('minutes')}`;
-        document.getElementById('warn-q-val').textContent = `${count} ${t('questions')}`;
-        updateMainButton('start');
+
+        // Обновляем текст предупреждения
+        document.getElementById('warn-q-val').textContent = '15 ' + t('questions');
+        document.getElementById('warn-time-val').textContent = '~15 ' + t('minutes');
+        
+        // Показываем модалку
         document.getElementById('warning-modal').classList.remove('hidden');
+        updateMainButton('start'); 
     }
+
     function updateMainButton(state, title = "") {
         if(!title) title = t('start_tour_btn');
         const btn = document.getElementById('main-action-btn');
@@ -1047,28 +1084,65 @@ document.addEventListener('DOMContentLoaded', function() {
             activeBtn.addEventListener('click', handleStartClick);
         }
     }
+
     safeAddListener('confirm-start', 'click', async () => {
       document.getElementById('warning-modal').classList.add('hidden');
-      await startTour();
+      await startTourLadder(); // <--- NEW FUNCTION
     });
-    async function startTour() {
-      if (!currentTourId) return;
-      const { data, error } = await supabaseClient
-          .from('questions')
-          .select('id, subject, question_text, options_text, time_limit_seconds')
-          .eq('tour_id', currentTourId)
-          .limit(50);
 
-      if (error || !data || data.length === 0) { alert('Ошибка вопросов'); return; }
-      questions = data.sort(() => Math.random() - 0.5).slice(0, 15);
+    async function startTourLadder() {
+      if (!currentTourId) return;
+      
+      // 1. Fetch 8 EASY Questions
+      const { data: easyQ } = await supabaseClient
+          .from('questions')
+          .select('id, subject, question_text, options_text, time_limit_seconds, difficulty')
+          .eq('tour_id', currentTourId)
+          .eq('language', currentLang)
+          .eq('difficulty', 'Easy')
+          .limit(20); // Fetch extra to shuffle
+
+      // 2. Fetch 5 MEDIUM Questions
+      const { data: medQ } = await supabaseClient
+          .from('questions')
+          .select('id, subject, question_text, options_text, time_limit_seconds, difficulty')
+          .eq('tour_id', currentTourId)
+          .eq('language', currentLang)
+          .eq('difficulty', 'Medium')
+          .limit(15);
+
+      // 3. Fetch 2 HARD Questions
+      const { data: hardQ } = await supabaseClient
+          .from('questions')
+          .select('id, subject, question_text, options_text, time_limit_seconds, difficulty')
+          .eq('tour_id', currentTourId)
+          .eq('language', currentLang)
+          .eq('difficulty', 'Hard')
+          .limit(10);
+
+      // Shuffle and Slice
+      const e = (easyQ || []).sort(() => 0.5 - Math.random()).slice(0, 8);
+      const m = (medQ || []).sort(() => 0.5 - Math.random()).slice(0, 5);
+      const h = (hardQ || []).sort(() => 0.5 - Math.random()).slice(0, 2);
+
+      // Combine into Ladder
+      questions = [...e, ...m, ...h];
+
+      if (questions.length === 0) { 
+          alert('Error: No questions found.'); 
+          return; 
+      }
+      
       let totalSeconds = 0;
       questions.forEach(q => totalSeconds += (q.time_limit_seconds || 60));
+      
       currentQuestionIndex = 0;
       correctCount = 0;
       showScreen('quiz-screen');
       startTimer(totalSeconds);
       showQuestion();
     }
+
     function startTimer(seconds) {
       let timeLeft = seconds;
       const timerEl = document.getElementById('timer');
@@ -1081,14 +1155,23 @@ document.addEventListener('DOMContentLoaded', function() {
         timeLeft--;
       }, 1000);
     }
+
     function showQuestion() {
       const q = questions[currentQuestionIndex];
       document.getElementById('question-number').textContent = currentQuestionIndex + 1;
       document.getElementById('total-q-count').textContent = questions.length;
-      document.getElementById('subject-tag').textContent = q.subject || 'Q';
+      
+      // Add difficulty badge to UI
+      let diffBadge = '';
+      if(q.difficulty === 'Easy') diffBadge = '🟢 Easy';
+      if(q.difficulty === 'Medium') diffBadge = '🟡 Medium';
+      if(q.difficulty === 'Hard') diffBadge = '🔴 Hard';
+
+      document.getElementById('subject-tag').innerHTML = (q.subject || 'Q') + ' <span style="opacity:0.6; margin-left:5px; font-size:10px;">' + diffBadge + '</span>';
+      
       document.getElementById('question-text').innerHTML = q.question_text;
       const timeForQ = q.time_limit_seconds || 60;
-      document.getElementById('q-time-hint').innerHTML = `<i class="fa-solid fa-hourglass-half"></i> ~${Math.round(timeForQ/60*10)/10} m`;
+      document.getElementById('q-time-hint').innerHTML = `<i class="fa-solid fa-hourglass-half"></i> ${timeForQ}s`;
       document.getElementById('quiz-progress-fill').style.width = `${((currentQuestionIndex + 1) / questions.length) * 100}%`;
       const container = document.getElementById('options-container');
       container.innerHTML = '';
