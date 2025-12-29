@@ -1,3 +1,26 @@
+/* ЗАПРЕТ ВЫДЕЛЕНИЯ ТЕКСТА (АНТИ-КОПИПАСТ) */
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+    font-family: 'Inter', sans-serif; 
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none; /* Chrome/Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE10+ */
+    user-select: none; /* Standard */
+}
+
+/* Разрешаем писать в поля ввода, иначе клавиатура не появится */
+input, textarea, select { 
+    -webkit-user-select: auto !important; 
+    user-select: auto !important; 
+}
+
+/* Остальной CSS без изменений... */
+body { background-color: var(--bg-color); color: var(--text-main); height: 100vh; overflow: hidden; }
+/* ... (весь ваш старый CSS ниже) ... */
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
@@ -288,3 +311,4 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .stat-list-info h4 { font-size: 14px; margin-bottom: 2px; }
 .stat-list-info p { font-size: 11px; color: #999; }
 .stat-list-value { font-weight: 700; font-size: 14px; }
+
