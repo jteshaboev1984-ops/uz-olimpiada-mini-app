@@ -7,7 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=66">
+    <link rel="stylesheet" href="style.css?v=68">
 </head>
 <body>
 
@@ -80,7 +80,6 @@
                     <i class="fa-solid fa-chevron-left"></i> <span data-i18n="btn_back">Orqaga</span>
                 </button>
             </div>
-            
             <div class="hero-content">
                 <div class="hero-avatar">
                     <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" id="cab-avatar-img">
@@ -162,7 +161,7 @@
             </div>
 
             <div class="footer-info">
-                <p>Smart Olympiad v66.0</p>
+                <p>Smart Olympiad v68.0</p>
                 <button class="btn-danger-box" id="delete-account-btn" style="margin-top: 15px;" data-i18n="btn_delete_account">Hisobni o'chirish</button>
             </div>
         </div>
@@ -378,7 +377,16 @@
             <div class="modal-icon-big"><i class="fa-solid fa-stopwatch"></i><div class="alert-badge">!</div></div>
             <h2 data-i18n="warn_title">Diqqat</h2>
             <p><span data-i18n="warn_msg_1">Sizda</span> <strong id="warn-q-val">...</strong> <span data-i18n="warn_msg_2">uchun</span> <strong id="warn-time-val">...</strong> <span data-i18n="warn_msg_3">vaqt bor.</span></p>
-            <div class="alert-box"><i class="fa-solid fa-triangle-exclamation"></i><p data-i18n="warn_hint">Turni qayta ishlash imkonsiz.</p></div>
+            <div class="alert-box" style="flex-direction: column; align-items: flex-start;">
+                <div style="display:flex; gap:10px; margin-bottom:5px;">
+                    <i class="fa-solid fa-layer-group" style="color:var(--primary);"></i>
+                    <p style="font-weight:600;" data-i18n="warn_hint">Savollar oddiydan qiyinga qarab boradi.</p>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <p data-i18n="warn_hint_2">Orqaga qaytish imkonsiz!</p>
+                </div>
+            </div>
             <button id="confirm-start" class="btn-primary"><span data-i18n="btn_start">Boshlash</span> <i class="fa-solid fa-arrow-right"></i></button>
             <button id="cancel-start" class="btn-text" data-i18n="btn_cancel">Bekor qilish</button>
         </div>
@@ -452,7 +460,7 @@
                 <div class="close-btn-white" id="close-about"><i class="fa-solid fa-times"></i></div>
                 <div class="logo-icon big"><i class="fa-solid fa-graduation-cap"></i></div>
                 <h1>Smart Olympiad</h1>
-                <div class="version-tag">Version 66.0</div>
+                <div class="version-tag">Version 68.0</div>
             </div>
             <div class="modal-body-scroll" style="padding: 24px; text-align: left; flex:1; overflow-y:auto;">
                 <h3 style="margin-bottom:12px;" data-i18n="about_platform">Platforma haqida</h3>
@@ -475,6 +483,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=66"></script>
+    <script src="script.js?v=68"></script>
 </body>
 </html>
