@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v70.0 (Final Stable: Ladder + Images + Correct Stats)');
+    console.log('App Started: v71.0 (Timer + Lang Lock + Images + Ladder)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentLbFilter = 'republic'; 
     let currentLang = 'uz'; 
     let tourCompleted = false;
+    let isLangLocked = false; // Флаг блокировки языка
 
     // === ПЕРЕМЕННЫЕ ТЕСТА ===
     let questions = [];
@@ -21,6 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let correctCount = 0;
     let timerInterval = null;
     let selectedAnswer = null;
+    let tourStartTime = 0; // Для подсчета общего времени
 
     // === НАСТРОЙКИ SUPABASE ===
     const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
@@ -148,7 +150,9 @@ document.addEventListener('DOMContentLoaded', function() {
             menu_mistakes: "Xatolar tahlili",
             menu_mistakes_desc: "Javoblarni ko'rish",
             lock_review_title: "Tahlil yopiq",
-            lock_review_msg: "Adolatli raqobat uchun xatolar tahlili olimpiada yakunlangandan so'ng ochiladi."
+            lock_review_msg: "Adolatli raqobat uchun xatolar tahlili olimpiada yakunlangandan so'ng ochiladi.",
+            lang_warning_reg: "Diqqat: Tilni keyinchalik o'zgartirib bo'lmaydi. Bu adolatli reyting uchun muhim.",
+            lang_locked_reason: "Adolatli raqobat uchun tilni o'zgartirish imkoniyati o'chirilgan."
         },
         ru: {
             reg_title: "Регистрация",
@@ -268,7 +272,9 @@ document.addEventListener('DOMContentLoaded', function() {
             menu_mistakes: "Работа над ошибками",
             menu_mistakes_desc: "Посмотреть ответы",
             lock_review_title: "Разбор закрыт",
-            lock_review_msg: "В целях честной игры разбор ошибок станет доступен после окончания олимпиады."
+            lock_review_msg: "В целях честной игры разбор ошибок станет доступен после окончания олимпиады.",
+            lang_warning_reg: "Внимание: Язык нельзя будет изменить позже. Это важно для честного рейтинга.",
+            lang_locked_reason: "Смена языка отключена для обеспечения честной конкуренции."
         },
         en: {
             reg_title: "Registration",
@@ -388,7 +394,9 @@ document.addEventListener('DOMContentLoaded', function() {
             menu_mistakes: "Mistake Review",
             menu_mistakes_desc: "Check answers",
             lock_review_title: "Review Locked",
-            lock_review_msg: "To ensure fair play, mistake review will be available after the Olympiad ends."
+            lock_review_msg: "To ensure fair play, mistake review will be available after the Olympiad ends.",
+            lang_warning_reg: "Attention: Language cannot be changed later. This is important for fair ranking.",
+            lang_locked_reason: "Language changing is disabled to ensure fair competition."
         }
     };
 
@@ -397,9 +405,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function setLanguage(lang) {
+        if (isLangLocked && lang !== currentLang) {
+            // Если язык заблокирован, запрещаем смену, но визуально селект уже должен быть disabled
+            return; 
+        }
+        
         if (!translations[lang]) lang = 'uz'; 
         currentLang = lang;
-        if(document.getElementById('lang-switcher-cab')) document.getElementById('lang-switcher-cab').value = lang;
+        
+        const regLangSel = document.getElementById('reg-lang-select');
+        if(regLangSel) regLangSel.value = lang;
+        
+        const cabLangSel = document.getElementById('lang-switcher-cab');
+        if(cabLangSel) cabLangSel.value = lang;
         
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
@@ -431,10 +449,20 @@ document.addEventListener('DOMContentLoaded', function() {
         if (classSel && classSel.options.length > 0) classSel.options[0].textContent = t('select_class');
     }
 
+    // Обработчик смены языка В РЕГИСТРАЦИИ (пока не заблокирован)
+    if(document.getElementById('reg-lang-select')) {
+        document.getElementById('reg-lang-select').addEventListener('change', (e) => {
+            if(!isLangLocked) setLanguage(e.target.value);
+        });
+    }
+
+    // Обработчик смены языка В КАБИНЕТЕ
     if(document.getElementById('lang-switcher-cab')) {
         document.getElementById('lang-switcher-cab').addEventListener('change', (e) => {
-            setLanguage(e.target.value);
-            localStorage.setItem('user_lang', e.target.value);
+            if(!isLangLocked) {
+                setLanguage(e.target.value);
+                localStorage.setItem('user_lang', e.target.value); // Сохраняем локально, если еще не залокчен на сервере
+            }
         });
     }
 
@@ -467,6 +495,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
 
+    // Предварительная установка языка (до загрузки профиля)
     const savedLang = localStorage.getItem('user_lang');
     if (savedLang) {
         setLanguage(savedLang);
@@ -485,7 +514,7 @@ document.addEventListener('DOMContentLoaded', function() {
         "Buxoro viloyati": ["Buxoro shahri", "Kogon shahri", "Buxoro tumani", "G'ijduvon tumani", "Jondor tumani", "Kogon tumani", "Olot tumani", "Peshku tumani", "Qorako'l tumani", "Qorovulbozor tumani", "Romitan tumani", "Shofirkon tumani", "Vobkent tumani"],
         "Farg'ona viloyati": ["Farg'ona shahri", "Marg'ilon shahri", "Qo'qon shahri", "Quvasoy shahri", "Bag'dod tumani", "Beshariq tumani", "Buvayda tumani", "Dang'ara tumani", "Farg'ona tumani", "Furqat tumani", "Oltiariq tumani", "Qo'shtepa tumani", "Quva tumani", "Rishton tumani", "So'x tumani", "Toshloq tumani", "Uchko'prik tumani", "O'zbekiston tumani", "Yozyovon tumani"],
         "Jizzax viloyati": ["Jizzax shahri", "Arnasoy tumani", "Baxmal tumani", "Do'stlik tumani", "Forish tumani", "G'allaorol tumani", "Jizzax tumani", "Mirzacho'l tumani", "Paxtakor tumani", "Sharof Rashidov tumani", "Yangiobod tumani", "Zomin tumani", "Zarbdor tumani", "Zafarobod tumani"],
-        "Xorazm viloyati": ["Urganch shahri", "Xiva shahri", "Bog'ot tumani", "Gurlan tumani", "Xiva tumani", "Hazorasp tumani", "Xonqa tumani", "Qo'shko'pir tumani", "Shovot tumani", "Urganch tumani", "Yangiariq tumani", "Yangibozor tumani"],
+        "Xorazm viloyati": ["Urganch shahri", "Xiva shahri", "Bog'ot tumani", "Gurlan tumani", "Xiva tumani", "Hazorasp tumani", "Xonqa tumani", "Q'shko'pir tumani", "Shovot tumani", "Urganch tumani", "Yangiariq tumani", "Yangibozor tumani"],
         "Namangan viloyati": ["Namangan shahri", "Chortoq tumani", "Chust tumani", "Kosonsoy tumani", "Mingbuloq tumani", "Namangan tumani", "Norin tumani", "Pop tumani", "To'raqo'rg'on tumani", "Uchqo'rg'on tumani", "Uychi tumani", "Yangiqo'rg'on tumani"],
         "Navoiy viloyati": ["Navoiy shahri", "Zarafshon shahri", "G'ozg'on shahri", "Konimex tumani", "Karmana tumani", "Qiziltepa tumani", "Xatirchi tumani", "Navbahor tumani", "Nurota tumani", "Tomdi tumani", "Uchquduq tumani"],
         "Qashqadaryo viloyati": ["Qarshi shahri", "Shahrisabz shahri", "Chiroqchi tumani", "Dehqonobod tumani", "G'uzor tumani", "Qamashi tumani", "Qarshi tumani", "Kasbi tumani", "Kitob tumani", "Koson tumani", "Mirishkor tumani", "Muborak tumani", "Nishon tumani", "Shahrisabz tumani", "Yakkabog' tumani", "Ko'kdala tumani"],
@@ -554,8 +583,24 @@ document.addEventListener('DOMContentLoaded', function() {
           }
           // Update Cabinet Info
           document.getElementById('cab-name').textContent = currentUserData.name;
-          document.getElementById('cab-id').textContent = String(telegramUserId).slice(-6); // last 6 digits as dummy ID
+          document.getElementById('cab-id').textContent = String(telegramUserId).slice(-6); 
           if(currentUserData.avatar_url) document.getElementById('cab-avatar-img').src = currentUserData.avatar_url;
+
+          // === ЛОГИКА БЛОКИРОВКИ ЯЗЫКА (Новое) ===
+          if (userData.fixed_language) {
+              isLangLocked = true;
+              setLanguage(userData.fixed_language);
+              
+              // Блокируем селект в кабинете
+              const cabLang = document.getElementById('lang-switcher-cab');
+              if(cabLang) cabLang.disabled = true;
+              const cabMsg = document.getElementById('lang-lock-msg');
+              if(cabMsg) cabMsg.classList.remove('hidden');
+
+              // Блокируем селект в регистрации (если вдруг юзер туда попадет)
+              const regLang = document.getElementById('reg-lang-select');
+              if(regLang) regLang.disabled = true;
+          }
 
       } else {
           // Если юзера нет - создаем
@@ -600,23 +645,22 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!currentUserData || !isProfileComplete) {
         showScreen('reg-screen');
         unlockProfileForm();
-        document.getElementById('reg-back-btn').classList.add('hidden'); // Cannot cancel reg
+        document.getElementById('reg-back-btn').classList.add('hidden'); 
       } else {
         fillProfileForm(currentUserData);
         showScreen('home-screen');
       }
     }
 
-    // === ОБНОВЛЕННАЯ ЛОГИКА ЗАГРУЗКИ СТАТИСТИКИ (ПО ЯЗЫКУ + 15 ВОПРОСОВ) ===
+    // === ОБНОВЛЕННАЯ ЛОГИКА ЗАГРУЗКИ СТАТИСТИКИ ===
     async function fetchStatsData() {
         if (!internalDbId || !currentTourId) return;
         
-        // ТЕПЕРЬ ФИЛЬТРУЕМ ПО ЯЗЫКУ
         const { data: qData } = await supabaseClient
             .from('questions')
             .select('id, subject')
             .eq('tour_id', currentTourId)
-            .eq('language', currentLang); // <--- ВАЖНОЕ ИЗМЕНЕНИЕ
+            .eq('language', currentLang); 
 
         if (qData) tourQuestionsCache = qData;
         
@@ -626,7 +670,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateDashboardStats() {
-        // Список префиксов
         const subjectPrefixes = ['math', 'eng', 'phys', 'chem', 'bio', 'it', 'eco', 'sat', 'ielts'];
         let totalCorrect = 0;
         let totalTours = 0; 
@@ -634,9 +677,9 @@ document.addEventListener('DOMContentLoaded', function() {
         subjectPrefixes.forEach(prefix => {
             const stats = calculateSubjectStats(prefix);
             let percent = 0;
-            // FIX: Делим на 15, так как в туре всего 15 вопросов, даже если в базе их 100
+            // 15 вопросов в туре
             if (stats.correct > 0) percent = Math.round((stats.correct / 15) * 100); 
-            if (percent > 100) percent = 100; // На всякий случай
+            if (percent > 100) percent = 100; 
 
             const percentEl = document.getElementById(`${prefix}-percent`);
             if (percentEl) percentEl.textContent = `${percent}%`;
@@ -646,15 +689,12 @@ document.addEventListener('DOMContentLoaded', function() {
             totalCorrect += stats.correct;
         });
         
-        // FIX: Для профиля берем ОБЩИЙ балл из базы (если он есть), иначе сумму текущих
-        // Но пока берем локально посчитанный totalCorrect для текущего тура
         document.getElementById('cab-score').textContent = totalCorrect;
-        if(tourCompleted) totalTours = 1; // Упрощено для MVP
+        if(tourCompleted) totalTours = 1;
         document.getElementById('cab-tours').textContent = totalTours;
     }
 
     function calculateSubjectStats(prefix) {
-        // Словарь всех возможных вариантов (на всякий случай, хотя теперь мы фильтруем точнее)
         const keywords = {
             'math': ['matematika', 'математика', 'math'],
             'eng': ['ingliz', 'английский', 'english'],
@@ -669,7 +709,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const targetKeywords = keywords[prefix] || [prefix];
 
-        // Фильтруем вопросы ТОЛЬКО для подсчета "какие мы решали"
         const subjectQuestions = tourQuestionsCache.filter(q => {
             if(!q.subject) return false;
             const s = q.subject.toLowerCase();
@@ -677,12 +716,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         let correct = 0;
-        let total = 0; // Нам нужно знать, сколько правильных
+        let total = 0; 
         subjectQuestions.forEach(q => {
             const answer = userAnswersCache.find(a => a.question_id === q.id);
             if (answer && answer.is_correct) correct++;
         });
-        // total здесь не возвращаем как знаменатель, знаменатель всегда 15 в updateDashboardStats
         return { total: subjectQuestions.length, correct };
     }
 
@@ -691,14 +729,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const content = document.getElementById('sd-content');
         const title = document.getElementById('sd-title');
         
-        // Получаем название для заголовка (из перевода или UpperCase)
         let subjTitle = t('subj_' + prefix);
         if(!subjTitle || subjTitle === ('subj_' + prefix)) subjTitle = prefix.toUpperCase();
 
         if (modal && content) {
             title.textContent = subjTitle;
-            
-            // Используем новую универсальную функцию подсчета
             let stats = calculateSubjectStats(prefix);
 
             const html = `
@@ -708,7 +743,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         ${stats.correct} ${t('correct_txt')}
                     </div>
                 </div>`;
-            content.innerHTML = html; // Всегда показываем статистику, даже если 0
+            content.innerHTML = html; 
             modal.classList.remove('hidden');
         }
     }
@@ -822,7 +857,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if ((currentLbFilter === 'republic' || currentLbFilter === 'region') && player.district) {
                 let d = player.district;
-                d = d.replace(' tumani', '').replace(' района', ''); // Shorten
+                d = d.replace(' tumani', '').replace(' района', ''); 
                 parts.push(`<span class="meta-row"><i class="fa-solid fa-map-pin"></i> ${d}</span>`);
             }
             if(player.school) {
@@ -905,7 +940,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if(currentUserData) document.getElementById('my-class-val').textContent = `${currentUserData.class} ${t('class_s')}`;
             document.getElementById('my-score-val').textContent = me.score;
             stickyEl.classList.remove('hidden');
-            // Update Cabinet Rank
             document.getElementById('cab-rank').textContent = myRank === "50+" ? ">50" : `#${myRank}`;
         } else {
             stickyEl.classList.add('hidden');
@@ -928,6 +962,13 @@ document.addEventListener('DOMContentLoaded', function() {
         districtSelect.value = data.district;
         document.getElementById('school-input').value = data.school;
         document.getElementById('research-consent').checked = data.research_consent || false;
+        
+        // Установка языка, если он уже выбран
+        const langSelect = document.getElementById('reg-lang-select');
+        if(langSelect && data.fixed_language) {
+            langSelect.value = data.fixed_language;
+            langSelect.disabled = true;
+        }
     }
 
     document.getElementById('save-profile').addEventListener('click', async () => {
@@ -936,15 +977,29 @@ document.addEventListener('DOMContentLoaded', function() {
       const district = document.getElementById('district-select').value;
       const school = document.getElementById('school-input').value.trim();
       const consent = document.getElementById('research-consent').checked;
+      const selectedLang = document.getElementById('reg-lang-select').value;
       
       if (!classVal || !region || !district || !school) { alert(t('alert_fill')); return; }
+      
+      // FIX: Если язык еще не зафиксирован, сохраняем его
+      if(!isLangLocked) {
+          currentLang = selectedLang;
+      }
       
       const btn = document.getElementById('save-profile');
       const originalText = btn.innerHTML;
       btn.disabled = true;
       btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('save_saving')}`;
       try {
-          const updateData = { telegram_id: telegramUserId, class: classVal, region: region, district: district, school: school, research_consent: consent };
+          const updateData = { 
+              telegram_id: telegramUserId, 
+              class: classVal, 
+              region: region, 
+              district: district, 
+              school: school, 
+              research_consent: consent,
+              fixed_language: currentLang // СОХРАНЯЕМ ВЫБРАННЫЙ ЯЗЫК НАВСЕГДА
+          };
           if (telegramData.photoUrl) updateData.avatar_url = telegramData.photoUrl;
           
           let fullName = telegramData.firstName + (telegramData.lastName ? ' ' + telegramData.lastName : '');
@@ -956,10 +1011,8 @@ document.addEventListener('DOMContentLoaded', function() {
           internalDbId = data.id;
           currentUserData = data;
           
-          // If came from cabinet, go back to cabinet (or update UI and go home)
-          // For simplicity -> Go Home
           showScreen('home-screen');
-          checkProfileAndTour(); // Refresh data
+          checkProfileAndTour(); 
       } catch (e) {
           alert(t('error') + ': ' + e.message);
           btn.disabled = false;
@@ -1035,7 +1088,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const btn = document.getElementById('main-action-btn');
         btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('loading')}`;
         
-        // Предварительная проверка (есть ли вообще вопросы)
         const { count } = await supabaseClient
             .from('questions')
             .select('*', { count: 'exact', head: true })
@@ -1048,11 +1100,9 @@ document.addEventListener('DOMContentLoaded', function() {
             return; 
         }
 
-        // Обновляем текст предупреждения
         document.getElementById('warn-q-val').textContent = '15 ' + t('questions');
         document.getElementById('warn-time-val').textContent = '~15 ' + t('minutes');
         
-        // Показываем модалку
         document.getElementById('warning-modal').classList.remove('hidden');
         updateMainButton('start'); 
     }
@@ -1090,45 +1140,41 @@ document.addEventListener('DOMContentLoaded', function() {
 
     safeAddListener('confirm-start', 'click', async () => {
       document.getElementById('warning-modal').classList.add('hidden');
-      await startTourLadder(); // <--- NEW FUNCTION
+      tourStartTime = Date.now(); // ЗАПОМИНАЕМ ВРЕМЯ СТАРТА
+      await startTourLadder(); 
     });
 
     async function startTourLadder() {
       if (!currentTourId) return;
       
-      // 1. Fetch 8 EASY Questions
       const { data: easyQ } = await supabaseClient
           .from('questions')
-          .select('id, subject, question_text, options_text, time_limit_seconds, difficulty, image_url') // Added image_url
+          .select('id, subject, question_text, options_text, time_limit_seconds, difficulty, image_url') 
           .eq('tour_id', currentTourId)
           .eq('language', currentLang)
           .eq('difficulty', 'Easy')
           .limit(20); 
 
-      // 2. Fetch 5 MEDIUM Questions
       const { data: medQ } = await supabaseClient
           .from('questions')
-          .select('id, subject, question_text, options_text, time_limit_seconds, difficulty, image_url') // Added image_url
+          .select('id, subject, question_text, options_text, time_limit_seconds, difficulty, image_url') 
           .eq('tour_id', currentTourId)
           .eq('language', currentLang)
           .eq('difficulty', 'Medium')
           .limit(15);
 
-      // 3. Fetch 2 HARD Questions
       const { data: hardQ } = await supabaseClient
           .from('questions')
-          .select('id, subject, question_text, options_text, time_limit_seconds, difficulty, image_url') // Added image_url
+          .select('id, subject, question_text, options_text, time_limit_seconds, difficulty, image_url') 
           .eq('tour_id', currentTourId)
           .eq('language', currentLang)
           .eq('difficulty', 'Hard')
           .limit(10);
 
-      // Shuffle and Slice
       const e = (easyQ || []).sort(() => 0.5 - Math.random()).slice(0, 8);
       const m = (medQ || []).sort(() => 0.5 - Math.random()).slice(0, 5);
       const h = (hardQ || []).sort(() => 0.5 - Math.random()).slice(0, 2);
 
-      // Combine into Ladder
       questions = [...e, ...m, ...h];
 
       if (questions.length === 0) { 
@@ -1164,7 +1210,6 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('question-number').textContent = currentQuestionIndex + 1;
       document.getElementById('total-q-count').textContent = questions.length;
       
-      // Difficulty Badge
       let diffBadge = '';
       if(q.difficulty === 'Easy') diffBadge = '🟢 Easy';
       if(q.difficulty === 'Medium') diffBadge = '🟡 Medium';
@@ -1172,22 +1217,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
       document.getElementById('subject-tag').innerHTML = (q.subject || 'Q') + ' <span style="opacity:0.6; margin-left:5px; font-size:10px;">' + diffBadge + '</span>';
       
-      // IMAGE HANDLING
       const imgCont = document.getElementById('q-img-cont');
       const img = document.getElementById('q-img');
       const loader = imgCont.querySelector('.img-loader');
 
       if (q.image_url) {
           imgCont.classList.remove('hidden');
-          loader.classList.remove('hidden'); // Show spinner
-          img.classList.add('hidden'); // Hide image initially
+          loader.classList.remove('hidden'); 
+          img.classList.add('hidden'); 
           
           img.onload = () => {
               loader.classList.add('hidden');
               img.classList.remove('hidden');
           };
           img.onerror = () => {
-              imgCont.classList.add('hidden'); // Hide container if fails
+              imgCont.classList.add('hidden'); 
           };
           img.src = q.image_url;
       } else {
@@ -1282,6 +1326,16 @@ document.addEventListener('DOMContentLoaded', function() {
     async function finishTour() {
       clearInterval(timerInterval);
       tourCompleted = true;
+      
+      // FIX: Calculate total time and update DB
+      const timeTaken = Math.floor((Date.now() - tourStartTime) / 1000);
+      try {
+          await supabaseClient.from('tour_progress')
+              .update({ total_time_taken: timeTaken })
+              .eq('user_id', internalDbId)
+              .eq('tour_id', currentTourId);
+      } catch (e) { console.error("Time update failed", e); }
+
       const percent = Math.round((correctCount / questions.length) * 100);
       showScreen('result-screen');
       document.getElementById('res-tour-title').textContent = "1-Tur";
@@ -1291,7 +1345,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const circle = document.getElementById('result-circle');
       if (circle) circle.style.background = `conic-gradient(var(--primary) 0% ${percent}%, #E5E5EA ${percent}% 100%)`;
       updateMainButton('completed');
-      document.getElementById('subjects-title').textContent = t('curr_tour'); // "Results"
+      document.getElementById('subjects-title').textContent = t('curr_tour'); 
       fetchStatsData(); 
     }
     function showScreen(screenId) {
@@ -1309,16 +1363,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     safeAddListener('open-cabinet-btn', 'click', () => { 
         showScreen('cabinet-screen'); 
-        // Update rank dynamically if needed
-        loadLeaderboard(); // to update sticky rank cache
+        loadLeaderboard(); 
     });
     safeAddListener('close-cabinet', 'click', () => showScreen('home-screen'));
     
-    // Меню кабинета:
     safeAddListener('btn-edit-profile', 'click', () => {
         showScreen('reg-screen');
         if(tourCompleted) lockProfileForm(); else unlockProfileForm();
-        document.getElementById('reg-back-btn').classList.remove('hidden'); // Allow cancel
+        document.getElementById('reg-back-btn').classList.remove('hidden'); 
     });
     safeAddListener('reg-back-btn', 'click', () => showScreen('cabinet-screen'));
 
@@ -1330,12 +1382,10 @@ document.addEventListener('DOMContentLoaded', function() {
     safeAddListener('about-btn', 'click', () => document.getElementById('about-modal').classList.remove('hidden'));
     safeAddListener('close-about', 'click', () => document.getElementById('about-modal').classList.add('hidden'));
     
-    // Логика ВЫХОДА (Браузер)
     safeAddListener('exit-app-btn', 'click', () => {
         if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) {
             Telegram.WebApp.close();
         } else {
-            // Browser reset logic
             localStorage.clear();
             location.reload();
         }
@@ -1343,7 +1393,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     safeAddListener('home-cert-btn', 'click', () => showCertsModal());
     safeAddListener('download-certificate-res-btn', 'click', () => showCertsModal());
-    safeAddListener('btn-open-certs-cab', 'click', () => showCertsModal()); // Added listener for cabinet
+    safeAddListener('btn-open-certs-cab', 'click', () => showCertsModal()); 
     safeAddListener('cancel-start', 'click', () => document.getElementById('warning-modal').classList.add('hidden'));
     safeAddListener('back-home', 'click', () => showScreen('home-screen'));
     safeAddListener('back-home-x', 'click', () => showScreen('home-screen'));
