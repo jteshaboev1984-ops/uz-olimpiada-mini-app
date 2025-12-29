@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v71.0 (Timer + Lang Lock + Images + Ladder)');
+    console.log('App Started: v71.2 (Strict Lock: Profile + Language + Support Hint)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -14,7 +14,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentLbFilter = 'republic'; 
     let currentLang = 'uz'; 
     let tourCompleted = false;
-    let isLangLocked = false; // Флаг блокировки языка
+    let isLangLocked = false; 
+    let isProfileLocked = false; // НОВЫЙ ФЛАГ БЛОКИРОВКИ ПРОФИЛЯ
 
     // === ПЕРЕМЕННЫЕ ТЕСТА ===
     let questions = [];
@@ -22,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let correctCount = 0;
     let timerInterval = null;
     let selectedAnswer = null;
-    let tourStartTime = 0; // Для подсчета общего времени
+    // Время старта берем из localStorage, чтобы пережить перезагрузку
 
     // === НАСТРОЙКИ SUPABASE ===
     const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
@@ -42,8 +43,9 @@ document.addEventListener('DOMContentLoaded', function() {
             label_school: "Maktab",
             consent_title: "Ma'lumotlarni qayta ishlashga rozilik",
             consent_desc: "Reyting uchun.",
-            btn_save: "Saqlash",
-            profile_locked_msg: "O'zgartirish vaqtincha yopiq",
+            btn_save: "Saqlash va Tasdiqlash", // Изменено для серьезности
+            profile_locked_msg: "Ma'lumotlar tasdiqlangan",
+            profile_locked_hint: "Xatolik bo'lsa 'Yordam' bo'limiga yozing. (Til o'zgartirilmaydi!)", // НОВОЕ
             btn_to_main: "Bosh sahifaga",
             btn_cancel: "Bekor qilish",
             greeting_hi: "Salom",
@@ -151,7 +153,7 @@ document.addEventListener('DOMContentLoaded', function() {
             menu_mistakes_desc: "Javoblarni ko'rish",
             lock_review_title: "Tahlil yopiq",
             lock_review_msg: "Adolatli raqobat uchun xatolar tahlili olimpiada yakunlangandan so'ng ochiladi.",
-            lang_warning_reg: "Diqqat: Tilni keyinchalik o'zgartirib bo'lmaydi. Bu adolatli reyting uchun muhim.",
+            lang_warning_reg: "Diqqat: Til va ma'lumotlar saqlangandan so'ng o'zgartirib bo'lmaydi!",
             lang_locked_reason: "Adolatli raqobat uchun tilni o'zgartirish imkoniyati o'chirilgan."
         },
         ru: {
@@ -164,8 +166,9 @@ document.addEventListener('DOMContentLoaded', function() {
             label_school: "Школа",
             consent_title: "Согласие на обработку",
             consent_desc: "Для рейтинга.",
-            btn_save: "Сохранить",
-            profile_locked_msg: "Редактирование закрыто",
+            btn_save: "Сохранить и Подтвердить",
+            profile_locked_msg: "Данные подтверждены",
+            profile_locked_hint: "Ошибка? Пишите в 'Помощь'. (Смена языка запрещена!)", // НОВОЕ
             btn_to_main: "На главную",
             btn_cancel: "Отмена",
             greeting_hi: "Привет",
@@ -273,7 +276,7 @@ document.addEventListener('DOMContentLoaded', function() {
             menu_mistakes_desc: "Посмотреть ответы",
             lock_review_title: "Разбор закрыт",
             lock_review_msg: "В целях честной игры разбор ошибок станет доступен после окончания олимпиады.",
-            lang_warning_reg: "Внимание: Язык нельзя будет изменить позже. Это важно для честного рейтинга.",
+            lang_warning_reg: "Внимание: Язык и данные профиля нельзя будет изменить после сохранения!",
             lang_locked_reason: "Смена языка отключена для обеспечения честной конкуренции."
         },
         en: {
@@ -286,8 +289,9 @@ document.addEventListener('DOMContentLoaded', function() {
             label_school: "School",
             consent_title: "Data Processing Consent",
             consent_desc: "For leaderboard ranking.",
-            btn_save: "Save",
-            profile_locked_msg: "Editing is locked",
+            btn_save: "Save & Confirm",
+            profile_locked_msg: "Data Locked",
+            profile_locked_hint: "Mistake? Contact Support. (Language cannot be changed!)", // NEW
             btn_to_main: "Go to Home",
             btn_cancel: "Cancel",
             greeting_hi: "Hi",
@@ -395,7 +399,7 @@ document.addEventListener('DOMContentLoaded', function() {
             menu_mistakes_desc: "Check answers",
             lock_review_title: "Review Locked",
             lock_review_msg: "To ensure fair play, mistake review will be available after the Olympiad ends.",
-            lang_warning_reg: "Attention: Language cannot be changed later. This is important for fair ranking.",
+            lang_warning_reg: "Attention: Language and profile data cannot be changed after saving!",
             lang_locked_reason: "Language changing is disabled to ensure fair competition."
         }
     };
@@ -406,7 +410,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function setLanguage(lang) {
         if (isLangLocked && lang !== currentLang) {
-            // Если язык заблокирован, запрещаем смену, но визуально селект уже должен быть disabled
+            // Блокировка работает
             return; 
         }
         
@@ -449,20 +453,19 @@ document.addEventListener('DOMContentLoaded', function() {
         if (classSel && classSel.options.length > 0) classSel.options[0].textContent = t('select_class');
     }
 
-    // Обработчик смены языка В РЕГИСТРАЦИИ (пока не заблокирован)
-    if(document.getElementById('reg-lang-select')) {
-        document.getElementById('reg-lang-select').addEventListener('change', (e) => {
-            if(!isLangLocked) setLanguage(e.target.value);
-        });
-    }
-
-    // Обработчик смены языка В КАБИНЕТЕ
     if(document.getElementById('lang-switcher-cab')) {
         document.getElementById('lang-switcher-cab').addEventListener('change', (e) => {
             if(!isLangLocked) {
                 setLanguage(e.target.value);
-                localStorage.setItem('user_lang', e.target.value); // Сохраняем локально, если еще не залокчен на сервере
+                localStorage.setItem('user_lang', e.target.value); 
             }
+        });
+    }
+    
+    // Обработчик языка на регистрации
+    if(document.getElementById('reg-lang-select')) {
+        document.getElementById('reg-lang-select').addEventListener('change', (e) => {
+            if(!isLangLocked) setLanguage(e.target.value);
         });
     }
 
@@ -495,7 +498,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
 
-    // Предварительная установка языка (до загрузки профиля)
     const savedLang = localStorage.getItem('user_lang');
     if (savedLang) {
         setLanguage(savedLang);
@@ -565,7 +567,6 @@ document.addEventListener('DOMContentLoaded', function() {
   
     // === ГЛАВНАЯ ЛОГИКА ===
     async function checkProfileAndTour() {
-      // 1. Сначала находим пользователя в базе
       const { data: userData } = await supabaseClient.from('users').select('*').eq('telegram_id', telegramUserId).maybeSingle();
       
       if (userData) {
@@ -586,20 +587,24 @@ document.addEventListener('DOMContentLoaded', function() {
           document.getElementById('cab-id').textContent = String(telegramUserId).slice(-6); 
           if(currentUserData.avatar_url) document.getElementById('cab-avatar-img').src = currentUserData.avatar_url;
 
-          // === ЛОГИКА БЛОКИРОВКИ ЯЗЫКА (Новое) ===
+          // === БЛОКИРОВКА ЯЗЫКА ===
           if (userData.fixed_language) {
               isLangLocked = true;
               setLanguage(userData.fixed_language);
               
-              // Блокируем селект в кабинете
               const cabLang = document.getElementById('lang-switcher-cab');
               if(cabLang) cabLang.disabled = true;
               const cabMsg = document.getElementById('lang-lock-msg');
               if(cabMsg) cabMsg.classList.remove('hidden');
 
-              // Блокируем селект в регистрации (если вдруг юзер туда попадет)
               const regLang = document.getElementById('reg-lang-select');
               if(regLang) regLang.disabled = true;
+          }
+
+          // === БЛОКИРОВКА ПРОФИЛЯ (СТРОГАЯ) ===
+          // Проверяем, заполнены ли основные поля
+          if (userData.class && userData.region && userData.district && userData.school) {
+              isProfileLocked = true;
           }
 
       } else {
@@ -614,7 +619,7 @@ document.addEventListener('DOMContentLoaded', function() {
           }
       }
 
-      // 2. Проверяем Туры
+      // Проверка туров
       const now = new Date().toISOString();
       const { data: tourData } = await supabaseClient.from('tours').select('*').lte('start_date', now).gte('end_date', now).eq('is_active', true).maybeSingle();
 
@@ -652,6 +657,43 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
 
+    // === ФУНКЦИЯ БЛОКИРОВКИ ПРОФИЛЯ ===
+    function lockProfileForm(permanent = false) {
+        const saveBtn = document.getElementById('save-profile');
+        const lockMsg = document.getElementById('reg-locked-msg');
+        const backBtn = document.getElementById('reg-back-btn');
+        
+        saveBtn.classList.add('hidden');
+        lockMsg.classList.remove('hidden');
+        
+        // Обновляем текст сообщения блокировки
+        if(permanent) {
+            // Если профиль заполнен и заблокирован навсегда
+            lockMsg.innerHTML = `<i class="fa-solid fa-lock"></i> 
+                                 <div style="text-align:left; margin-left:8px;">
+                                    <div style="font-weight:700;">${t('profile_locked_msg')}</div>
+                                    <div style="font-size:10px; font-weight:400; opacity:0.8;">${t('profile_locked_hint')}</div>
+                                 </div>`;
+            lockMsg.style.background = "#E8F5E9"; // Зеленоватый оттенок (успех)
+            lockMsg.style.color = "#2E7D32";
+            lockMsg.style.border = "1px solid #C8E6C9";
+        } else {
+            // Старая блокировка (если тур завершен)
+            lockMsg.innerHTML = `<i class="fa-solid fa-lock"></i> <span>${t('profile_locked_msg')}</span>`;
+        }
+
+        backBtn.classList.remove('hidden');
+        
+        document.querySelectorAll('#reg-screen input, #reg-screen select').forEach(el => el.disabled = true);
+    }
+
+    function unlockProfileForm() {
+        document.getElementById('save-profile').classList.remove('hidden');
+        document.getElementById('reg-back-btn').classList.add('hidden');
+        document.getElementById('reg-locked-msg').classList.add('hidden');
+        document.querySelectorAll('#reg-screen input, #reg-screen select').forEach(el => el.disabled = false);
+    }
+
     // === ОБНОВЛЕННАЯ ЛОГИКА ЗАГРУЗКИ СТАТИСТИКИ ===
     async function fetchStatsData() {
         if (!internalDbId || !currentTourId) return;
@@ -677,7 +719,6 @@ document.addEventListener('DOMContentLoaded', function() {
         subjectPrefixes.forEach(prefix => {
             const stats = calculateSubjectStats(prefix);
             let percent = 0;
-            // 15 вопросов в туре
             if (stats.correct > 0) percent = Math.round((stats.correct / 15) * 100); 
             if (percent > 100) percent = 100; 
 
@@ -963,7 +1004,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('school-input').value = data.school;
         document.getElementById('research-consent').checked = data.research_consent || false;
         
-        // Установка языка, если он уже выбран
         const langSelect = document.getElementById('reg-lang-select');
         if(langSelect && data.fixed_language) {
             langSelect.value = data.fixed_language;
@@ -981,10 +1021,9 @@ document.addEventListener('DOMContentLoaded', function() {
       
       if (!classVal || !region || !district || !school) { alert(t('alert_fill')); return; }
       
-      // FIX: Если язык еще не зафиксирован, сохраняем его
-      if(!isLangLocked) {
-          currentLang = selectedLang;
-      }
+      // FIX: Если язык еще не зафиксирован в базе, берем выбранный
+      // Если уже зафиксирован (isLangLocked=true), оставляем старый (currentLang)
+      let langToSave = isLangLocked ? currentLang : selectedLang;
       
       const btn = document.getElementById('save-profile');
       const originalText = btn.innerHTML;
@@ -998,7 +1037,7 @@ document.addEventListener('DOMContentLoaded', function() {
               district: district, 
               school: school, 
               research_consent: consent,
-              fixed_language: currentLang // СОХРАНЯЕМ ВЫБРАННЫЙ ЯЗЫК НАВСЕГДА
+              fixed_language: langToSave // Железобетонная отправка
           };
           if (telegramData.photoUrl) updateData.avatar_url = telegramData.photoUrl;
           
@@ -1011,6 +1050,11 @@ document.addEventListener('DOMContentLoaded', function() {
           internalDbId = data.id;
           currentUserData = data;
           
+          // Обновляем состояние блокировки в скрипте сразу
+          isLangLocked = true;
+          isProfileLocked = true;
+          currentLang = langToSave;
+
           showScreen('home-screen');
           checkProfileAndTour(); 
       } catch (e) {
@@ -1020,26 +1064,6 @@ document.addEventListener('DOMContentLoaded', function() {
       } 
     });
   
-    function lockProfileForm() {
-        document.getElementById('save-profile').classList.add('hidden');
-        document.getElementById('reg-back-btn').classList.remove('hidden');
-        document.getElementById('reg-locked-msg').classList.remove('hidden');
-        document.querySelectorAll('#reg-screen input, #reg-screen select').forEach(el => el.disabled = true);
-    }
-    function unlockProfileForm() {
-        document.getElementById('save-profile').classList.remove('hidden');
-        document.getElementById('reg-back-btn').classList.add('hidden');
-        document.getElementById('reg-locked-msg').classList.add('hidden');
-        document.querySelectorAll('#reg-screen input, #reg-screen select').forEach(el => el.disabled = false);
-    }
-    const requiredFields = document.querySelectorAll('#class-select, #region-select, #district-select, #school-input');
-    requiredFields.forEach(field => {
-      field.addEventListener('input', () => {
-        const allFilled = Array.from(requiredFields).every(f => f.value.trim() !== '');
-        document.getElementById('save-profile').disabled = !allFilled;
-      });
-    });
-    
     // === ЛОГИКА УДАЛЕНИЯ АККАУНТА ===
     safeAddListener('delete-account-btn', 'click', () => {
         if(tourCompleted) {
@@ -1058,7 +1082,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const { error } = await supabaseClient.from('users').delete().eq('id', internalDbId);
             if(error) throw error;
             
-            // Clear local data
             localStorage.clear();
             location.reload(); 
         } catch (e) {
@@ -1073,17 +1096,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const now = new Date();
         const end = currentTourEndDate ? new Date(currentTourEndDate) : null;
         
-        // ЕСЛИ ТУР ЕЩЕ ИДЕТ - БЛОКИРУЕМ
         if (end && now < end) {
             document.getElementById('review-unlock-date').textContent = end.toLocaleDateString() + ' ' + end.toLocaleTimeString().slice(0,5);
             document.getElementById('review-lock-modal').classList.remove('hidden');
         } else {
-            // ТУР ЗАКОНЧЕН - ОТКРЫВАЕМ
             alert("Tahlil uchun ruxsat ochiq (Keyingi yangilanishda bu yerda to'liq tahlil oynasi bo'ladi).");
         }
     });
 
-    // === QUIZ LOGIC (NEW LADDER SYSTEM) ===
+    // === QUIZ LOGIC (LADDER + TIMER) ===
     async function handleStartClick() {
         const btn = document.getElementById('main-action-btn');
         btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('loading')}`;
@@ -1140,7 +1161,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     safeAddListener('confirm-start', 'click', async () => {
       document.getElementById('warning-modal').classList.add('hidden');
-      tourStartTime = Date.now(); // ЗАПОМИНАЕМ ВРЕМЯ СТАРТА
+      
+      // FIX: Используем localStorage для надежности
+      const startTime = Date.now();
+      localStorage.setItem('tour_start_time', startTime);
+      
       await startTourLadder(); 
     });
 
@@ -1327,13 +1352,18 @@ document.addEventListener('DOMContentLoaded', function() {
       clearInterval(timerInterval);
       tourCompleted = true;
       
-      // FIX: Calculate total time and update DB
-      const timeTaken = Math.floor((Date.now() - tourStartTime) / 1000);
+      // FIX: Calculate total time
+      const start = localStorage.getItem('tour_start_time');
+      const timeTaken = start ? Math.floor((Date.now() - Number(start)) / 1000) : 0;
+      
+      // FIX: Use UPSERT instead of UPDATE (to create record if missing)
       try {
-          await supabaseClient.from('tour_progress')
-              .update({ total_time_taken: timeTaken })
-              .eq('user_id', internalDbId)
-              .eq('tour_id', currentTourId);
+          await supabaseClient.from('tour_progress').upsert({
+              user_id: internalDbId,
+              tour_id: currentTourId,
+              score: correctCount, // Сохраняем и счет тоже
+              total_time_taken: timeTaken
+          }, { onConflict: 'user_id, tour_id' }); // Уникальный ключ
       } catch (e) { console.error("Time update failed", e); }
 
       const percent = Math.round((correctCount / questions.length) * 100);
@@ -1367,9 +1397,13 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     safeAddListener('close-cabinet', 'click', () => showScreen('home-screen'));
     
+    // МЕНЮ КАБИНЕТА
     safeAddListener('btn-edit-profile', 'click', () => {
         showScreen('reg-screen');
-        if(tourCompleted) lockProfileForm(); else unlockProfileForm();
+        // FIX: Используем новый флаг isProfileLocked
+        if(isProfileLocked) lockProfileForm(true); 
+        else unlockProfileForm();
+        
         document.getElementById('reg-back-btn').classList.remove('hidden'); 
     });
     safeAddListener('reg-back-btn', 'click', () => showScreen('cabinet-screen'));
