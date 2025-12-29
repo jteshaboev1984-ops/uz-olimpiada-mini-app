@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v72.0 (Strict + Anti-Cheat + All Fixes)');
+    console.log('App Started: v72.1 (Fixed: Missing fillProfileForm)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let correctCount = 0;
     let timerInterval = null;
     let selectedAnswer = null;
-    let cheatWarningCount = 0; // СЧЕТЧИК СВОРАЧИВАНИЙ
+    let cheatWarningCount = 0; 
 
     // === НАСТРОЙКИ SUPABASE ===
     const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
@@ -473,22 +473,30 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // === ИНИЦИАЛИЗАЦИЯ TELEGRAM ===
+    // === ИНИЦИАЛИЗАЦИЯ TELEGRAM & LANGUAGE ===
     if (window.Telegram && window.Telegram.WebApp) {
       Telegram.WebApp.ready();
       Telegram.WebApp.expand();
+      
       const user = Telegram.WebApp.initDataUnsafe.user;
+      
       if (user && user.id) {
         telegramUserId = Number(user.id);
         telegramData.firstName = user.first_name;
         telegramData.lastName = user.last_name;
         if (user.photo_url) telegramData.photoUrl = user.photo_url;
         telegramData.languageCode = user.language_code;
+
         document.getElementById('reg-user-name').textContent = telegramData.firstName + ' ' + (telegramData.lastName || '');
         document.getElementById('home-user-name').textContent = telegramData.firstName || t('lb_participant');
-        if(telegramData.photoUrl) document.getElementById('cab-avatar-img').src = telegramData.photoUrl;
+        if(telegramData.photoUrl) {
+            document.getElementById('cab-avatar-img').src = telegramData.photoUrl;
+        }
       } else {
-        if (!localStorage.getItem('test_user_id')) localStorage.setItem('test_user_id', Math.floor(Math.random() * 1000000000));
+        console.warn("No Telegram user found. Running in Test Mode.");
+        if (!localStorage.getItem('test_user_id')) {
+             localStorage.setItem('test_user_id', Math.floor(Math.random() * 1000000000));
+        }
         telegramUserId = Number(localStorage.getItem('test_user_id'));
         document.getElementById('reg-user-name').textContent = 'Test User';
       }
@@ -505,9 +513,7 @@ document.addEventListener('DOMContentLoaded', function() {
         setLanguage('uz');
     }
   
-    // === РЕГИОНЫ И СЕЛЕКТЫ (Опущено для краткости, они такие же как раньше) ===
-    // ... (ВСТАВИТЬ КОД РЕГИОНОВ ИЗ ПРЕДЫДУЩЕЙ ВЕРСИИ) ...
-    // ВСТАВЬТЕ СЮДА ВЕСЬ БЛОК const regions = { ... } и настройку селектов
+    // === ДАННЫЕ РЕГИОНОВ ===
     const regions = {
         "Toshkent shahri": ["Bektemir tumani", "Chilonzor tumani", "Mirobod tumani", "Mirzo Ulug'bek tumani", "Olmazor tumani", "Sergeli tumani", "Shayxontohur tumani", "Uchtepa tumani", "Yakkasaroy tumani", "Yangihayot tumani", "Yashnobod tumani", "Yunusobod tumani"],
         "Andijon viloyati": ["Andijon shahri", "Xonobod shahri", "Andijon tumani", "Asaka tumani", "Baliqchi tumani", "Bo'z tumani", "Buloqboshi tumani", "Izboskan tumani", "Jalaquduq tumani", "Marhamat tumani", "Oltinko'l tumani", "Paxtaobod tumani", "Qo'rg'ontepa tumani", "Shahrixon tumani", "Ulug'nor tumani", "Xo'jaobod tumani"],
@@ -571,6 +577,7 @@ document.addEventListener('DOMContentLoaded', function() {
           internalDbId = userData.id;
           currentUserData = userData; 
 
+          // Синхронизация имени
           if (telegramData.firstName) {
               let tgName = telegramData.firstName + (telegramData.lastName ? ' ' + telegramData.lastName : '');
               tgName = tgName.trim();
@@ -579,6 +586,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   currentUserData.name = tgName; 
               }
           }
+          // Update Cabinet Info
           document.getElementById('cab-name').textContent = currentUserData.name;
           document.getElementById('cab-id').textContent = String(telegramUserId).slice(-6); 
           if(currentUserData.avatar_url) document.getElementById('cab-avatar-img').src = currentUserData.avatar_url;
@@ -606,6 +614,7 @@ document.addEventListener('DOMContentLoaded', function() {
           }
 
       } else {
+          // Если юзера нет - создаем
           let fullName = telegramData.firstName ? (telegramData.firstName + (telegramData.lastName ? ' ' + telegramData.lastName : '')).trim() : 'Foydalanuvchi';
           const { data: newUser } = await supabaseClient.from('users')
               .insert({ telegram_id: telegramUserId, name: fullName, avatar_url: telegramData.photoUrl })
@@ -616,6 +625,7 @@ document.addEventListener('DOMContentLoaded', function() {
           }
       }
 
+      // 2. Проверяем Туры
       const now = new Date().toISOString();
       const { data: tourData } = await supabaseClient.from('tours').select('*').lte('start_date', now).gte('end_date', now).eq('is_active', true).maybeSingle();
 
@@ -651,6 +661,32 @@ document.addEventListener('DOMContentLoaded', function() {
         fillProfileForm(currentUserData);
         showScreen('home-screen');
       }
+    }
+
+    // === ВОТ ЭТА ФУНКЦИЯ БЫЛА ПРОПУЩЕНА ===
+    function fillProfileForm(data) {
+        document.getElementById('class-select').value = data.class;
+        document.getElementById('region-select').value = data.region;
+        const districtSelect = document.getElementById('district-select');
+        districtSelect.innerHTML = `<option value="" disabled selected>${t('select_district')}</option>`;
+        if (regions[data.region]) {
+          regions[data.region].sort().forEach(district => {
+            const option = document.createElement('option');
+            option.value = district;
+            option.textContent = district;
+            districtSelect.appendChild(option);
+          });
+        }
+        districtSelect.value = data.district;
+        document.getElementById('school-input').value = data.school;
+        document.getElementById('research-consent').checked = data.research_consent || false;
+        
+        // Установка языка, если он уже выбран
+        const langSelect = document.getElementById('reg-lang-select');
+        if(langSelect && data.fixed_language) {
+            langSelect.value = data.fixed_language;
+            langSelect.disabled = true;
+        }
     }
 
     function lockProfileForm(permanent = false) {
@@ -706,8 +742,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
 
-    // === ЛОГИКА ТЕСТА, СТАТИСТИКИ И ЛИДЕРБОРДА (БЕЗ ИЗМЕНЕНИЙ) ===
-    // (Код ниже идентичен v71.2, кроме функции fetchStatsData/updateDashboardStats - они стандартные)
+    // === ЛОГИКА ТЕСТА, СТАТИСТИКИ И ЛИДЕРБОРДА ===
     
     async function fetchStatsData() {
         if (!internalDbId || !currentTourId) return;
