@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v72.1 (Fixed: Missing fillProfileForm)');
+    console.log('App Started: v72.2 (Fixed: Language Priority from DB)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -577,7 +577,6 @@ document.addEventListener('DOMContentLoaded', function() {
           internalDbId = userData.id;
           currentUserData = userData; 
 
-          // Синхронизация имени
           if (telegramData.firstName) {
               let tgName = telegramData.firstName + (telegramData.lastName ? ' ' + telegramData.lastName : '');
               tgName = tgName.trim();
@@ -586,20 +585,22 @@ document.addEventListener('DOMContentLoaded', function() {
                   currentUserData.name = tgName; 
               }
           }
-          // Update Cabinet Info
           document.getElementById('cab-name').textContent = currentUserData.name;
           document.getElementById('cab-id').textContent = String(telegramUserId).slice(-6); 
           if(currentUserData.avatar_url) document.getElementById('cab-avatar-img').src = currentUserData.avatar_url;
 
-          // === БЛОКИРОВКА ЯЗЫКА (FIXED + OLD USERS) ===
-          // Блокируем, если язык зафиксирован ИЛИ если профиль заполнен (для старых)
+          // === ПРИНУДИТЕЛЬНАЯ УСТАНОВКА ЯЗЫКА ИЗ БАЗЫ (FIXED) ===
+          if (userData.fixed_language) {
+              isLangLocked = true;
+              currentLang = userData.fixed_language; // Обновляем переменную
+              setLanguage(userData.fixed_language);  // Обновляем UI
+              localStorage.setItem('user_lang', userData.fixed_language); // Обновляем память
+          } 
+          
           const isOldUserReady = (userData.class && userData.region && userData.district && userData.school);
           
           if (userData.fixed_language || isOldUserReady) {
               isLangLocked = true;
-              // Если fixed_language нет, но профиль готов -> язык не меняем, берем текущий (или из local)
-              if(userData.fixed_language) setLanguage(userData.fixed_language);
-              
               const cabLang = document.getElementById('lang-switcher-cab');
               if(cabLang) cabLang.disabled = true;
               const cabMsg = document.getElementById('lang-lock-msg');
@@ -614,7 +615,6 @@ document.addEventListener('DOMContentLoaded', function() {
           }
 
       } else {
-          // Если юзера нет - создаем
           let fullName = telegramData.firstName ? (telegramData.firstName + (telegramData.lastName ? ' ' + telegramData.lastName : '')).trim() : 'Foydalanuvchi';
           const { data: newUser } = await supabaseClient.from('users')
               .insert({ telegram_id: telegramUserId, name: fullName, avatar_url: telegramData.photoUrl })
@@ -625,7 +625,6 @@ document.addEventListener('DOMContentLoaded', function() {
           }
       }
 
-      // 2. Проверяем Туры
       const now = new Date().toISOString();
       const { data: tourData } = await supabaseClient.from('tours').select('*').lte('start_date', now).gte('end_date', now).eq('is_active', true).maybeSingle();
 
@@ -663,7 +662,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
 
-    // === ВОТ ЭТА ФУНКЦИЯ БЫЛА ПРОПУЩЕНА ===
     function fillProfileForm(data) {
         document.getElementById('class-select').value = data.class;
         document.getElementById('region-select').value = data.region;
@@ -681,7 +679,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('school-input').value = data.school;
         document.getElementById('research-consent').checked = data.research_consent || false;
         
-        // Установка языка, если он уже выбран
         const langSelect = document.getElementById('reg-lang-select');
         if(langSelect && data.fixed_language) {
             langSelect.value = data.fixed_language;
@@ -724,18 +721,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // === АНТИ-ЧИТ: ДЕТЕКТОР СВОРАЧИВАНИЯ ===
     function handleVisibilityChange() {
-        // Проверяем: Тест идет? Не завершен?
         const quizScreen = document.getElementById('quiz-screen');
         if (document.hidden && !quizScreen.classList.contains('hidden') && !tourCompleted) {
             cheatWarningCount++;
             
             if (cheatWarningCount === 1) {
-                // 1-е предупреждение
                 document.getElementById('cheat-warning-modal').classList.remove('hidden');
             } else if (cheatWarningCount >= 2) {
-                // 2-й раз - СМЕРТЬ (Завершение)
-                finishTour(); // Принудительно завершаем
-                alert(t('cheat_msg')); // Показываем алерт
+                finishTour(); 
+                alert(t('cheat_msg')); 
             }
         }
     }
