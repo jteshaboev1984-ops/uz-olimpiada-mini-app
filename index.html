@@ -7,9 +7,10 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=70">
+    <link rel="stylesheet" href="style.css?v=71">
 </head>
 <body>
+
     <div class="screen hidden" id="reg-screen">
         <div class="header-profile">
             <div class="user-avatar-small"><i class="fa-solid fa-user-pen"></i></div>
@@ -17,6 +18,23 @@
             <p data-i18n="reg_subtitle">Ma'lumotlaringizni kiriting</p>
         </div>
         <div class="container pb-large">
+            <div class="card" style="border: 1px solid var(--primary);">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label style="color:var(--primary); font-weight:700;" data-i18n="menu_lang">Til / Язык</label>
+                    <div class="input-wrapper">
+                        <select id="reg-lang-select">
+                            <option value="uz">O'zbekcha</option>
+                            <option value="ru">Русский</option>
+                            <option value="en">English</option>
+                        </select>
+                        <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                    </div>
+                    <p style="font-size:11px; color:var(--text-sec); margin-top:8px; line-height:1.4;" data-i18n="lang_warning_reg">
+                        Diqqat: Tilni keyinchalik o'zgartirib bo'lmaydi. Bu adolatli reyting uchun muhim.
+                    </p>
+                </div>
+            </div>
+
             <div class="card profile-info-card">
                 <div class="avatar-circle">
                     <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="User">
@@ -117,17 +135,25 @@
                     <i class="fa-solid fa-chevron-right arrow"></i>
                 </div>
                 
-                <div class="settings-item">
-                    <div class="set-icon green"><i class="fa-solid fa-language"></i></div>
-                    <div class="set-text">
-                        <h4 data-i18n="menu_lang">Til</h4>
-                        <div style="margin-top:4px;">
-                            <select id="lang-switcher-cab" class="lang-select-clean">
-                                <option value="uz">O'zbekcha</option>
-                                <option value="ru">Русский</option>
-                                <option value="en">English</option>
-                            </select>
+                <div class="settings-item" style="flex-direction: column; align-items: flex-start; cursor: default;">
+                    <div style="display: flex; align-items: center; width: 100%;">
+                        <div class="set-icon green"><i class="fa-solid fa-language"></i></div>
+                        <div class="set-text">
+                            <h4 data-i18n="menu_lang">Til</h4>
+                            <div style="margin-top:4px;">
+                                <select id="lang-switcher-cab" class="lang-select-clean">
+                                    <option value="uz">O'zbekcha</option>
+                                    <option value="ru">Русский</option>
+                                    <option value="en">English</option>
+                                </select>
+                            </div>
                         </div>
+                    </div>
+                    <div id="lang-lock-msg" class="hidden" style="margin-top: 10px; font-size: 11px; color: #8E8E93; background: #F9F9F9; padding: 8px; border-radius: 8px; width: 100%;">
+                        <i class="fa-solid fa-circle-info" style="margin-right: 4px;"></i> 
+                        <span data-i18n="lang_locked_reason">
+                            Adolatli raqobat uchun tilni o'zgartirish imkoniyati o'chirilgan.
+                        </span>
                     </div>
                 </div>
 
@@ -160,7 +186,7 @@
             </div>
 
             <div class="footer-info">
-                <p>Smart Olympiad v70.0</p>
+                <p>Smart Olympiad v71.0</p>
                 <button class="btn-danger-box" id="delete-account-btn" style="margin-top: 15px;" data-i18n="btn_delete_account">Hisobni o'chirish</button>
             </div>
         </div>
@@ -466,7 +492,7 @@
                 <div class="close-btn-white" id="close-about"><i class="fa-solid fa-times"></i></div>
                 <div class="logo-icon big"><i class="fa-solid fa-graduation-cap"></i></div>
                 <h1>Smart Olympiad</h1>
-                <div class="version-tag">Version 70.0</div>
+                <div class="version-tag">Version 71.0</div>
             </div>
             <div class="modal-body-scroll" style="padding: 24px; text-align: left; flex:1; overflow-y:auto;">
                 <h3 style="margin-bottom:12px;" data-i18n="about_platform">Platforma haqida</h3>
@@ -489,6 +515,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=70"></script>
+    <script src="script.js?v=71"></script>
 </body>
 </html>
