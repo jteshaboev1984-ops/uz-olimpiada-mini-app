@@ -12,7 +12,7 @@
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=73.4">
+    <link rel="stylesheet" href="style.css?v=73.5">
 </head>
 <body>
 
@@ -20,7 +20,6 @@
         <div class="header-profile">
             <div class="user-avatar-small"><i class="fa-solid fa-user-pen"></i></div>
             <h1 data-i18n="reg_title">Ro'yxatdan o'tish</h1>
-            <p id="reg-user-name" style="color:var(--primary); font-weight:600; margin-top:5px;">...</p>
             <p data-i18n="reg_subtitle">Ma'lumotlaringizni kiriting</p>
         </div>
         <div class="container pb-large">
@@ -36,6 +35,16 @@
                         <i class="fa-solid fa-chevron-down arrow-icon"></i>
                     </div>
                     <p style="font-size:11px; color:var(--text-sec); margin-top:8px; line-height:1.4;" data-i18n="lang_warning_reg">...</p>
+                </div>
+            </div>
+            <div class="card profile-info-card">
+                <div class="avatar-circle">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="User">
+                    <div class="verified-badge"><i class="fa-solid fa-check"></i></div>
+                </div>
+                <div class="profile-text">
+                    <span class="sub-label" data-i18n="participant_label">Ishtirokchi</span>
+                    <h3 id="reg-user-name">...</h3>
                 </div>
             </div>
 
@@ -78,7 +87,7 @@
 
             <div class="card checkbox-card">
                 <input type="checkbox" id="research-consent" checked>
-                <div class="checkbox-text"><strong data-i18n="consent_title">Ma'lumotlarni tasdiqlash</strong><span data-i18n="consent_desc">Reyting va sertifikat uchun.</span></div>
+                <div class="checkbox-text"><strong data-i18n="consent_title">Ma'lumotlarni qayta ishlashga rozilik</strong><span data-i18n="consent_desc">Reyting uchun.</span></div>
             </div>
         </div>
         
@@ -150,6 +159,10 @@
                             </div>
                         </div>
                     </div>
+                    <div id="lang-lock-msg" class="hidden" style="margin-top: 10px; font-size: 11px; color: #8E8E93; background: #F9F9F9; padding: 8px; border-radius: 8px; width: 100%;">
+                        <i class="fa-solid fa-circle-info" style="margin-right: 4px;"></i> 
+                        <span data-i18n="lang_locked_reason">...</span>
+                    </div>
                 </div>
 
                 <div class="settings-item" id="btn-open-certs-cab">
@@ -167,6 +180,7 @@
                         <h4 data-i18n="menu_mistakes">Xatolar tahlili</h4>
                         <p data-i18n="menu_mistakes_desc">Javoblarni ko'rish</p>
                     </div>
+                    <i class="fa-solid fa-lock" id="mistake-lock-icon" style="font-size:12px; color:#C7C7CC;"></i>
                 </div>
 
                 <div class="settings-item" onclick="openExternalLink('https://t.me/your_admin')">
@@ -180,7 +194,7 @@
             </div>
 
             <div class="footer-info">
-                <p>Smart Olympiad v73.4</p>
+                <p>Smart Olympiad v73.5</p>
                 <button class="btn-danger-box" id="delete-account-btn" style="margin-top: 15px;" data-i18n="btn_delete_account">Hisobni o'chirish</button>
             </div>
         </div>
@@ -244,6 +258,16 @@
                     <span class="percent-badge" id="eco-percent">0%</span>
                     <div class="subject-top"><div class="sub-icon brown"><i class="fa-solid fa-chart-line"></i></div></div>
                     <h3 data-i18n="subj_eco">Iqtisodiyot</h3><div class="progress-line"><div id="eco-bar" style="width: 0%"></div></div>
+                </div>
+                <div class="subject-card" onclick="openSubjectStats('sat')">
+                    <span class="percent-badge" id="sat-percent">0%</span>
+                    <div class="subject-top"><div class="sub-icon red"><i class="fa-solid fa-brain"></i></div></div>
+                    <h3>SAT</h3><div class="progress-line"><div id="sat-bar" style="width: 0%"></div></div>
+                </div>
+                <div class="subject-card" onclick="openSubjectStats('ielts')">
+                    <span class="percent-badge" id="ielts-percent">0%</span>
+                    <div class="subject-top"><div class="sub-icon red"><i class="fa-solid fa-graduation-cap"></i></div></div>
+                    <h3>IELTS</h3><div class="progress-line"><div id="ielts-bar" style="width: 0%"></div></div>
                 </div>
 
                 <div id="home-cert-btn" class="subject-card hidden">
@@ -323,12 +347,21 @@
                     </div>
                 </div>
                 <h2 data-i18n="res_finished">Tur yakunlandi!</h2>
+                <p style="color: #8E8E93; margin-top: 5px;" data-i18n="res_saved">Natijangiz saqlandi</p>
             </div>
 
             <div class="stats-row-strict">
                 <div class="col-left"><span class="lbl" data-i18n="stat_tour">TUR</span><span class="val" id="res-tour-title">1-Tur</span></div>
                 <div class="col-center"><span class="lbl" data-i18n="stat_total">JAMI</span><span class="val">15</span></div>
                 <div class="col-right"><span class="lbl" data-i18n="stat_correct">TO'G'RI</span><span class="val green-text" id="res-correct">0</span></div>
+            </div>
+
+            <div class="section-header"><h3 data-i18n="review_title">Xatolar ustida ishlash</h3></div>
+            <div class="card error-review-card">
+                <div class="review-item">
+                    <div class="review-header"><i class="fa-solid fa-circle-check" style="color:var(--success)"></i> <span data-i18n="data_saved">Ma'lumotlar saqlandi</span></div>
+                    <p style="font-size:13px; margin-top:5px; color:#666;" data-i18n="review_desc">Batafsil tahlil natijalar e'lon qilingandan so'ng mavjud bo'ladi.</p>
+                </div>
             </div>
         </div>
 
@@ -393,25 +426,25 @@
     <div class="modal hidden" id="certs-modal">
         <div class="modal-card">
             <div class="modal-header-custom">
-                <h3 data-i18n="menu_certs">Sertifikatlar</h3>
+                <h3 data-i18n="my_certs">Mening sertifikatlarim</h3>
                 <div class="close-icon-btn" onclick="document.getElementById('certs-modal').classList.add('hidden')"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div id="certs-list-container"></div>
+            <div style="padding: 10px 0; text-align: left;" id="certs-list-container"></div>
         </div>
     </div>
 
     <div class="modal hidden" id="tour-info-modal">
         <div class="modal-card">
             <h2 data-i18n="tour_passed_title">Tur yakunlangan!</h2>
-            <p data-i18n="tour_passed_msg">Natijangiz saqlandi.</p>
-            <button class="btn-primary" onclick="document.getElementById('tour-info-modal').classList.add('hidden')" data-i18n="btn_understood">OK</button>
+            <p data-i18n="tour_passed_msg">Siz ushbu bosqich javoblarini topshirgansiz.</p>
+            <button class="btn-primary" onclick="document.getElementById('tour-info-modal').classList.add('hidden')" data-i18n="btn_understood">Tushunarli</button>
         </div>
     </div>
 
     <div class="modal hidden" id="delete-confirm-modal">
         <div class="modal-card">
             <h2 data-i18n="del_title">Hisobni o'chirish?</h2>
-            <p data-i18n="del_msg">Qayta tiklab bo'lmaydi.</p>
+            <p data-i18n="del_msg">Barcha natijalaringiz o'chib ketadi.</p>
             <button id="confirm-delete-btn" class="btn-danger-box" data-i18n="btn_delete_confirm">O'chirish</button>
             <button class="btn-text" onclick="document.getElementById('delete-confirm-modal').classList.add('hidden')" data-i18n="btn_cancel">Bekor qilish</button>
         </div>
@@ -424,7 +457,7 @@
                 <div class="logo-icon big"><i class="fa-solid fa-graduation-cap"></i></div>
                 <h1>Smart Olympiad</h1>
             </div>
-            <div class="modal-body-scroll" style="padding:20px; overflow-y:auto; text-align:left;">
+            <div class="modal-body-scroll" style="padding: 20px; text-align: left; flex:1; overflow-y:auto;">
                 <p data-i18n="about_text">...</p>
             </div>
         </div>
@@ -432,13 +465,15 @@
 
     <div class="modal hidden" id="cheat-warning-modal">
         <div class="modal-card">
-            <div class="modal-icon-big" style="color:var(--danger);"><i class="fa-solid fa-eye-slash"></i></div>
-            <h2 data-i18n="cheat_title">Diqqat!</h2>
+            <div class="modal-icon-big" style="background:#FFF2F2; color:var(--danger); border: 2px solid var(--danger);">
+                <i class="fa-solid fa-eye-slash"></i>
+            </div>
+            <h2 style="color:var(--danger);" data-i18n="cheat_title">Diqqat!</h2>
             <p data-i18n="cheat_msg">Ilovadan chiqish taqiqlanadi!</p>
             <button class="btn-primary" onclick="document.getElementById('cheat-warning-modal').classList.add('hidden')" data-i18n="btn_understood">Tushunarli</button>
         </div>
     </div>
 
-    <script src="script.js?v=73.4"></script>
+    <script src="script.js?v=73.5"></script>
 </body>
 </html>
