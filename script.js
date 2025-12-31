@@ -49,6 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
             reg_title: "Ro'yxatdan o'tish",
             reg_subtitle: "Ma'lumotlaringizni kiriting",
             participant_label: "Ishtirokchi",
+            label_full_name: "F.I.O. (Sertifikat uchun)",
             label_class: "Sinf",
             label_region: "Viloyat",
             label_district: "Tuman / Shahar",
@@ -174,6 +175,7 @@ document.addEventListener('DOMContentLoaded', function() {
             reg_title: "Регистрация",
             reg_subtitle: "Введите данные",
             participant_label: "Участник",
+            label_full_name: "Ф.И.О. (Для сертификата)",
             label_class: "Класс",
             label_region: "Регион",
             label_district: "Район / Город",
@@ -299,6 +301,7 @@ document.addEventListener('DOMContentLoaded', function() {
             reg_title: "Registration",
             reg_subtitle: "Enter your details",
             participant_label: "Participant",
+            label_full_name: "Full Name (For certificate)",
             label_class: "Grade",
             label_region: "Region",
             label_district: "District / City",
@@ -1466,4 +1469,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     checkProfileAndTour();
 });
+
 
