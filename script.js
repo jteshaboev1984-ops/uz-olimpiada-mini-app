@@ -43,6 +43,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // === ФУНКЦИЯ ПЕРЕВОДА НАЗВАНИЯ ТУРА ===
+    function formatTourTitle(raw) {
+        if (!raw) return t('start_tour_btn');
+        return raw.replace(/Tur|Тур|Tour/i, t('stat_tour'));
+    }
+    
     // === СЛОВАРЬ ПЕРЕВОДОВ ===
     const translations = {
         uz: {
@@ -660,7 +666,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   document.getElementById('subjects-title').textContent = t('curr_tour'); 
               } else {
                   tourCompleted = false;
-                  updateMainButton('start', tourData.title);
+                  updateMainButton('start', formatTourTitle(tourData.title));
                   document.getElementById('subjects-title').textContent = t('subjects_title');
               }
           }
@@ -943,33 +949,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderLeaderboardUI(list, podiumEl, listEl) {
         podiumEl.innerHTML = '';
         listEl.innerHTML = '';
+        
+        // Топ-3 игрока (Подиум)
         const top3 = [list[1], list[0], list[2]]; 
         const ranks = ['second', 'first', 'third'];
         const rkClasses = ['rk-2', 'rk-1', 'rk-3'];
         const realRanks = [2, 1, 3];
-
-        const getSubHtml = (player) => {
-            let parts = [];
-            if (currentLbFilter === 'republic' && player.region) {
-                let r = player.region;
-                if(r.includes('Toshkent shahri') || r.includes('Ташкент')) r = t('city_tashkent');
-                parts.push(`<span class="meta-row"><i class="fa-solid fa-location-dot"></i> ${r}</span>`);
-            }
-            if ((currentLbFilter === 'republic' || currentLbFilter === 'region') && player.district) {
-                let d = player.district;
-                d = d.replace(' tumani', '').replace(' района', ''); 
-                parts.push(`<span class="meta-row"><i class="fa-solid fa-map-pin"></i> ${d}</span>`);
-            }
-            if(player.school) {
-                let s = player.school;
-                if(!s.toLowerCase().includes('maktab') && !s.toLowerCase().includes('school')) {
-                    s = `${t('school_prefix')} ${s}`;
-                }
-                parts.push(`<span class="meta-row"><i class="fa-solid fa-school"></i> ${s}</span>`);
-            }
-            parts.push(`<span class="meta-row"><i class="fa-solid fa-user-graduate"></i> ${player.classVal} ${t('class_s')}</span>`);
-            return parts.join(''); 
-        };
 
         top3.forEach((player, i) => {
             if (player) {
@@ -977,15 +962,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     ? `<img src="${player.avatarUrl}" class="winner-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3135/3135715.png'">`
                     : `<div class="winner-img" style="background:#E1E1E6; display:flex; align-items:center; justify-content:center; font-size:24px; color:#666;">${player.name[0]}</div>`;
 
+                // Сокращенная локация для подиума
+                const shortLoc = (player.region || "").split(' ')[0] + ", " + (player.district || "").replace(' tumani', '').replace(' района', '');
+
                 let html = `
                     <div class="winner ${ranks[i]}">
                         <div class="avatar-wrapper">
                             ${avatarHtml}
                             <div class="rank-circle ${rkClasses[i]}">${realRanks[i]}</div>
                         </div>
-                        <div class="winner-name">${player.name}</div>
-                        <div class="winner-class">
-                            ${getSubHtml(player)}
+                        <div class="winner-name">${player.name.split(' ').slice(0,2).join(' ')}</div>
+                        <div class="winner-class" style="font-size:10px; opacity:0.8; line-height:1.2; margin-top:3px;">
+                            📍 ${shortLoc}<br>🏫 №${player.school}
                         </div>
                         <div class="winner-score">${player.score}</div>
                     </div>
@@ -996,12 +984,21 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
+        // Основной список (4 место и ниже)
         list.slice(3).forEach((player, index) => {
             const realRank = index + 4;
             const avatarHtml = player.avatarUrl 
                 ? `<img src="${player.avatarUrl}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
                 : '';
             const fallbackAvatar = `<div class="no-img">${player.name[0]}</div>`;
+
+            // Умное сокращение ФИО (только Имя и Фамилия)
+            const displayName = player.name.split(' ').slice(0, 2).join(' ');
+            
+            // Умное сокращение локации
+            const reg = (player.region || "").replace(" viloyati", "").replace(" shahri", "").replace(" vil", "");
+            const dist = (player.district || "").replace(" tumani", "").replace(" района", "");
+            const metaInfo = `📍 ${reg}, ${dist} • 🏫 №${player.school}`;
 
             let cardStyle = player.isMe ? 'background:#F0F8FF; border:1px solid var(--primary);' : '';
 
@@ -1013,10 +1010,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         ${player.avatarUrl ? fallbackAvatar.replace('class="no-img"', 'class="no-img" style="display:none"') : fallbackAvatar}
                     </div>
                     <div class="l-info">
-                        <span class="l-name">${player.name}</span>
-                        <div class="l-sub">${getSubHtml(player)}</div>
+                        <span class="l-name" style="font-weight:700; display:block; color:#000; font-size:14px;">${displayName}</span>
+                        <div class="l-sub" style="font-size:11px; color:#8E8E93; margin-top:2px;">${metaInfo}</div>
                     </div>
-                    <div class="l-score">${player.score}</div>
+                    <div class="l-score" style="font-weight:800; color:var(--primary); font-size:16px; min-width:35px; text-align:right;">${player.score}</div>
                 </div>
             `;
             listEl.insertAdjacentHTML('beforeend', html);
@@ -1047,6 +1044,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     document.getElementById('save-profile').addEventListener('click', async () => {
+      // 1. Собираем данные, включая новое поле F.I.O.
+      const fullName = document.getElementById('full-name-input').value.trim();
       const classVal = document.getElementById('class-select').value;
       const region = document.getElementById('region-select').value;
       const district = document.getElementById('district-select').value;
@@ -1054,7 +1053,11 @@ document.addEventListener('DOMContentLoaded', function() {
       const consent = document.getElementById('research-consent').checked;
       const selectedLang = document.getElementById('reg-lang-select').value;
       
-      if (!classVal || !region || !district || !school) { alert(t('alert_fill')); return; }
+      // 2. Добавляем проверку, чтобы поле F.I.O. не было пустым
+      if (!fullName || !classVal || !region || !district || !school) { 
+          alert(t('alert_fill')); 
+          return; 
+      }
       
       let langToSave = isLangLocked ? currentLang : selectedLang;
       
@@ -1062,9 +1065,11 @@ document.addEventListener('DOMContentLoaded', function() {
       const originalText = btn.innerHTML;
       btn.disabled = true;
       btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('save_saving')}`;
+      
       try {
           const updateData = { 
               telegram_id: telegramUserId, 
+              full_name: fullName, // <-- Теперь данные уходят в вашу новую колонку
               class: classVal, 
               region: region, 
               district: district, 
@@ -1072,10 +1077,16 @@ document.addEventListener('DOMContentLoaded', function() {
               research_consent: consent,
               fixed_language: langToSave 
           };
+          // ... остальной код (if telegramData.photoUrl и т.д.) оставляйте как есть
           if (telegramData.photoUrl) updateData.avatar_url = telegramData.photoUrl;
           
           let fullName = telegramData.firstName + (telegramData.lastName ? ' ' + telegramData.lastName : '');
-          if (fullName.trim()) updateData.name = fullName.trim();
+          // 1. Telegramdan kelgan ismni 'name' ustuniga saqlaymiz (agar u mavjud bo'lsa)
+          let tgName = telegramData.firstName + (telegramData.lastName ? ' ' + telegramData.lastName : '');
+          if (tgName.trim()) updateData.name = tgName.trim();
+          
+          // 2. Foydalanuvchi qo'lda yozgan F.I.O. ni 'full_name' ustuniga saqlaymiz
+          updateData.full_name = fullName;
 
           const { data, error } = await supabaseClient.from('users').upsert(updateData, { onConflict: 'telegram_id' }).select().single(); 
           if(error) throw error;
@@ -1141,33 +1152,83 @@ document.addEventListener('DOMContentLoaded', function() {
         const btn = document.getElementById('main-action-btn');
         btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('loading')}`;
         
-        const { count } = await supabaseClient
+        // 1. Загружаем все вопросы тура на нужном языке одним запросом
+        const { data: allQ, error } = await supabaseClient
             .from('questions')
-            .select('*', { count: 'exact', head: true })
+            .select('*')
             .eq('tour_id', currentTourId)
             .eq('language', currentLang);
 
-        if (count === 0) {
-            alert("Ushbu tilda savollar topilmadi / Вопросов на этом языке пока нет.");
-            updateMainButton('start'); 
+        if (error || !allQ || allQ.length === 0) {
+            alert("Savollar topilmadi / Вопросы не найдены.");
+            updateMainButton('start', formatTourTitle(currentTourTitle)); 
             return; 
         }
 
-        document.getElementById('warn-q-val').textContent = '15 ' + t('questions');
-        document.getElementById('warn-time-val').textContent = '~15 ' + t('minutes');
+        // 2. Вспомогательная функция для точного поиска по предмету и сложности
+        const pick = (subj, diff) => {
+            const keywords = {
+                'math': ['matematika', 'математика', 'math'],
+                'eng': ['ingliz', 'английский', 'english'],
+                'phys': ['fizika', 'физика', 'physics'],
+                'chem': ['kimyo', 'химия', 'chemistry'],
+                'bio': ['biologiya', 'биология', 'biology'],
+                'it': ['informatika', 'информатика', 'computer', 'it'],
+                'eco': ['iqtisodiyot', 'экономика', 'economics']
+            };
+            const keys = keywords[subj] || [subj];
+            const pool = allQ.filter(q => 
+                q.subject && 
+                keys.some(k => q.subject.toLowerCase().includes(k)) && 
+                q.difficulty === diff
+            );
+            // Если нужной сложности нет, берем любую другую этого же предмета
+            if (pool.length === 0) {
+                const fallback = allQ.filter(q => q.subject && keys.some(k => q.subject.toLowerCase().includes(k)));
+                return fallback[Math.floor(Math.random() * fallback.length)];
+            }
+            return pool[Math.floor(Math.random() * pool.length)];
+        };
+
+        // 3. Сборка билета (Математика 1-1-1 + Скользящий баланс для остальных)
+        // Математика всегда получает Easy, Medium и Hard
+        const ticket = [pick('math', 'Easy'), pick('math', 'Medium'), pick('math', 'Hard')];
+        
+        // Для остальных 6 предметов создаем скользящий банк (7 Easy, 4 Medium, 1 Hard)
+        const others = ['eng', 'phys', 'chem', 'bio', 'it', 'eco'];
+        let diffPool = ['Hard', 'Medium', 'Medium', 'Medium', 'Medium', 'Easy', 'Easy', 'Easy', 'Easy', 'Easy', 'Easy', 'Easy'];
+        diffPool.sort(() => 0.5 - Math.random()); // Перемешиваем сложности
+
+        let poolIdx = 0;
+        others.forEach(subj => {
+            ticket.push(pick(subj, diffPool[poolIdx++]));
+            ticket.push(pick(subj, diffPool[poolIdx++]));
+        });
+
+        // Сохраняем выбранные вопросы в глобальную переменную и перемешиваем их порядок
+        questions = ticket.filter(q => q !== undefined).sort(() => 0.5 - Math.random());
+
+        // 4. ТОЧНЫЙ РАСЧЕТ ВРЕМЕНИ
+        const totalSeconds = questions.reduce((acc, q) => acc + (q.time_limit_seconds || 60), 0);
+        const totalMinutes = Math.ceil(totalSeconds / 60);
+
+        // Обновляем данные в модальном окне уведомления
+        document.getElementById('warn-q-val').textContent = questions.length + ' ' + t('questions');
+        document.getElementById('warn-time-val').textContent = totalMinutes + ' ' + t('minutes');
         
         document.getElementById('warning-modal').classList.remove('hidden');
-        updateMainButton('start'); 
+        updateMainButton('start', formatTourTitle(currentTourTitle)); 
     }
 
     function updateMainButton(state, title = "") {
-        if(!title) title = t('start_tour_btn');
         const btn = document.getElementById('main-action-btn');
         const certCard = document.getElementById('home-cert-btn'); 
         if (!btn) return;
+        
         const newBtn = btn.cloneNode(true);
         btn.parentNode.replaceChild(newBtn, btn);
         const activeBtn = document.getElementById('main-action-btn');
+        
         if (state === 'inactive') {
             activeBtn.innerHTML = `<i class="fa-solid fa-calendar-xmark"></i> ${t('no_active_tour')}`;
             activeBtn.disabled = true;
@@ -1182,7 +1243,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (certCard) certCard.classList.remove('hidden'); 
             activeBtn.addEventListener('click', () => document.getElementById('tour-info-modal').classList.remove('hidden'));
         } else {
-            activeBtn.innerHTML = `<i class="fa-solid fa-play"></i> ${title}`;
+            // Применяем форматирование заголовка
+            const displayTitle = formatTourTitle(title || t('start_tour_btn'));
+            activeBtn.innerHTML = `<i class="fa-solid fa-play"></i> ${displayTitle}`;
             activeBtn.className = 'btn-primary';
             activeBtn.disabled = false;
             activeBtn.style.background = "";
@@ -1190,65 +1253,22 @@ document.addEventListener('DOMContentLoaded', function() {
             activeBtn.addEventListener('click', handleStartClick);
         }
     }
-
-    safeAddListener('confirm-start', 'click', async () => {
+    safeAddListener('confirm-start', 'click', () => {
       document.getElementById('warning-modal').classList.add('hidden');
+      localStorage.setItem('tour_start_time', Date.now());
       
-      const startTime = Date.now();
-      localStorage.setItem('tour_start_time', startTime);
-      
-      await startTourLadder(); 
-    });
-
-    async function startTourLadder() {
-      if (!currentTourId) return;
-      
-      const { data: easyQ } = await supabaseClient
-          .from('questions')
-          .select('id, subject, question_text, options_text, time_limit_seconds, difficulty, image_url') 
-          .eq('tour_id', currentTourId)
-          .eq('language', currentLang)
-          .eq('difficulty', 'Easy')
-          .limit(20); 
-
-      const { data: medQ } = await supabaseClient
-          .from('questions')
-          .select('id, subject, question_text, options_text, time_limit_seconds, difficulty, image_url') 
-          .eq('tour_id', currentTourId)
-          .eq('language', currentLang)
-          .eq('difficulty', 'Medium')
-          .limit(15);
-
-      const { data: hardQ } = await supabaseClient
-          .from('questions')
-          .select('id, subject, question_text, options_text, time_limit_seconds, difficulty, image_url') 
-          .eq('tour_id', currentTourId)
-          .eq('language', currentLang)
-          .eq('difficulty', 'Hard')
-          .limit(10);
-
-      const e = (easyQ || []).sort(() => 0.5 - Math.random()).slice(0, 8);
-      const m = (medQ || []).sort(() => 0.5 - Math.random()).slice(0, 5);
-      const h = (hardQ || []).sort(() => 0.5 - Math.random()).slice(0, 2);
-
-      questions = [...e, ...m, ...h];
-
-      if (questions.length === 0) { 
-          alert('Error: No questions found.'); 
-          return; 
-      }
-      
-      let totalSeconds = 0;
-      questions.forEach(q => totalSeconds += (q.time_limit_seconds || 60));
-      
+      // Сбрасываем внутренние счетчики
       currentQuestionIndex = 0;
       correctCount = 0;
       showScreen('quiz-screen');
+      
+      // Считаем сумму секунд билета для таймера
+      const totalSeconds = questions.reduce((acc, q) => acc + (q.time_limit_seconds || 60), 0);
       startTimer(totalSeconds);
       showQuestion();
-    }
+    });
 
-    function startTimer(seconds) {
+      function startTimer(seconds) {
       let timeLeft = seconds;
       const timerEl = document.getElementById('timer');
       if (timerInterval) clearInterval(timerInterval);
@@ -1466,8 +1486,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="cert-action"><span class="badge-soon">Soon</span></div>
             </div>`;
         document.getElementById('certs-modal').classList.remove('hidden');
-    }
-    checkProfileAndTour();
+        checkProfileAndTour();
 });
+
 
 
