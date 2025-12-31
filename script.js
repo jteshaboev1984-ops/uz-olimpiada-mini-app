@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v73.0 (Matrix Sliding + Real Name + No Errors)');
+    console.log('App Started: v73.1 (No Errors & UI Fixed)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -21,7 +21,6 @@ document.addEventListener('DOMContentLoaded', function() {
     let correctCount = 0;
     let timerInterval = null;
     let selectedAnswer = null;
-    let cheatWarningCount = 0; 
 
     const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
     const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI';
@@ -31,13 +30,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // === ПЕРЕВОДЫ ===
     const translations = {
         uz: {
-            reg_title: "Ro'yxatdan o'tish", reg_subtitle: "Ma'lumotlaringizni kiriting", label_full_name: "F.I.O. (Sertifikat uchun)", label_class: "Sinf", label_region: "Viloyat", label_district: "Tuman / Shahar", label_school: "Maktab", btn_save: "Saqlash va Tasdiqlash", btn_back: "Orqaga", profile_locked_msg: "Ma'lumotlar tasdiqlangan", profile_locked_hint: "O'zgartirish imkonsiz (Faqat Admin orqali)", greeting_hi: "Salom", btn_leaderboard: "Reyting", btn_about: "Loyiha haqida", subjects_title: "Fanlar", subj_math: "Matematika", subj_eng: "Ingliz tili", loading: "Yuklanmoqda...", btn_exit: "Chiqish", btn_next: "Keyingi", stat_tour: "TUR", stat_total: "JAMI", stat_correct: "TO'G'RI", lb_title: "Reyting", lb_republic: "Respublika", lb_region: "Viloyat", lb_district: "Tuman", lb_points: "BALL", lb_rank: "O'rin", stat_tours: "Turlar", warn_title: "Diqqat", warn_msg_1: "Sizda", warn_msg_2: "ta savol uchun", warn_msg_3: "vaqt bor.", btn_start: "Boshlash", btn_cancel: "Bekor qilish", select_region: "Viloyatni tanlang", select_district: "Tumanni tanlang", select_class: "Sinfni tanlang", class_s: "sinf", tour_completed_btn: "Tur yakunlangan", start_tour_btn: "Turni boshlash", minutes: "daqiqa", questions: "savol", school_prefix: "Maktab №", btn_understood: "Tushunarli", cheat_title: "Diqqat!", cheat_msg: "Ilovadan chiqish taqiqlanadi! Qoidabuzarlik qayd etildi.", btn_to_main: "Bosh sahifaga", menu_lang: "Til", menu_my_data: "Ma'lumotlarim", menu_my_data_desc: "Ism, sinf, maktab", menu_certs: "Sertifikatlar", menu_certs_desc: "Yutuqlar arxivi", menu_mistakes: "Xatolar tahlili", btn_delete_account: "Hisobni o'chirish"
+            reg_title: "Ro'yxatdan o'tish", reg_subtitle: "Ma'lumotlaringizni kiriting", label_full_name: "F.I.O. (Sertifikat uchun)", label_class: "Sinf", label_region: "Viloyat", label_district: "Tuman / Shahar", label_school: "Maktab", btn_save: "Saqlash va Tasdiqlash", btn_back: "Orqaga", profile_locked_msg: "Ma'lumotlar tasdiqlangan", profile_locked_hint: "O'zgartirish imkonsiz (Faqat Admin orqali)", greeting_hi: "Salom", btn_leaderboard: "Reyting", btn_about: "Loyiha haqida", subjects_title: "Fanlar", subj_math: "Matematika", subj_eng: "Ingliz tili", loading: "Yuklanmoqda...", btn_exit: "Chiqish", btn_next: "Keyingi", stat_tour: "TUR", stat_total: "JAMI", stat_correct: "TO'G'RI", lb_title: "Reyting", lb_republic: "Respublika", lb_region: "Viloyat", lb_district: "Tuman", lb_points: "BALL", lb_rank: "O'rin", stat_tours: "Turlar", warn_title: "Diqqat", warn_msg_1: "Sizda", warn_msg_2: "ta savol uchun", warn_msg_3: "vaqt bor.", btn_start: "Boshlash", btn_cancel: "Bekor qilish", select_region: "Viloyatni tanlang", select_district: "Tumanni tanlang", select_class: "Sinfni tanlang", class_s: "sinf", tour_completed_btn: "Tur yakunlangan", start_tour_btn: "Turni boshlash", minutes: "daqiqa", questions: "savol", btn_understood: "Tushunarli", cheat_title: "Diqqat!", cheat_msg: "Ilovadan chiqish taqiqlanadi!", btn_to_main: "Bosh sahifaga", menu_lang: "Til", menu_my_data: "Ma'lumotlarim", menu_my_data_desc: "Ism, sinf, maktab", menu_certs: "Sertifikatlar", menu_certs_desc: "Yutuqlar arxivi", menu_mistakes: "Xatolar tahlili", btn_delete_account: "Hisobni o'chirish", alert_fill: "Barcha maydonlarni to'ldiring!"
         },
         ru: {
-            reg_title: "Регистрация", reg_subtitle: "Введите данные", label_full_name: "Ф.И.О. (Для сертификата)", label_class: "Класс", label_region: "Регион", label_district: "Район / Город", label_school: "Школа", btn_save: "Сохранить и Подтвердить", btn_back: "Назад", profile_locked_msg: "Данные подтверждены", profile_locked_hint: "Изменение невозможно (Через админа)", greeting_hi: "Привет", btn_leaderboard: "Рейтинг", btn_about: "О проекте", subjects_title: "Предметы", subj_math: "Математика", subj_eng: "Английский", loading: "Загрузка...", btn_exit: "Выход", btn_next: "Далее", stat_tour: "ТУР", stat_total: "ВСЕГО", stat_correct: "ВЕРНО", lb_title: "Рейтинг", lb_republic: "Республика", lb_region: "Регион", lb_district: "Район", lb_points: "БАЛЛЫ", lb_rank: "Место", stat_tours: "Туров", warn_title: "Внимание", warn_msg_1: "У вас будет", warn_msg_2: "на", warn_msg_3: "вопросов.", btn_start: "Начать", btn_cancel: "Отмена", select_region: "Выберите регион", select_district: "Выберите район", select_class: "Выберите класс", class_s: "класс", tour_completed_btn: "Тур завершен", start_tour_btn: "Начать тур", minutes: "минут", questions: "вопросов", school_prefix: "Школа №", btn_understood: "Понятно", cheat_title: "Внимание!", cheat_msg: "Выходить из приложения запрещено! Нарушение зафиксировано.", btn_to_main: "На главную", menu_lang: "Язык", menu_my_data: "Мои данные", menu_my_data_desc: "Имя, класс, школа", menu_certs: "Сертификаты", menu_certs_desc: "Архив достижений", menu_mistakes: "Разбор ошибок", btn_delete_account: "Удалить аккаунт"
+            reg_title: "Регистрация", reg_subtitle: "Введите данные", label_full_name: "Ф.И.О. (Для сертификата)", label_class: "Класс", label_region: "Регион", label_district: "Район / Город", label_school: "Школа", btn_save: "Сохранить и Подтвердить", btn_back: "Назад", profile_locked_msg: "Данные подтверждены", profile_locked_hint: "Изменение невозможно (Через админа)", greeting_hi: "Привет", btn_leaderboard: "Рейтинг", btn_about: "О проекте", subjects_title: "Предметы", subj_math: "Математика", subj_eng: "Английский", loading: "Загрузка...", btn_exit: "Выход", btn_next: "Далее", stat_tour: "ТУР", stat_total: "ВСЕГО", stat_correct: "ВЕРНО", lb_title: "Рейтинг", lb_republic: "Республика", lb_region: "Регион", lb_district: "Район", lb_points: "БАЛЛЫ", lb_rank: "Место", stat_tours: "Туров", warn_title: "Внимание", warn_msg_1: "У вас будет", warn_msg_2: "на", warn_msg_3: "вопросов.", btn_start: "Начать", btn_cancel: "Отмена", select_region: "Выберите регион", select_district: "Выберите район", select_class: "Выберите класс", class_s: "класс", tour_completed_btn: "Тур завершен", start_tour_btn: "Начать тур", minutes: "минут", questions: "вопросов", btn_understood: "Понятно", cheat_title: "Внимание!", cheat_msg: "Выходить из приложения запрещено!", btn_to_main: "На главную", menu_lang: "Язык", menu_my_data: "Мои данные", menu_my_data_desc: "Имя, класс, школа", menu_certs: "Сертификаты", menu_certs_desc: "Архив достижений", menu_mistakes: "Разбор ошибок", btn_delete_account: "Удалить аккаунт", alert_fill: "Заполните все поля!"
         },
         en: {
-            reg_title: "Registration", reg_subtitle: "Enter details", label_full_name: "Full Name (For Certificate)", label_class: "Grade", label_region: "Region", label_district: "District / City", label_school: "School", btn_save: "Save & Confirm", btn_back: "Back", profile_locked_msg: "Data Confirmed", profile_locked_hint: "Cannot be changed (Contact Admin)", greeting_hi: "Hi", btn_leaderboard: "Leaderboard", btn_about: "About", subjects_title: "Subjects", subj_math: "Math", subj_eng: "English", loading: "Loading...", btn_exit: "Exit", btn_next: "Next", stat_tour: "TOUR", stat_total: "TOTAL", stat_correct: "CORRECT", lb_title: "Leaderboard", lb_republic: "Republic", lb_region: "Region", lb_district: "District", lb_points: "POINTS", lb_rank: "Rank", stat_tours: "Tours", warn_title: "Warning", warn_msg_1: "You have", warn_msg_2: "for", warn_msg_3: "questions.", btn_start: "Start", btn_cancel: "Cancel", select_region: "Select Region", select_district: "Select District", select_class: "Select Grade", class_s: "grade", tour_completed_btn: "Tour Finished", start_tour_btn: "Start Tour", minutes: "minutes", questions: "questions", school_prefix: "School №", btn_understood: "Understood", cheat_title: "Warning!", cheat_msg: "Leaving the app is prohibited! Violation recorded.", btn_to_main: "Home", menu_lang: "Language", menu_my_data: "My Data", menu_my_data_desc: "Name, grade, school", menu_certs: "Certificates", menu_certs_desc: "Achievement Archive", menu_mistakes: "Error Review", btn_delete_account: "Delete Account"
+            reg_title: "Registration", reg_subtitle: "Enter details", label_full_name: "Full Name (For Certificate)", label_class: "Grade", label_region: "Region", label_district: "District / City", label_school: "School", btn_save: "Save & Confirm", btn_back: "Back", profile_locked_msg: "Data Confirmed", profile_locked_hint: "Cannot be changed (Contact Admin)", greeting_hi: "Hi", btn_leaderboard: "Leaderboard", btn_about: "About", subjects_title: "Subjects", subj_math: "Math", subj_eng: "English", loading: "Loading...", btn_exit: "Exit", btn_next: "Next", stat_tour: "TOUR", stat_total: "TOTAL", stat_correct: "CORRECT", lb_title: "Leaderboard", lb_republic: "Republic", lb_region: "Region", lb_district: "District", lb_points: "POINTS", lb_rank: "Rank", stat_tours: "Tours", warn_title: "Warning", warn_msg_1: "You have", warn_msg_2: "for", warn_msg_3: "questions.", btn_start: "Start", btn_cancel: "Cancel", select_region: "Select Region", select_district: "Select District", select_class: "Select Grade", class_s: "grade", tour_completed_btn: "Tour Finished", start_tour_btn: "Start Tour", minutes: "minutes", questions: "questions", btn_understood: "Understood", cheat_title: "Warning!", cheat_msg: "Leaving the app is prohibited!", btn_to_main: "Home", menu_lang: "Language", menu_my_data: "My Data", menu_my_data_desc: "Name, grade, school", menu_certs: "Certificates", menu_certs_desc: "Achievement Archive", menu_mistakes: "Error Review", btn_delete_account: "Delete Account", alert_fill: "Fill in all fields!"
         }
     };
 
@@ -46,6 +45,29 @@ document.addEventListener('DOMContentLoaded', function() {
     function formatTourTitle(raw) {
         if (!raw) return t('start_tour_btn');
         return raw.replace(/Tur|Тур|Tour/i, t('stat_tour'));
+    }
+
+    // === ФУНКЦИИ СТАТИСТИКИ (ПЕРЕНЕСЕНЫ ВВЕРХ) ===
+    async function fetchStatsData() {
+        if (!internalDbId || !currentTourId) return;
+        const { data: qData } = await supabaseClient.from('questions').select('id, subject').eq('tour_id', currentTourId).eq('language', currentLang);
+        tourQuestionsCache = qData || [];
+        const { data: aData } = await supabaseClient.from('user_answers').select('question_id, is_correct').eq('user_id', internalDbId);
+        userAnswersCache = aData || [];
+        updateDashboardStats();
+    }
+
+    function updateDashboardStats() {
+        ['math', 'eng'].forEach(p => {
+            const keys = p === 'math' ? ['matematika', 'math'] : ['ingliz', 'english'];
+            const subQ = tourQuestionsCache.filter(q => q.subject && keys.some(k => q.subject.toLowerCase().includes(k)));
+            const corr = subQ.filter(q => userAnswersCache.find(a => a.question_id === q.id && a.is_correct)).length;
+            const pct = subQ.length > 0 ? Math.round((corr / 15) * 100) : 0;
+            const pEl = document.getElementById(`${p}-percent`); if (pEl) pEl.textContent = pct + '%';
+            const bEl = document.getElementById(`${p}-bar`); if (bEl) bEl.style.width = pct + '%';
+        });
+        const sEl = document.getElementById('cab-score'); if (sEl) sEl.textContent = userAnswersCache.filter(a => a.is_correct).length;
+        const tEl = document.getElementById('cab-tours'); if (tEl) tEl.textContent = tourCompleted ? 1 : 0;
     }
 
     // === ДАННЫЕ РЕГИОНОВ ===
@@ -63,10 +85,9 @@ document.addEventListener('DOMContentLoaded', function() {
         "Samarqand viloyati": ["Samarqand shahri", "Kattaqo'rg'on shahri", "Bulung'ur tumani", "Ishtixon tumani", "Jomboy tumani", "Narpay tumani", "Payariq tumani", "Pastdarg'om tumani", "Urgut tumani"],
         "Sirdaryo viloyati": ["Guliston shahri", "Yangiyer shahri", "Boyovut tumani", "Xovos tumani", "Sayxunobod tumani", "Sirdaryo tumani"],
         "Surxondaryo viloyati": ["Termiz shahri", "Angor tumani", "Boysun tumani", "Denov tumani", "Jarqo'rg'on tumani", "Sariosiyo tumani", "Sherobod tumani", "Sho'rchi tumani", "Uzun tumani"],
-        "Toshkent viloyati": ["Nurafshon shahri", "Olmaliq shahri", "Angren shahri", "Bekobod shahri", "Chirchiq shahri", "Bo'stonliq tumani", "Chinoz tumani", "Parkent tumani", "Zangiota tumani", "Qibray tumani"]
+        "Toshkent viloyati": ["Nurafshon shahri", "Olmaliq shahri", "Angren shahri", "Bekobod shahri", "Ohangaron shahri", "Chirchiq shahri", "Bo'stonliq tumani", "Chinoz tumani", "Parkent tumani", "Zangiota tumani", "Qibray tumani"]
     };
 
-    // === ИНИЦИАЛИЗАЦИЯ UI СПИСКОВ ===
     function initSelectors() {
         const rs = document.getElementById('region-select');
         const cs = document.getElementById('class-select');
@@ -109,37 +130,14 @@ document.addEventListener('DOMContentLoaded', function() {
         else updateMainButton('inactive');
     }
 
-    // === ЛОГИКА БАЗЫ ===
-    async function fetchStatsData() {
-        if (!internalDbId || !currentTourId) return;
-        const { data: qData } = await supabaseClient.from('questions').select('id, subject').eq('tour_id', currentTourId).eq('language', currentLang);
-        tourQuestionsCache = qData || [];
-        const { data: aData } = await supabaseClient.from('user_answers').select('question_id, is_correct').eq('user_id', internalDbId);
-        userAnswersCache = aData || [];
-        updateDashboardStats();
-    }
-
-    function updateDashboardStats() {
-        ['math', 'eng'].forEach(p => {
-            const keys = p === 'math' ? ['matematika', 'math'] : ['ingliz', 'english'];
-            const subQ = tourQuestionsCache.filter(q => q.subject && keys.some(k => q.subject.toLowerCase().includes(k)));
-            const corr = subQ.filter(q => userAnswersCache.find(a => a.question_id === q.id && a.is_correct)).length;
-            const pct = subQ.length > 0 ? Math.round((corr / 15) * 100) : 0;
-            if (document.getElementById(`${p}-percent`)) document.getElementById(`${p}-percent`).textContent = pct + '%';
-            if (document.getElementById(`${p}-bar`)) document.getElementById(`${p}-bar`).style.width = pct + '%';
-        });
-        document.getElementById('cab-score').textContent = userAnswersCache.filter(a => a.is_correct).length;
-        document.getElementById('cab-tours').textContent = tourCompleted ? 1 : 0;
-    }
-
     async function checkProfileAndTour() {
         const { data: user } = await supabaseClient.from('users').select('*').eq('telegram_id', telegramUserId).maybeSingle();
         if (user) {
             internalDbId = user.id; currentUserData = user;
             if (user.fixed_language) { isLangLocked = true; setLanguage(user.fixed_language); }
             if (user.full_name && user.class) isProfileLocked = true;
-            document.getElementById('cab-name').textContent = user.full_name || user.name;
-            document.getElementById('cab-id').textContent = String(telegramUserId).slice(-6);
+            const cName = document.getElementById('cab-name'); if(cName) cName.textContent = user.full_name || user.name;
+            const cId = document.getElementById('cab-id'); if(cId) cId.textContent = String(telegramUserId).slice(-6);
         } else {
             const { data: newUser } = await supabaseClient.from('users').insert({ telegram_id: telegramUserId, name: telegramData.firstName }).select().single();
             internalDbId = newUser.id; currentUserData = newUser;
@@ -174,17 +172,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function lockProfileForm() {
-        document.getElementById('save-profile').classList.add('hidden');
-        document.getElementById('reg-locked-msg').classList.remove('hidden');
-        document.getElementById('reg-back-btn').classList.remove('hidden');
+        const sBtn = document.getElementById('save-profile'); if(sBtn) sBtn.classList.add('hidden');
+        const lMsg = document.getElementById('reg-locked-msg'); if(lMsg) lMsg.classList.remove('hidden');
+        const bBtn = document.getElementById('reg-back-btn'); if(bBtn) bBtn.classList.remove('hidden');
         document.querySelectorAll('#reg-screen input, #reg-screen select').forEach(el => el.disabled = true);
     }
 
-    // === ЛОГИКА ВЫБОРА ВОПРОСОВ (Matrix Sliding) ===
+    function unlockProfileForm() {
+        const sBtn = document.getElementById('save-profile'); if(sBtn) sBtn.classList.remove('hidden');
+        document.querySelectorAll('#reg-screen input, #reg-screen select').forEach(el => el.disabled = false);
+    }
+
+    // === МАТРИЧНЫЙ АЛГОРИТМ 15 ВОПРОСОВ ===
     async function handleStartClick() {
         const btn = document.getElementById('main-action-btn'); btn.innerHTML = t('loading');
         const { data: allQ } = await supabaseClient.from('questions').select('*').eq('tour_id', currentTourId).eq('language', currentLang);
-        if (!allQ || allQ.length === 0) { alert("Savollar yo'q"); updateMainButton('start', formatTourTitle(currentTourTitle)); return; }
+        if (!allQ || allQ.length === 0) { alert("Savollar topilmadi."); updateMainButton('start', formatTourTitle(currentTourTitle)); return; }
 
         const pick = (s, d) => {
             const pool = allQ.filter(q => (q.subject || '').toLowerCase().includes(s) && q.difficulty === d);
@@ -200,10 +203,10 @@ document.addEventListener('DOMContentLoaded', function() {
         subs.forEach(s => { ticket.push(pick(s, diffs[idx++])); ticket.push(pick(s, diffs[idx++])); });
         
         questions = ticket.filter(q => q).sort(() => 0.5 - Math.random());
-        const secs = questions.reduce((a, q) => a + (q.time_limit_seconds || 60), 0);
+        const totalSecs = questions.reduce((a, q) => a + (q.time_limit_seconds || 60), 0);
         
         document.getElementById('warn-q-val').textContent = questions.length + ' ' + t('questions');
-        document.getElementById('warn-time-val').textContent = Math.ceil(secs/60) + ' ' + t('minutes');
+        document.getElementById('warn-time-val').textContent = Math.ceil(totalSecs/60) + ' ' + t('minutes');
         document.getElementById('warning-modal').classList.remove('hidden');
         updateMainButton('start', formatTourTitle(currentTourTitle));
     }
@@ -217,50 +220,39 @@ document.addEventListener('DOMContentLoaded', function() {
         else { b.innerHTML = `<i class="fa-solid fa-play"></i> ${title || t('start_tour_btn')}`; b.onclick = handleStartClick; }
     }
 
-    // === ЛИДЕРБОРД (УМНЫЙ ДИЗАЙН) ===
-    window.setLeaderboardFilter = (f) => {
-        currentLbFilter = f;
-        document.querySelectorAll('.lb-segment').forEach(el => el.classList.remove('active'));
-        document.getElementById(`filter-${f}`).classList.add('active');
-        loadLeaderboard();
-    }
-
     async function loadLeaderboard() {
         const listEl = document.getElementById('lb-list');
         listEl.innerHTML = `<p style="text-align:center; padding:20px; color:#999;">${t('loading')}</p>`;
-        
-        let query = supabaseClient.from('tour_progress').select('user_id, score').eq('tour_id', currentTourId).order('score', { ascending: false }).limit(100);
-        const { data: scores } = await query;
+        const { data: scores } = await supabaseClient.from('tour_progress').select('user_id, score').eq('tour_id', currentTourId).order('score', { ascending: false }).limit(100);
         if (!scores) return;
-
         const { data: users } = await supabaseClient.from('users').select('id, full_name, region, district, school, class').in('id', scores.map(s => s.user_id));
-        
         listEl.innerHTML = "";
         scores.forEach((s, idx) => {
-            const u = users.find(x => x.id === s.user_id);
-            if (!u) return;
-            
-            // Логика Фамилия Имя (Верхняя строка)
-            const nameParts = (u.full_name || "Ishtirokchi").split(' ');
-            const displayName = nameParts.slice(0, 2).join(' ');
-
-            // Логика Локация (Нижняя строка)
-            const shortReg = (u.region || "").replace(" viloyati", "").replace(" shahri", "");
-            const shortDist = (u.district || "").replace(" tumani", "");
-            const meta = `📍 ${shortReg}, ${shortDist} • 🏫 №${u.school}`;
-
+            const u = users.find(x => x.id === s.user_id); if (!u) return;
+            const displayName = (u.full_name || "Ishtirokchi").split(' ').slice(0, 2).join(' ');
+            const meta = `📍 ${(u.region||'').replace(' viloyati','')}, ${(u.district||'').replace(' tumani','')} • 🏫 №${u.school}`;
             listEl.insertAdjacentHTML('beforeend', `
                 <div class="leader-card" style="${u.id === internalDbId ? 'border:1px solid var(--primary); background:#F0F8FF' : ''}">
                     <div class="l-rank">${idx+1}</div>
-                    <div class="l-info">
-                        <span class="l-name" style="font-weight:700; display:block;">${displayName}</span>
-                        <span class="l-sub" style="font-size:11px; color:#8E8E93;">${meta}</span>
-                    </div>
+                    <div class="l-info"><span class="l-name" style="font-weight:700; display:block;">${displayName}</span><span class="l-sub" style="font-size:11px; color:#8E8E93;">${meta}</span></div>
                     <div class="l-score" style="font-weight:800; color:var(--primary);">${s.score}</div>
                 </div>
             `);
         });
     }
+
+    // === ИНИЦИАЛИЗАЦИЯ TELEGRAM ===
+    if (window.Telegram && Telegram.WebApp) {
+        Telegram.WebApp.ready(); Telegram.WebApp.expand();
+        const u = Telegram.WebApp.initDataUnsafe.user;
+        if (u) { 
+            telegramUserId = u.id; telegramData.firstName = u.first_name; 
+            const rUn = document.getElementById('reg-user-name'); if(rUn) rUn.textContent = u.first_name + ' ' + (u.last_name || '');
+            const hUn = document.getElementById('home-user-name'); if(hUn) hUn.textContent = u.first_name;
+        }
+    }
+
+    checkProfileAndTour();
 
     // === СОБЫТИЯ ===
     document.getElementById('save-profile').onclick = async () => {
@@ -269,40 +261,26 @@ document.addEventListener('DOMContentLoaded', function() {
         const rg = document.getElementById('region-select').value;
         const ds = document.getElementById('district-select').value;
         const sc = document.getElementById('school-input').value.trim();
-        
         if (!fn || !cl || !rg || !ds || !sc) { alert(t('alert_fill')); return; }
-        
-        const { data, error } = await supabaseClient.from('users').update({ 
-            full_name: fn, class: cl, region: rg, district: ds, school: sc, fixed_language: currentLang 
-        }).eq('id', internalDbId).select().single();
-        
+        const { error } = await supabaseClient.from('users').update({ full_name: fn, class: cl, region: rg, district: ds, school: sc, fixed_language: currentLang }).eq('id', internalDbId);
         if (!error) { isProfileLocked = true; checkProfileAndTour(); }
     };
 
     function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); window.scrollTo(0,0); }
-    
-    // Инициализация Telegram
-    if (window.Telegram && Telegram.WebApp) {
-        Telegram.WebApp.ready(); Telegram.WebApp.expand();
-        const u = Telegram.WebApp.initDataUnsafe.user;
-        if (u) { telegramUserId = u.id; telegramData.firstName = u.first_name; }
-    }
-    
-    checkProfileAndTour();
     document.getElementById('open-cabinet-btn').onclick = () => { showScreen('cabinet-screen'); loadLeaderboard(); };
     document.getElementById('close-cabinet').onclick = () => showScreen('home-screen');
     document.getElementById('leaderboard-btn').onclick = () => { showScreen('leaderboard-screen'); setLeaderboardFilter('republic'); };
     document.getElementById('lb-back').onclick = () => showScreen('home-screen');
-    document.getElementById('confirm-start').onclick = () => { document.getElementById('warning-modal').classList.add('hidden'); showScreen('quiz-screen'); startTimer(questions.reduce((a,q)=>a+(q.time_limit_seconds||60),0)); showQuestion(); };
+    document.getElementById('confirm-start').onclick = () => { document.getElementById('warning-modal').classList.add('hidden'); showScreen('quiz-screen'); currentQuestionIndex = 0; correctCount = 0; startTimer(questions.reduce((a,q)=>a+(q.time_limit_seconds||60),0)); showQuestion(); };
     
-    function startTimer(s) { if (timerInterval) clearInterval(timerInterval); timerInterval = setInterval(() => { document.getElementById('timer').textContent = `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`; if (s-- <= 0) { clearInterval(timerInterval); finishTour(); } }, 1000); }
+    function startTimer(s) { if (timerInterval) clearInterval(timerInterval); timerInterval = setInterval(() => { const timer = document.getElementById('timer'); if(timer) timer.textContent = `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`; if (s-- <= 0) { clearInterval(timerInterval); finishTour(); } }, 1000); }
     
     function showQuestion() {
         const q = questions[currentQuestionIndex];
-        document.getElementById('question-number').textContent = currentQuestionIndex + 1;
-        document.getElementById('total-q-count').textContent = questions.length;
-        document.getElementById('subject-tag').textContent = q.subject || 'Q';
-        document.getElementById('question-text').innerHTML = q.question_text;
+        const qn = document.getElementById('question-number'); if(qn) qn.textContent = currentQuestionIndex + 1;
+        const tq = document.getElementById('total-q-count'); if(tq) tq.textContent = questions.length;
+        const st = document.getElementById('subject-tag'); if(st) st.textContent = q.subject || 'Q';
+        const qt = document.getElementById('question-text'); if(qt) qt.innerHTML = q.question_text;
         const cont = document.getElementById('options-container'); cont.innerHTML = "";
         const next = document.getElementById('next-button'); next.disabled = true;
         const opts = (q.options_text || "").split('\n').filter(o => o.trim());
@@ -312,7 +290,7 @@ document.addEventListener('DOMContentLoaded', function() {
             b.onclick = () => { document.querySelectorAll('.option-card').forEach(x=>x.classList.remove('selected')); b.classList.add('selected'); selectedAnswer = o.trim(); next.disabled = false; };
             cont.appendChild(b);
         });
-        renderLaTeX();
+        if(typeof renderMathInElement === 'function') renderMathInElement(document.body);
     }
 
     document.getElementById('next-button').onclick = async () => {
@@ -327,8 +305,8 @@ document.addEventListener('DOMContentLoaded', function() {
         clearInterval(timerInterval);
         await supabaseClient.from('tour_progress').upsert({ user_id: internalDbId, tour_id: currentTourId, score: correctCount }, { onConflict: 'user_id, tour_id' });
         showScreen('result-screen');
-        document.getElementById('res-correct').textContent = correctCount;
-        document.getElementById('result-percent').textContent = Math.round((correctCount/15)*100) + '%';
+        const rc = document.getElementById('res-correct'); if(rc) rc.textContent = correctCount;
+        const rp = document.getElementById('result-percent'); if(rp) rp.textContent = Math.round((correctCount/15)*100) + '%';
         checkProfileAndTour();
     }
     
