@@ -12,7 +12,7 @@
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=73.5">
+    <link rel="stylesheet" href="style.css?v=73.6">
 </head>
 <body>
 
@@ -87,7 +87,7 @@
 
             <div class="card checkbox-card">
                 <input type="checkbox" id="research-consent" checked>
-                <div class="checkbox-text"><strong data-i18n="consent_title">Ma'lumotlarni qayta ishlashga rozilik</strong><span data-i18n="consent_desc">Reyting uchun.</span></div>
+                <div class="checkbox-text"><strong data-i18n="consent_title">Tasdiqlash</strong><span data-i18n="consent_desc">Ma'lumotlar to'g'riligini tasdiqlayman.</span></div>
             </div>
         </div>
         
@@ -194,7 +194,7 @@
             </div>
 
             <div class="footer-info">
-                <p>Smart Olympiad v73.5</p>
+                <p>Smart Olympiad v73.6</p>
                 <button class="btn-danger-box" id="delete-account-btn" style="margin-top: 15px;" data-i18n="btn_delete_account">Hisobni o'chirish</button>
             </div>
         </div>
@@ -347,21 +347,12 @@
                     </div>
                 </div>
                 <h2 data-i18n="res_finished">Tur yakunlandi!</h2>
-                <p style="color: #8E8E93; margin-top: 5px;" data-i18n="res_saved">Natijangiz saqlandi</p>
             </div>
 
             <div class="stats-row-strict">
                 <div class="col-left"><span class="lbl" data-i18n="stat_tour">TUR</span><span class="val" id="res-tour-title">1-Tur</span></div>
                 <div class="col-center"><span class="lbl" data-i18n="stat_total">JAMI</span><span class="val">15</span></div>
                 <div class="col-right"><span class="lbl" data-i18n="stat_correct">TO'G'RI</span><span class="val green-text" id="res-correct">0</span></div>
-            </div>
-
-            <div class="section-header"><h3 data-i18n="review_title">Xatolar ustida ishlash</h3></div>
-            <div class="card error-review-card">
-                <div class="review-item">
-                    <div class="review-header"><i class="fa-solid fa-circle-check" style="color:var(--success)"></i> <span data-i18n="data_saved">Ma'lumotlar saqlandi</span></div>
-                    <p style="font-size:13px; margin-top:5px; color:#666;" data-i18n="review_desc">Batafsil tahlil natijalar e'lon qilingandan so'ng mavjud bo'ladi.</p>
-                </div>
             </div>
         </div>
 
@@ -426,27 +417,18 @@
     <div class="modal hidden" id="certs-modal">
         <div class="modal-card">
             <div class="modal-header-custom">
-                <h3 data-i18n="my_certs">Mening sertifikatlarim</h3>
+                <h3 data-i18n="menu_certs">Sertifikatlar</h3>
                 <div class="close-icon-btn" onclick="document.getElementById('certs-modal').classList.add('hidden')"><i class="fa-solid fa-times"></i></div>
             </div>
-            <div style="padding: 10px 0; text-align: left;" id="certs-list-container"></div>
+            <div id="certs-list-container"></div>
         </div>
     </div>
 
     <div class="modal hidden" id="tour-info-modal">
         <div class="modal-card">
             <h2 data-i18n="tour_passed_title">Tur yakunlangan!</h2>
-            <p data-i18n="tour_passed_msg">Siz ushbu bosqich javoblarini topshirgansiz.</p>
+            <p data-i18n="tour_passed_msg">Natijangiz saqlandi.</p>
             <button class="btn-primary" onclick="document.getElementById('tour-info-modal').classList.add('hidden')" data-i18n="btn_understood">Tushunarli</button>
-        </div>
-    </div>
-
-    <div class="modal hidden" id="delete-confirm-modal">
-        <div class="modal-card">
-            <h2 data-i18n="del_title">Hisobni o'chirish?</h2>
-            <p data-i18n="del_msg">Barcha natijalaringiz o'chib ketadi.</p>
-            <button id="confirm-delete-btn" class="btn-danger-box" data-i18n="btn_delete_confirm">O'chirish</button>
-            <button class="btn-text" onclick="document.getElementById('delete-confirm-modal').classList.add('hidden')" data-i18n="btn_cancel">Bekor qilish</button>
         </div>
     </div>
 
@@ -474,6 +456,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=73.5"></script>
+    <script src="script.js?v=73.6"></script>
 </body>
 </html>
