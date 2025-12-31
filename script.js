@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v72.2 (Fixed: Language Priority from DB)');
+    console.log('App Started: v72.2 (Fixed: LaTeX Rendering & Language Priority)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -30,6 +30,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI';
     const { createClient } = supabase;
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+
+    // === ФУНКЦИЯ РЕНДЕРИНГА LATEX ===
+    function renderLaTeX() {
+        if (window.renderMathInElement) {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: "$$", right: "$$", display: true},
+                    {left: "$", right: "$", display: false}
+                ],
+                throwOnError : false
+            });
+        }
+    }
 
     // === СЛОВАРЬ ПЕРЕВОДОВ ===
     const translations = {
@@ -1323,6 +1336,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         container.appendChild(textarea);
       }
+
+      // После отрисовки вопроса и вариантов — запускаем KaTeX
+      renderLaTeX();
     }
     
     safeAddListener('next-button', 'click', async () => {
