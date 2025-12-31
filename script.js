@@ -41,8 +41,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 throwOnError : false
             });
         }
-    }
-    
+    } 
+
     // === ФУНКЦИЯ ПЕРЕВОДА НАЗВАНИЯ ТУРА ===
     function formatTourTitle(raw) {
         if (!raw) return t('start_tour_btn');
@@ -1078,17 +1078,20 @@ document.addEventListener('DOMContentLoaded', function() {
               fixed_language: langToSave 
           };
           // ... остальной код (if telegramData.photoUrl и т.д.) оставляйте как есть
+          // ... updateData obyekti yuqorisidagi qism ...
+          
           if (telegramData.photoUrl) updateData.avatar_url = telegramData.photoUrl;
           
-          let fullName = telegramData.firstName + (telegramData.lastName ? ' ' + telegramData.lastName : '');
-          // 1. Telegramdan kelgan ismni 'name' ustuniga saqlaymiz (agar u mavjud bo'lsa)
-          let tgName = telegramData.firstName + (telegramData.lastName ? ' ' + telegramData.lastName : '');
-          if (tgName.trim()) updateData.name = tgName.trim();
+          // 1. Telegramdan kelgan ismni 'name' ustuniga saqlaymiz
+          let tgName = (telegramData.firstName + (telegramData.lastName ? ' ' + telegramData.lastName : '')).trim();
+          if (tgName) updateData.name = tgName;
           
-          // 2. Foydalanuvchi qo'lda yozgan F.I.O. ni 'full_name' ustuniga saqlaymiz
+          // 2. Foydalanuvchi qo'lda yozgan F.I.O. ni 'full_name' ustuniga saqlaymiz 
+          // (fullName tepada inputdan const qilib olingan, shuni ishlatamiz)
           updateData.full_name = fullName;
-
+          
           const { data, error } = await supabaseClient.from('users').upsert(updateData, { onConflict: 'telegram_id' }).select().single(); 
+          // ... qolgan qismi ... 
           if(error) throw error;
           
           internalDbId = data.id;
@@ -1487,7 +1490,4 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>`;
         document.getElementById('certs-modal').classList.remove('hidden');
         checkProfileAndTour();
-});
-
-
-
+}); // Конец DOMContentLoaded
