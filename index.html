@@ -7,12 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
-
-    <link rel="stylesheet" href="style.css?v=73.6">
+    <link rel="stylesheet" href="style.css?v=72">
 </head>
 <body>
 
@@ -47,14 +42,6 @@
                     <h3 id="reg-user-name">...</h3>
                 </div>
             </div>
-
-            <div class="form-group">
-                <label data-i18n="label_full_name">F.I.O. (Sertifikat uchun)</label>
-                <div class="input-wrapper">
-                    <input type="text" id="full-name-input" placeholder="Familiya Ism Sharif">
-                    <i class="fa-solid fa-user icon-right"></i>
-                </div>
-            </div>
             
             <div class="form-group">
                 <label data-i18n="label_class">Sinf</label>
@@ -86,8 +73,8 @@
             </div>
 
             <div class="card checkbox-card">
-                <input type="checkbox" id="research-consent" checked>
-                <div class="checkbox-text"><strong data-i18n="consent_title">Tasdiqlash</strong><span data-i18n="consent_desc">Ma'lumotlar to'g'riligini tasdiqlayman.</span></div>
+                <input type="checkbox" id="research-consent">
+                <div class="checkbox-text"><strong data-i18n="consent_title">Ma'lumotlarni qayta ishlashga rozilik</strong><span data-i18n="consent_desc">Reyting uchun.</span></div>
             </div>
         </div>
         
@@ -194,7 +181,7 @@
             </div>
 
             <div class="footer-info">
-                <p>Smart Olympiad v73.6</p>
+                <p>Smart Olympiad v72.0</p>
                 <button class="btn-danger-box" id="delete-account-btn" style="margin-top: 15px;" data-i18n="btn_delete_account">Hisobni o'chirish</button>
             </div>
         </div>
@@ -347,16 +334,26 @@
                     </div>
                 </div>
                 <h2 data-i18n="res_finished">Tur yakunlandi!</h2>
+                <p style="color: #8E8E93; margin-top: 5px;" data-i18n="res_saved">Natijangiz saqlandi</p>
             </div>
 
             <div class="stats-row-strict">
                 <div class="col-left"><span class="lbl" data-i18n="stat_tour">TUR</span><span class="val" id="res-tour-title">1-Tur</span></div>
-                <div class="col-center"><span class="lbl" data-i18n="stat_total">JAMI</span><span class="val">15</span></div>
+                <div class="col-center"><span class="lbl" data-i18n="stat_total">JAMI</span><span class="val" id="res-total">15</span></div>
                 <div class="col-right"><span class="lbl" data-i18n="stat_correct">TO'G'RI</span><span class="val green-text" id="res-correct">0</span></div>
+            </div>
+
+            <div class="section-header"><h3 data-i18n="review_title">Xatolar ustida ishlash</h3></div>
+            <div class="card error-review-card">
+                <div class="review-item">
+                    <div class="review-header"><i class="fa-solid fa-circle-check" style="color:var(--success)"></i> <span data-i18n="data_saved">Ma'lumotlar saqlandi</span></div>
+                    <p style="font-size:13px; margin-top:5px; color:#666;" data-i18n="review_desc">Batafsil tahlil natijalar e'lon qilingandan so'ng mavjud bo'ladi.</p>
+                </div>
             </div>
         </div>
 
         <div class="bottom-fixed column">
+            <button class="btn-secondary" id="download-certificate-res-btn"><i class="fa-solid fa-download"></i> <span data-i18n="btn_download_cert">Sertifikatni yuklash</span></button>
             <button class="btn-primary" id="back-home" data-i18n="btn_to_main">Bosh sahifaga</button>
         </div>
     </div>
@@ -376,13 +373,22 @@
             </div>
         </div>
 
-        <div id="lb-list" class="lb-list-scroll"></div>
+        <div class="lb-podium-container">
+            <div id="lb-podium" class="top-three"></div>
+        </div>
+
+        <div class="container" style="padding:0;">
+            <div class="list-header" style="padding: 0 16px; margin-bottom: 10px;">
+                <span data-i18n="lb_participant">ISHTIROKCHI</span><span data-i18n="lb_score">BALL</span>
+            </div>
+            <div id="lb-list" class="lb-list-scroll"></div>
+        </div>
 
         <div id="lb-user-sticky" class="lb-sticky-footer hidden">
             <div class="my-rank-badge" id="my-rank-val">#--</div>
             <div class="my-info">
                 <span class="my-name" data-i18n="you">Siz</span>
-                <span class="my-sub" id="my-class-val">--</span>
+                <span class="my-sub" id="my-class-val">-- sinf</span>
             </div>
             <div class="my-stats">
                 <div class="stat-group">
@@ -395,52 +401,107 @@
 
     <div class="modal hidden" id="warning-modal">
         <div class="modal-card">
-            <div class="modal-icon-big"><i class="fa-solid fa-stopwatch"></i></div>
+            <div class="modal-icon-big"><i class="fa-solid fa-stopwatch"></i><div class="alert-badge">!</div></div>
             <h2 data-i18n="warn_title">Diqqat</h2>
             <p><span data-i18n="warn_msg_1">Sizda</span> <strong id="warn-q-val">...</strong> <span data-i18n="warn_msg_2">uchun</span> <strong id="warn-time-val">...</strong> <span data-i18n="warn_msg_3">vaqt bor.</span></p>
-            <button id="confirm-start" class="btn-primary" data-i18n="btn_start">Boshlash</button>
+            <div class="alert-box" style="flex-direction: column; align-items: flex-start;">
+                <div style="display:flex; gap:10px; margin-bottom:5px;">
+                    <i class="fa-solid fa-layer-group" style="color:var(--primary);"></i>
+                    <p style="font-weight:600;" data-i18n="warn_hint">Savollar oddiydan qiyinga qarab boradi.</p>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <p data-i18n="warn_hint_2">Orqaga qaytish imkonsiz!</p>
+                </div>
+            </div>
+            <button id="confirm-start" class="btn-primary"><span data-i18n="btn_start">Boshlash</span> <i class="fa-solid fa-arrow-right"></i></button>
             <button id="cancel-start" class="btn-text" data-i18n="btn_cancel">Bekor qilish</button>
         </div>
     </div>
-
+    
     <div class="modal hidden" id="subject-details-modal">
         <div class="modal-card">
             <div class="modal-header-custom">
                 <h3 id="sd-title">...</h3>
-                <div class="close-icon-btn" onclick="document.getElementById('subject-details-modal').classList.add('hidden')"><i class="fa-solid fa-times"></i></div>
+                <div class="close-icon-btn" onclick="document.getElementById('subject-details-modal').classList.add('hidden')">
+                    <i class="fa-solid fa-times"></i>
+                </div>
             </div>
-            <div id="sd-content"></div>
-            <button class="btn-primary" onclick="document.getElementById('subject-details-modal').classList.add('hidden')" data-i18n="btn_understood">OK</button>
+            <div id="sd-content" style="padding-bottom: 10px;"></div>
+            <button class="btn-primary" onclick="document.getElementById('subject-details-modal').classList.add('hidden')" data-i18n="btn_close">Yopish</button>
         </div>
     </div>
 
     <div class="modal hidden" id="certs-modal">
         <div class="modal-card">
             <div class="modal-header-custom">
-                <h3 data-i18n="menu_certs">Sertifikatlar</h3>
-                <div class="close-icon-btn" onclick="document.getElementById('certs-modal').classList.add('hidden')"><i class="fa-solid fa-times"></i></div>
+                <h3 data-i18n="my_certs">Mening sertifikatlarim</h3>
+                <div class="close-icon-btn" onclick="document.getElementById('certs-modal').classList.add('hidden')">
+                    <i class="fa-solid fa-times"></i>
+                </div>
             </div>
-            <div id="certs-list-container"></div>
+            <div style="padding: 10px 0; text-align: left;" id="certs-list-container"><p data-i18n="loading">Yuklanmoqda...</p></div>
         </div>
     </div>
 
     <div class="modal hidden" id="tour-info-modal">
         <div class="modal-card">
+            <div class="modal-icon-big" style="color:var(--success); background:#e8f8ec;"><i class="fa-solid fa-calendar-check"></i></div>
             <h2 data-i18n="tour_passed_title">Tur yakunlangan!</h2>
-            <p data-i18n="tour_passed_msg">Natijangiz saqlandi.</p>
-            <button class="btn-primary" onclick="document.getElementById('tour-info-modal').classList.add('hidden')" data-i18n="btn_understood">Tushunarli</button>
+            <p style="color:#666; font-size:14px; margin-bottom:15px;" data-i18n="tour_passed_msg">Siz ushbu bosqich javoblarini topshirgansiz. Natijalar Reyting bo'limida.</p>
+            <button class="btn-primary" onclick="openExternalLink('https://t.me/your_channel')" style="margin-top:15px;">
+                <i class="fa-brands fa-telegram"></i> <span data-i18n="btn_channel">Kanalga o'tish</span>
+            </button>
+            <button class="btn-text-simple" onclick="document.getElementById('tour-info-modal').classList.add('hidden')" data-i18n="btn_close">Yopish</button>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="delete-confirm-modal">
+        <div class="modal-card">
+            <div class="modal-icon-big" style="background:#FFF2F2; color:var(--danger);"><i class="fa-solid fa-trash-can"></i></div>
+            <h2 data-i18n="del_title">Hisobni o'chirish?</h2>
+            <p data-i18n="del_msg">Barcha natijalaringiz va reytingdagi o'rningiz o'chib ketadi. Qayta tiklab bo'lmaydi.</p>
+            <button id="confirm-delete-btn" class="btn-danger-box" style="margin-bottom:10px; border:none; background:var(--danger); color:white;" data-i18n="btn_delete_confirm">O'chirish</button>
+            <button class="btn-text" onclick="document.getElementById('delete-confirm-modal').classList.add('hidden')" data-i18n="btn_cancel">Bekor qilish</button>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="review-lock-modal">
+        <div class="modal-card">
+            <div class="modal-icon-big" style="background:#FFF2F2; color:var(--danger);"><i class="fa-solid fa-lock"></i></div>
+            <h2 data-i18n="lock_review_title">Tahlil yopiq</h2>
+            <p style="color:#666; font-size:14px; margin-bottom:15px;" data-i18n="lock_review_msg">Adolatli raqobat uchun xatolar tahlili olimpiada yakunlangandan so'ng ochiladi.</p>
+            <div class="alert-box">
+                <i class="fa-regular fa-calendar"></i>
+                <div style="text-align:left;">
+                    <strong><span data-i18n="btn_close">Yopish</span>: <span id="review-unlock-date">...</span></strong>
+                </div>
+            </div>
+            <button class="btn-primary" onclick="document.getElementById('review-lock-modal').classList.add('hidden')" data-i18n="btn_understood">Tushunarli</button>
         </div>
     </div>
 
     <div class="modal hidden" id="about-modal">
-        <div class="modal-card full-height">
+        <div class="modal-card full-height" style="padding: 0; overflow: hidden; display:flex; flex-direction:column;">
             <div class="about-hero">
                 <div class="close-btn-white" id="close-about"><i class="fa-solid fa-times"></i></div>
                 <div class="logo-icon big"><i class="fa-solid fa-graduation-cap"></i></div>
                 <h1>Smart Olympiad</h1>
+                <div class="version-tag">Version 72.0</div>
             </div>
-            <div class="modal-body-scroll" style="padding: 20px; text-align: left; flex:1; overflow-y:auto;">
-                <p data-i18n="about_text">...</p>
+            <div class="modal-body-scroll" style="padding: 24px; text-align: left; flex:1; overflow-y:auto;">
+                <h3 style="margin-bottom:12px;" data-i18n="about_platform">Platforma haqida</h3>
+                <p style="font-size:14px; line-height:1.5; color:#444; margin-bottom:20px;" data-i18n="about_text">...</p>
+                <h3 style="margin-bottom:12px;" data-i18n="about_features">Xususiyatlar</h3>
+                <div class="about-features">
+                    <div class="feat-row"><i class="fa-solid fa-check-circle" style="color:var(--success)"></i> <span data-i18n="feat_1">...</span></div>
+                    <div class="feat-row"><i class="fa-solid fa-check-circle" style="color:var(--success)"></i> <span data-i18n="feat_2">...</span></div>
+                    <div class="feat-row"><i class="fa-solid fa-check-circle" style="color:var(--success)"></i> <span data-i18n="feat_3">...</span></div>
+                    <div class="feat-row"><i class="fa-solid fa-check-circle" style="color:var(--success)"></i> <span data-i18n="feat_4">...</span></div>
+                </div>
+                <div style="margin-top:30px; text-align:center;">
+                    <p style="font-size:12px; color:#999;">Designed with ❤️ for education</p>
+                </div>
             </div>
         </div>
     </div>
@@ -451,11 +512,18 @@
                 <i class="fa-solid fa-eye-slash"></i>
             </div>
             <h2 style="color:var(--danger);" data-i18n="cheat_title">Diqqat!</h2>
-            <p data-i18n="cheat_msg">Ilovadan chiqish taqiqlanadi!</p>
+            <p style="color:#000; font-weight:600; margin-bottom:10px;" data-i18n="cheat_msg">
+                Ilovadan chiqish taqiqlanadi! Agar yana qaytarilsa, testingiz bekor qilinadi.
+            </p>
             <button class="btn-primary" onclick="document.getElementById('cheat-warning-modal').classList.add('hidden')" data-i18n="btn_understood">Tushunarli</button>
         </div>
     </div>
 
-    <script src="script.js?v=73.6"></script>
+    <script src="script.js?v=72.2"></script>
 </body>
 </html>
+
+
+
+
+
