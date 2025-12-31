@@ -312,3 +312,44 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .stat-list-info p { font-size: 11px; color: #999; }
 .stat-list-value { font-weight: 700; font-size: 14px; }
 
+/* Лидерборд: двухстрочный дизайн и защита от длинных имен */
+.l-info {
+    flex: 1;
+    margin-left: 12px;
+    overflow: hidden; /* Обрезает текст, если он шире колонки */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.l-name {
+    font-weight: 700;
+    font-size: 14px;
+    color: #000;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Добавляет "..." если имя слишком длинное */
+}
+
+.l-sub {
+    font-size: 11px;
+    color: #8E8E93;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.l-score {
+    font-weight: 800;
+    color: var(--primary);
+    font-size: 16px;
+    min-width: 40px;
+    text-align: right;
+}
+
+/* Иконки в подстрочнике */
+.l-sub i {
+    font-size: 10px;
+    margin-right: 2px;
+}
