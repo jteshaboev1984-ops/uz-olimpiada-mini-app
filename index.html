@@ -12,7 +12,7 @@
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=73.1">
+    <link rel="stylesheet" href="style.css?v=73.4">
 </head>
 <body>
 
@@ -21,9 +21,10 @@
             <div class="user-avatar-small"><i class="fa-solid fa-user-pen"></i></div>
             <h1 data-i18n="reg_title">Ro'yxatdan o'tish</h1>
             <p id="reg-user-name" style="color:var(--primary); font-weight:600; margin-top:5px;">...</p>
+            <p data-i18n="reg_subtitle">Ma'lumotlaringizni kiriting</p>
         </div>
         <div class="container pb-large">
-            <div class="card" style="border: 1px solid var(--primary); margin-bottom:15px;">
+            <div class="card" style="border: 1px solid var(--primary);">
                 <div class="form-group" style="margin-bottom:0;">
                     <label style="color:var(--primary); font-weight:700;" data-i18n="menu_lang">Til / Язык</label>
                     <div class="input-wrapper">
@@ -34,6 +35,7 @@
                         </select>
                         <i class="fa-solid fa-chevron-down arrow-icon"></i>
                     </div>
+                    <p style="font-size:11px; color:var(--text-sec); margin-top:8px; line-height:1.4;" data-i18n="lang_warning_reg">...</p>
                 </div>
             </div>
 
@@ -44,7 +46,7 @@
                     <i class="fa-solid fa-user icon-right"></i>
                 </div>
             </div>
-
+            
             <div class="form-group">
                 <label data-i18n="label_class">Sinf</label>
                 <div class="input-wrapper">
@@ -76,16 +78,16 @@
 
             <div class="card checkbox-card">
                 <input type="checkbox" id="research-consent" checked>
-                <div class="checkbox-text"><strong data-i18n="consent_title">Ma'lumotlarni tasdiqlash</strong><span data-i18n="consent_desc">Sertifikat va reyting uchun.</span></div>
+                <div class="checkbox-text"><strong data-i18n="consent_title">Ma'lumotlarni tasdiqlash</strong><span data-i18n="consent_desc">Reyting va sertifikat uchun.</span></div>
             </div>
         </div>
         
         <div class="bottom-fixed column">
             <button id="save-profile" class="btn-primary" data-i18n="btn_save">Saqlash</button>
             <div id="reg-locked-msg" class="locked-status-btn hidden">
-                <i class="fa-solid fa-lock"></i> <span data-i18n="profile_locked_msg">Ma'lumotlar tasdiqlangan</span>
+                <i class="fa-solid fa-lock"></i> <span data-i18n="profile_locked_msg">O'zgartirish vaqtincha yopiq</span>
             </div>
-            <button id="reg-back-btn" class="btn-secondary hidden" data-i18n="btn_back">Orqaga</button>
+            <button id="reg-back-btn" class="btn-secondary hidden" data-i18n="btn_cancel">Bekor qilish</button>
         </div>
     </div>
 
@@ -129,7 +131,7 @@
                     <div class="set-icon blue"><i class="fa-regular fa-id-card"></i></div>
                     <div class="set-text">
                         <h4 data-i18n="menu_my_data">Ma'lumotlarim</h4>
-                        <p data-i18n="menu_my_data_desc">Ism, sinf, maktab</p>
+                        <p data-i18n="menu_my_data_desc">Sinf, maktab, hudud</p>
                     </div>
                     <i class="fa-solid fa-chevron-right arrow"></i>
                 </div>
@@ -166,10 +168,19 @@
                         <p data-i18n="menu_mistakes_desc">Javoblarni ko'rish</p>
                     </div>
                 </div>
+
+                <div class="settings-item" onclick="openExternalLink('https://t.me/your_admin')">
+                    <div class="set-icon gray"><i class="fa-regular fa-circle-question"></i></div>
+                    <div class="set-text">
+                        <h4 data-i18n="menu_support">Yordam</h4>
+                        <p data-i18n="menu_support_desc">Admin bilan aloqa</p>
+                    </div>
+                    <i class="fa-solid fa-chevron-right arrow"></i>
+                </div>
             </div>
 
             <div class="footer-info">
-                <p>Smart Olympiad v73.1</p>
+                <p>Smart Olympiad v73.4</p>
                 <button class="btn-danger-box" id="delete-account-btn" style="margin-top: 15px;" data-i18n="btn_delete_account">Hisobni o'chirish</button>
             </div>
         </div>
@@ -199,20 +210,67 @@
             <div class="section-header"><h2 id="subjects-title" data-i18n="subjects_title">Fanlar</h2></div>
 
             <div class="subjects-grid">
-                <div class="subject-card">
+                <div class="subject-card" onclick="openSubjectStats('math')">
                     <span class="percent-badge" id="math-percent">0%</span>
                     <div class="subject-top"><div class="sub-icon blue"><i class="fa-solid fa-calculator"></i></div></div>
                     <h3 data-i18n="subj_math">Matematika</h3><div class="progress-line"><div id="math-bar" style="width: 0%"></div></div>
                 </div>
-                <div class="subject-card">
+                <div class="subject-card" onclick="openSubjectStats('eng')">
                     <span class="percent-badge" id="eng-percent">0%</span>
                     <div class="subject-top"><div class="sub-icon violet"><i class="fa-solid fa-globe"></i></div></div>
                     <h3 data-i18n="subj_eng">Ingliz tili</h3><div class="progress-line"><div id="eng-bar" style="width: 0%"></div></div>
                 </div>
+                 <div class="subject-card" onclick="openSubjectStats('phys')">
+                    <span class="percent-badge" id="phys-percent">0%</span>
+                    <div class="subject-top"><div class="sub-icon orange"><i class="fa-solid fa-bolt"></i></div></div>
+                    <h3 data-i18n="subj_phys">Fizika</h3><div class="progress-line"><div id="phys-bar" style="width: 0%"></div></div>
+                </div>
+                 <div class="subject-card" onclick="openSubjectStats('chem')">
+                    <span class="percent-badge" id="chem-percent">0%</span>
+                    <div class="subject-top"><div class="sub-icon teal"><i class="fa-solid fa-flask"></i></div></div>
+                    <h3 data-i18n="subj_chem">Kimyo</h3><div class="progress-line"><div id="chem-bar" style="width: 0%"></div></div>
+                </div>
+                <div class="subject-card" onclick="openSubjectStats('bio')">
+                    <span class="percent-badge" id="bio-percent">0%</span>
+                    <div class="subject-top"><div class="sub-icon green"><i class="fa-solid fa-leaf"></i></div></div>
+                    <h3 data-i18n="subj_bio">Biologiya</h3><div class="progress-line"><div id="bio-bar" style="width: 0%"></div></div>
+                </div>
+                <div class="subject-card" onclick="openSubjectStats('it')">
+                    <span class="percent-badge" id="it-percent">0%</span>
+                    <div class="subject-top"><div class="sub-icon cyan"><i class="fa-solid fa-laptop-code"></i></div></div>
+                    <h3 data-i18n="subj_it">Informatika</h3><div class="progress-line"><div id="it-bar" style="width: 0%"></div></div>
+                </div>
+                 <div class="subject-card" onclick="openSubjectStats('eco')">
+                    <span class="percent-badge" id="eco-percent">0%</span>
+                    <div class="subject-top"><div class="sub-icon brown"><i class="fa-solid fa-chart-line"></i></div></div>
+                    <h3 data-i18n="subj_eco">Iqtisodiyot</h3><div class="progress-line"><div id="eco-bar" style="width: 0%"></div></div>
+                </div>
+
                 <div id="home-cert-btn" class="subject-card hidden">
-                    <div class="subject-top"><div class="sub-icon gold"><i class="fa-solid fa-award"></i></div></div>
+                    <div class="subject-top">
+                        <div class="sub-icon gold"><i class="fa-solid fa-award"></i></div>
+                    </div>
                     <h3 data-i18n="cert_title">Sertifikat</h3>
                     <div style="font-size: 12px; color: #8E8E93; margin-top: 5px;" data-i18n="cert_desc">PDF yuklab olish</div>
+                </div>
+            </div>
+
+            <div class="section-header" style="margin-top: 30px;"><h2 data-i18n="res_title">Resurslar</h2></div>
+            <div class="resources-list">
+                <div class="resource-card" onclick="openExternalLink('https://youtube.com')">
+                    <div class="res-icon youtube"><i class="fa-brands fa-youtube"></i></div>
+                    <div class="res-info"><h4 data-i18n="res_vid_title">Video darslar</h4><p data-i18n="res_vid_desc">Masalalar yechimi</p></div>
+                    <i class="fa-solid fa-chevron-right arrow"></i>
+                </div>
+                <div class="resource-card" onclick="openExternalLink('https://t.me/your_channel')">
+                    <div class="res-icon telegram"><i class="fa-solid fa-bullhorn"></i></div>
+                    <div class="res-info"><h4 data-i18n="res_ch_title">Kanal</h4><p data-i18n="res_ch_desc">Yangiliklar</p></div>
+                    <i class="fa-solid fa-chevron-right arrow"></i>
+                </div>
+                <div class="resource-card" onclick="openExternalLink('https://t.me/your_group')">
+                    <div class="res-icon group"><i class="fa-solid fa-users"></i></div>
+                    <div class="res-info"><h4 data-i18n="res_grp_title">Ishtirokchilar chati</h4><p data-i18n="res_grp_desc">Muhokama</p></div>
+                    <i class="fa-solid fa-chevron-right arrow"></i>
                 </div>
             </div>
         </div> 
@@ -231,15 +289,18 @@
             <div class="q-counter"><span id="question-number">1</span> / <span id="total-q-count">15</span></div>
         </div>
         <div class="quiz-progress"><div class="fill" id="quiz-progress-fill" style="width: 0%;"></div></div>
+        
         <div class="container quiz-container pb-large">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                 <div class="subject-badge" id="subject-tag">...</div>
                 <div class="time-hint" id="q-time-hint"></div>
             </div>
+
             <div id="q-img-cont" class="quiz-image-container hidden">
                 <div class="img-loader"><i class="fa-solid fa-spinner fa-spin"></i></div>
-                <img id="q-img" src="" alt="Q-Image" class="hidden">
+                <img id="q-img" src="" alt="Question Image" class="hidden">
             </div>
+
             <h2 id="question-text" class="question-title">...</h2>
             <div id="options-container" class="options-list"></div>
         </div>
@@ -251,21 +312,26 @@
     <div class="screen hidden" id="result-screen">
         <div class="header-simple sticky-header">
             <div class="close-icon" id="back-home-x"><i class="fa-solid fa-times"></i></div>
-            <h3 data-i18n="res_screen_title">Natija</h3>
+            <h3 data-i18n="res_screen_title">Tur natijasi</h3>
         </div>
+
         <div class="container result-content pb-large">
             <div class="result-chart-wrapper">
                 <div class="circular-chart" id="result-circle">
-                    <div class="inner-circle"><span class="percent-text" id="result-percent">0%</span></div>
+                    <div class="inner-circle">
+                        <span class="percent-text" id="result-percent">0%</span>
+                    </div>
                 </div>
                 <h2 data-i18n="res_finished">Tur yakunlandi!</h2>
             </div>
+
             <div class="stats-row-strict">
                 <div class="col-left"><span class="lbl" data-i18n="stat_tour">TUR</span><span class="val" id="res-tour-title">1-Tur</span></div>
-                <div class="col-center"><span class="lbl" data-i18n="stat_total">JAMI</span><span class="val" id="res-total">15</span></div>
+                <div class="col-center"><span class="lbl" data-i18n="stat_total">JAMI</span><span class="val">15</span></div>
                 <div class="col-right"><span class="lbl" data-i18n="stat_correct">TO'G'RI</span><span class="val green-text" id="res-correct">0</span></div>
             </div>
         </div>
+
         <div class="bottom-fixed column">
             <button class="btn-primary" id="back-home" data-i18n="btn_to_main">Bosh sahifaga</button>
         </div>
@@ -277,18 +343,29 @@
                 <div class="back-btn-simple" id="lb-back"><i class="fa-solid fa-arrow-left"></i></div>
                 <h3 data-i18n="lb_title">Reyting</h3>
             </div>
-            <div class="lb-segmented-control">
-                <div class="lb-segment active" id="filter-republic" onclick="setLeaderboardFilter('republic')" data-i18n="lb_republic">Respublika</div>
-                <div class="lb-segment" id="filter-region" onclick="setLeaderboardFilter('region')" data-i18n="lb_region">Viloyat</div>
-                <div class="lb-segment" id="filter-district" onclick="setLeaderboardFilter('district')" data-i18n="lb_district">Tuman</div>
+            <div class="lb-filter-container">
+                <div class="lb-segmented-control">
+                    <div class="lb-segment active" id="filter-republic" onclick="setLeaderboardFilter('republic')" data-i18n="lb_republic">Respublika</div>
+                    <div class="lb-segment" id="filter-region" onclick="setLeaderboardFilter('region')" data-i18n="lb_region">Viloyat</div>
+                    <div class="lb-segment" id="filter-district" onclick="setLeaderboardFilter('district')" data-i18n="lb_district">Tuman</div>
+                </div>
             </div>
         </div>
-        <div id="lb-podium" class="top-three"></div>
-        <div class="container" style="padding:0;"><div id="lb-list" class="lb-list-scroll"></div></div>
+
+        <div id="lb-list" class="lb-list-scroll"></div>
+
         <div id="lb-user-sticky" class="lb-sticky-footer hidden">
             <div class="my-rank-badge" id="my-rank-val">#--</div>
-            <div class="my-info"><span class="my-name" data-i18n="you">Siz</span><span class="my-sub" id="my-class-val">--</span></div>
-            <div class="my-stats"><div class="stat-group"><span class="stat-val" id="my-score-val">0</span><span class="stat-lbl" data-i18n="lb_points">BALL</span></div></div>
+            <div class="my-info">
+                <span class="my-name" data-i18n="you">Siz</span>
+                <span class="my-sub" id="my-class-val">--</span>
+            </div>
+            <div class="my-stats">
+                <div class="stat-group">
+                    <span class="stat-val" id="my-score-val">0</span>
+                    <span class="stat-lbl" data-i18n="lb_points">BALL</span>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -302,15 +379,66 @@
         </div>
     </div>
 
+    <div class="modal hidden" id="subject-details-modal">
+        <div class="modal-card">
+            <div class="modal-header-custom">
+                <h3 id="sd-title">...</h3>
+                <div class="close-icon-btn" onclick="document.getElementById('subject-details-modal').classList.add('hidden')"><i class="fa-solid fa-times"></i></div>
+            </div>
+            <div id="sd-content"></div>
+            <button class="btn-primary" onclick="document.getElementById('subject-details-modal').classList.add('hidden')" data-i18n="btn_understood">OK</button>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="certs-modal">
+        <div class="modal-card">
+            <div class="modal-header-custom">
+                <h3 data-i18n="menu_certs">Sertifikatlar</h3>
+                <div class="close-icon-btn" onclick="document.getElementById('certs-modal').classList.add('hidden')"><i class="fa-solid fa-times"></i></div>
+            </div>
+            <div id="certs-list-container"></div>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="tour-info-modal">
+        <div class="modal-card">
+            <h2 data-i18n="tour_passed_title">Tur yakunlangan!</h2>
+            <p data-i18n="tour_passed_msg">Natijangiz saqlandi.</p>
+            <button class="btn-primary" onclick="document.getElementById('tour-info-modal').classList.add('hidden')" data-i18n="btn_understood">OK</button>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="delete-confirm-modal">
+        <div class="modal-card">
+            <h2 data-i18n="del_title">Hisobni o'chirish?</h2>
+            <p data-i18n="del_msg">Qayta tiklab bo'lmaydi.</p>
+            <button id="confirm-delete-btn" class="btn-danger-box" data-i18n="btn_delete_confirm">O'chirish</button>
+            <button class="btn-text" onclick="document.getElementById('delete-confirm-modal').classList.add('hidden')" data-i18n="btn_cancel">Bekor qilish</button>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="about-modal">
+        <div class="modal-card full-height">
+            <div class="about-hero">
+                <div class="close-btn-white" id="close-about"><i class="fa-solid fa-times"></i></div>
+                <div class="logo-icon big"><i class="fa-solid fa-graduation-cap"></i></div>
+                <h1>Smart Olympiad</h1>
+            </div>
+            <div class="modal-body-scroll" style="padding:20px; overflow-y:auto; text-align:left;">
+                <p data-i18n="about_text">...</p>
+            </div>
+        </div>
+    </div>
+
     <div class="modal hidden" id="cheat-warning-modal">
         <div class="modal-card">
-            <div class="modal-icon-big" style="background:#FFF2F2; color:var(--danger); border: 2px solid var(--danger);"><i class="fa-solid fa-eye-slash"></i></div>
-            <h2 style="color:var(--danger);" data-i18n="cheat_title">Diqqat!</h2>
+            <div class="modal-icon-big" style="color:var(--danger);"><i class="fa-solid fa-eye-slash"></i></div>
+            <h2 data-i18n="cheat_title">Diqqat!</h2>
             <p data-i18n="cheat_msg">Ilovadan chiqish taqiqlanadi!</p>
             <button class="btn-primary" onclick="document.getElementById('cheat-warning-modal').classList.add('hidden')" data-i18n="btn_understood">Tushunarli</button>
         </div>
     </div>
 
-    <script src="script.js?v=73.1"></script>
+    <script src="script.js?v=73.4"></script>
 </body>
 </html>
