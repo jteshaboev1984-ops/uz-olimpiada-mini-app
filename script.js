@@ -30,7 +30,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI';
     const { createClient } = supabase;
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
-
+    // === ФУНКЦИЯ РЕНДЕРИНГА LATEX ===
+    function renderLaTeX() {
+        if (window.renderMathInElement) {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: "$$", right: "$$", display: true},
+                    {left: "$", right: "$", display: false}
+                ],
+                throwOnError : false
+            });
+        }
+    }
+    
     // === СЛОВАРЬ ПЕРЕВОДОВ ===
     const translations = {
         uz: {
@@ -512,7 +524,8 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         setLanguage('uz');
     }
-  
+
+    
     // === ДАННЫЕ РЕГИОНОВ ===
     const regions = {
         "Toshkent shahri": ["Bektemir tumani", "Chilonzor tumani", "Mirobod tumani", "Mirzo Ulug'bek tumani", "Olmazor tumani", "Sergeli tumani", "Shayxontohur tumani", "Uchtepa tumani", "Yakkasaroy tumani", "Yangihayot tumani", "Yashnobod tumani", "Yunusobod tumani"],
@@ -1323,7 +1336,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         container.appendChild(textarea);
       }
-    }
+        renderLaTeX(); // <--- Вставьте это здесь
+}
     
     safeAddListener('next-button', 'click', async () => {
       const nextBtn = document.getElementById('next-button');
@@ -1452,3 +1466,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     checkProfileAndTour();
 });
+
