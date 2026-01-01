@@ -636,13 +636,11 @@ try {
         // 3. Синхронизация данных
         internalDbId = authData.id;
         currentUserData = authData;
-
-        // ИСПРАВЛЕНИЕ: Защита от появления строки "null" или "undefined"
-        if (authData.telegram_id) {
+        
+        // ИСПРАВЛЕНИЕ: Берем ID из базы только если он там есть и он не пустой.
+        // Если в базе его нет, НЕ перезаписываем то, что получили от Телеграма.
+        if (authData.telegram_id && authData.telegram_id !== null) {
             telegramUserId = String(authData.telegram_id);
-        } else if (window.Telegram && Telegram.WebApp.initDataUnsafe.user) {
-            // Если в базе нет ID, берем его напрямую из Телеграм
-            telegramUserId = String(Telegram.WebApp.initDataUnsafe.user.id);
         }
         // Обновление кабинета
         const elCN = document.getElementById('cab-name'); if(elCN) elCN.textContent = authData.full_name || authData.name;
@@ -1034,13 +1032,20 @@ try {
     document.getElementById('save-profile').addEventListener('click', async () => {
       if (isSavingProfile) return; // Если сохранение уже идет — выходим
 
-      // --- ИСПРАВЛЕНИЕ: Проверяем ID еще раз перед отправкой ---
-      if (!telegramUserId || telegramUserId === "null") {
+      // --- НОВАЯ ПРОВЕРКА ТУТ ---
+      // Если ID почему-то стал текстом "null", пробуем взять его из WebApp еще раз
+      if (!telegramUserId || telegramUserId === "null" || telegramUserId === "undefined") {
           if (window.Telegram && Telegram.WebApp.initDataUnsafe.user) {
-              telegramUserId = Telegram.WebApp.initDataUnsafe.user.id.toString();
+              telegramUserId = String(Telegram.WebApp.initDataUnsafe.user.id);
           }
       }
 
+      // Если ID всё еще нет (например, открыли не в боте) — стоп
+      if (!telegramUserId || telegramUserId === "null" || isNaN(Number(telegramUserId))) {
+          alert("Xatolik: Telegram ID topilmadi. Iltimos botni qayta ishga tushiring.");
+          return;
+      }
+      // --- КОНЕЦ НОВОЙ ПРОВЕРКИ ---
       const fullName = document.getElementById('full-name-input').value.trim();
       const classVal = document.getElementById('class-select').value;
       const region = document.getElementById('region-select').value;
@@ -1074,7 +1079,12 @@ try {
 
           const { data, error } = await supabaseClient
               .from('users')
-              .upsert(updateData, { onConflict: 'telegram_id' })
+              .upsert({ 
+                  // ИСПРАВЛЕНИЕ: Принудительно преобразуем telegramUserId в Number.
+                  // База данных ожидает bigint (число), и Number() гарантирует это.
+                  telegram_id: Number(telegramUserId), 
+                  ...updateData 
+              }, { onConflict: 'telegram_id' })
               .select()
               .maybeSingle();
           
@@ -1512,4 +1522,5 @@ questions = ticket.filter(q => q !== undefined).sort((a, b) => {
         checkProfileAndTour();
     }, 300);
 }); // Самый конец DOMContentLoaded
+
 
