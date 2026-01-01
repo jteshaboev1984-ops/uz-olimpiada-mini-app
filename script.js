@@ -613,16 +613,9 @@ try {
           classSelect.appendChild(option);
         }
     }
-  
-    // === ГЛАВНАЯ ЛОГИКА ===
- async function checkProfileAndTour() {
-        // 1. Проверка окружения (Пункт 2 анализа)
-        if (!tgInitData || tgInitData === "") {
-            console.warn("Telegram WebApp data not found.");
-            return;
-        }
+  async function checkProfileAndTour() {
+        if (!tgInitData || tgInitData === "") return;
 
-        // 2. Вход через базу данных
         const { data: authData, error: authError } = await supabaseClient.rpc('telegram_login', {
             p_init_data: tgInitData
         });
@@ -633,16 +626,16 @@ try {
             return;
         }
 
-        // 3. Синхронизация данных
         internalDbId = authData.id;
         currentUserData = authData;
         
-        // ИСПРАВЛЕНИЕ: Берем ID из базы только если он там есть и он не пустой.
-        // Если в базе его нет, НЕ перезаписываем то, что получили от Телеграма.
-        if (authData.telegram_id && authData.telegram_id !== null) {
+        // Берем ID из базы, если его нет — из данных Телеграм. Без String(null)
+        if (authData.telegram_id) {
             telegramUserId = String(authData.telegram_id);
+        } else if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
+            telegramUserId = String(window.Telegram.WebApp.initDataUnsafe.user.id);
         }
-        // Обновление кабинета
+
         const elCN = document.getElementById('cab-name'); if(elCN) elCN.textContent = authData.full_name || authData.name;
         const elID = document.getElementById('cab-id'); if(elID) elID.textContent = String(telegramUserId).slice(-6);
 
@@ -653,7 +646,6 @@ try {
             if(document.getElementById('lang-switcher-cab')) document.getElementById('lang-switcher-cab').disabled = true;
         }
 
-        // 4. Проверка полноты профиля (усиленная)
         const isComplete = authData.full_name && authData.full_name.length > 2 &&
                            authData.class && authData.region && authData.district;
         
@@ -662,13 +654,29 @@ try {
             unlockProfileForm();
             const backBtn = document.getElementById('reg-back-btn'); if(backBtn) backBtn.classList.add('hidden');
         } else {
-            // Если всё заполнено — блокируем форму и идем в кабинет
             isProfileLocked = true;
             fillProfileForm(authData);
             showScreen('home-screen');
-            await fetchStatsData(); // Загружаем баллы сразу при входе
+            await fetchStatsData(); 
         }
-    } // <--- Закрывающая скобка функции
+
+        // Поиск активного тура (теперь внутри функции)
+        const { data: tourData } = await supabaseClient.from('tours').select('*').eq('is_active', true).maybeSingle();
+        if (tourData) {
+            currentTourId = tourData.id;
+            currentTourTitle = tourData.title;
+            currentTourEndDate = tourData.end_date;
+            const { data: progress } = await supabaseClient.from('tour_progress').select('*').eq('user_id', internalDbId).eq('tour_id', currentTourId).maybeSingle();
+            if (progress) {
+                tourCompleted = true;
+                updateMainButton('completed');
+            } else {
+                updateMainButton('start', currentTourTitle);
+            }
+        } else {
+            updateMainButton('inactive');
+        }
+    }
     function fillProfileForm(data) {
         document.getElementById('class-select').value = data.class;
         document.getElementById('region-select').value = data.region;
