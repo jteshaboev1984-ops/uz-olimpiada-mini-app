@@ -1065,14 +1065,16 @@ try {
 
           if (error) throw error;
           
-          if (data) {
+         if (data) {
               currentUserData = data;
               internalDbId = data.id; 
               isProfileLocked = true;
-
-              // ВАЖНО: Просто переходим на главную, не вызывая checkProfileAndTour (разрыв петли)
+              
+              // FAQAT ma'lumot saqlangan bo'lsa asosiy sahifaga o'tamiz
               showScreen('home-screen');
               await fetchStatsData(); 
+          } else {
+              alert("Xatolik: Ma'lumotlar bazadan qaytmadi.");
           }
       } catch (e) {
           console.error("Save error:", e);
@@ -1491,6 +1493,7 @@ questions = ticket.filter(q => q !== undefined).sort((a, b) => {
         checkProfileAndTour();
     }, 300);
 }); // Самый конец DOMContentLoaded
+
 
 
 
