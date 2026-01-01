@@ -1207,8 +1207,15 @@ document.addEventListener('DOMContentLoaded', function() {
             ticket.push(pick(subj, diffPool[poolIdx++]));
         });
 
-        // Сохраняем выбранные вопросы в глобальную переменную и перемешиваем их порядок
-        questions = ticket.filter(q => q !== undefined).sort(() => 0.5 - Math.random());
+        // 1. Создаем веса для сложности
+const diffWeights = { 'Easy': 1, 'Medium': 2, 'Hard': 3 };
+
+// 2. Сначала фильтруем, потом сортируем по сложности (Лесенка)
+questions = ticket.filter(q => q !== undefined).sort((a, b) => {
+    return diffWeights[a.difficulty] - diffWeights[b.difficulty];
+});
+
+// Теперь вопросы всегда будут идти: сначала все Easy, потом Medium, потом Hard.
 
         // 4. ТОЧНЫЙ РАСЧЕТ ВРЕМЕНИ
         const totalSeconds = questions.reduce((acc, q) => acc + (q.time_limit_seconds || 60), 0);
@@ -1419,7 +1426,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       const percent = Math.round((correctCount / questions.length) * 100);
       showScreen('result-screen');
-      document.getElementById('res-tour-title').textContent = "1-Tur";
+      document.getElementById('res-tour-title').textContent = formatTourTitle(currentTourTitle || "1-Tur");
       document.getElementById('res-total').textContent = questions.length;
       document.getElementById('res-correct').textContent = correctCount;
       document.getElementById('result-percent').textContent = `${percent}%`;
@@ -1492,5 +1499,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     checkProfileAndTour(); // Запускаем проверку
 }); // <--- ЗАКРЫВАЕМ DOMContentLoaded (сначала }, потом ) )
+
 
 
