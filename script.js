@@ -491,17 +491,26 @@ document.querySelectorAll('[data-i18n]').forEach(el => {
         document.getElementById('lang-switcher-cab').addEventListener('change', (e) => {
             if(!isLangLocked) {
                 setLanguage(e.target.value);
-                localStorage.setItem('user_lang', e.target.value); 
+                try {
+    localStorage.setItem('user_lang', e.target.value); 
+} catch (e) {
+    console.warn("LocalStorage error:", e);
+} 
             }
         });
     }
     
     if(document.getElementById('reg-lang-select')) {
         document.getElementById('reg-lang-select').addEventListener('change', (e) => {
-            if(!isLangLocked) setLanguage(e.target.value);
+            if(!isLangLocked) {
+                setLanguage(e.target.value);
+                // Добавляем сохранение в память и здесь тоже
+                try {
+                    localStorage.setItem('user_lang', e.target.value);
+                } catch (err) { console.warn(err); }
+            }
         });
     }
-
     // === ИНИЦИАЛИЗАЦИЯ TELEGRAM & LANGUAGE ===
     // === ИНИЦИАЛИЗАЦИЯ TELEGRAM (SECURE MODE) ===
     let tgInitData = ""; 
@@ -530,7 +539,12 @@ document.querySelectorAll('[data-i18n]').forEach(el => {
         console.error("Ilova faqat Telegram ichida ishlaydi.");
     }
 
-    const savedLang = localStorage.getItem('user_lang');
+    let savedLang = null;
+try {
+    savedLang = localStorage.getItem('user_lang');
+} catch (e) {
+    console.warn("LocalStorage access denied");
+}
     if (savedLang) {
         setLanguage(savedLang);
     } else if (telegramData.languageCode) {
@@ -599,73 +613,55 @@ document.querySelectorAll('[data-i18n]').forEach(el => {
     }
   
     // === ГЛАВНАЯ ЛОГИКА ===
-    async function checkProfileAndTour() {
-        // Проверка: видит ли скрипт данные от Telegram
+ async function checkProfileAndTour() {
+        // 1. Проверка окружения (Пункт 2 анализа)
         if (!tgInitData || tgInitData === "") {
-            alert("Ошибка: Telegram ma'lumotlari topilmadi (initData is empty).\n\nПопробуйте открыть приложение ТОЛЬКО через кнопку Menu в боте.");
+            console.warn("Telegram WebApp data not found.");
             return;
         }
 
+        // 2. Вход через базу данных
         const { data: authData, error: authError } = await supabaseClient.rpc('telegram_login', {
             p_init_data: tgInitData
         });
 
-        // Если база данных вернула ошибку соединения или прав
-        if (authError) {
+        if (authError || !authData) {
             console.error("Auth failed:", authError);
-            alert("Server xatosi (RPC):\n" + authError.message + "\nCode: " + authError.code);
+            alert("Avtorizatsiya rad etildi.");
             return;
         }
 
-        // Если база вернула "ничего" (null) — значит Токен бота в SQL-функции неверный
-        if (!authData) {
-            alert("Avtorizatsiya rad etildi.\n\nПроверьте BOT TOKEN внутри SQL-функции telegram_login в Supabase!");
-            return;
-        }
-
-        // Если проверка прошла успешно, сохраняем данные
+        // 3. Синхронизация данных (убирает ошибку null reading 'id')
         internalDbId = authData.id;
         currentUserData = authData;
+        telegramUserId = String(authData.telegram_id);
 
+        // Обновление кабинета
         const elCN = document.getElementById('cab-name'); if(elCN) elCN.textContent = authData.full_name || authData.name;
-        const elID = document.getElementById('cab-id'); if(elID) elID.textContent = String(authData.telegram_id).slice(-6);
-        const elCI = document.getElementById('cab-avatar-img'); if(elCI && authData.avatar_url) elCI.src = authData.avatar_url;
+        const elID = document.getElementById('cab-id'); if(elID) elID.textContent = String(telegramUserId).slice(-6);
 
         if (authData.fixed_language) {
             isLangLocked = true;
             currentLang = authData.fixed_language;
-            setLanguage(authData.fixed_language);
-        }
-
-        const now = new Date().toISOString();
-        const { data: tourData } = await supabaseClient.from('tours').select('*').lte('start_date', now).gte('end_date', now).eq('is_active', true).maybeSingle();
-        
-        if (tourData) {
-            currentTourId = tourData.id; currentTourTitle = tourData.title; currentTourEndDate = tourData.end_date;
-            const { data: progress } = await supabaseClient.from('tour_progress').select('*').eq('user_id', internalDbId).eq('tour_id', tourData.id).maybeSingle();
-            tourCompleted = !!progress;
             setLanguage(currentLang);
-            await fetchStatsData();
-        } else {
-            updateMainButton('inactive');
         }
 
-        // Усиленная проверка на заполненность (проверяем, что поля не пустые)
+        // 4. Проверка полноты профиля (усиленная)
         const isComplete = authData.full_name && authData.full_name.length > 2 &&
-                           authData.class && 
-                           authData.region && 
-                           authData.district;
+                           authData.class && authData.region && authData.district;
         
         if (!isComplete) {
             showScreen('reg-screen');
             unlockProfileForm();
+            const backBtn = document.getElementById('reg-back-btn'); if(backBtn) backBtn.classList.add('hidden');
         } else {
+            // Если всё заполнено — блокируем форму и идем в кабинет
             isProfileLocked = true;
             fillProfileForm(authData);
             showScreen('home-screen');
-            await fetchStatsData(); // Загружаем статистику только если профиль готов
+            await fetchStatsData(); // Загружаем баллы сразу при входе
         }
-}
+    } // <--- Закрывающая скобка функции
     function fillProfileForm(data) {
         document.getElementById('class-select').value = data.class;
         document.getElementById('region-select').value = data.region;
@@ -1023,8 +1019,12 @@ document.querySelectorAll('[data-i18n]').forEach(el => {
             stickyEl.classList.add('hidden');
         }
     }
+    // Флаг защиты от повторных нажатий (Пункт 6 анализа)
+    let isSavingProfile = false;
 
     document.getElementById('save-profile').addEventListener('click', async () => {
+      if (isSavingProfile) return; // Если сохранение уже идет — выходим
+
       const fullName = document.getElementById('full-name-input').value.trim();
       const classVal = document.getElementById('class-select').value;
       const region = document.getElementById('region-select').value;
@@ -1038,16 +1038,19 @@ document.querySelectorAll('[data-i18n]').forEach(el => {
       
       const btn = document.getElementById('save-profile');
       const originalText = btn.innerHTML;
-      btn.disabled = true;
-      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('save_saving')}`;
 
-      try {
+      try { // Блок try начинается ЗДЕСЬ (Пункт 1 анализа)
+          isSavingProfile = true;
+          btn.disabled = true;
+          btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('save_saving')}`;
+
           const updateData = { 
               full_name: fullName, 
               class: classVal, 
               region: region, 
               district: district, 
               school: school, 
+              research_consent: document.getElementById('research-consent').checked,
               fixed_language: currentLang
           };
 
@@ -1060,30 +1063,23 @@ document.querySelectorAll('[data-i18n]').forEach(el => {
           if (error) throw error;
           
           if (data) {
-              // Эти действия выполняются ТОЛЬКО если данные успешно получены
               currentUserData = data;
               internalDbId = data.id; 
-              isLangLocked = true;
               isProfileLocked = true;
-              currentLang = data.fixed_language;
 
-              // Переходим на главную ТОЛЬКО если всё успешно
+              // ВАЖНО: Просто переходим на главную, не вызывая checkProfileAndTour (разрыв петли)
               showScreen('home-screen');
               await fetchStatsData(); 
-          } else {
-              // Если база вернула null, не пускаем пользователя дальше
-              alert("Xatolik: Ma'lumotlar saqlanmadi. Iltimos, qaytadan urinib ko'ring.");
-          } 
-          
+          }
       } catch (e) {
+          console.error("Save error:", e);
           alert(t('error') + ': ' + e.message);
       } finally {
-          // ЭТОТ БЛОК ОБЯЗАТЕЛЬНО ВКЛЮЧИТ КНОПКУ ОБРАТНО
+          isSavingProfile = false;
           btn.disabled = false;
           btn.innerHTML = originalText;
       }
-    });
-  
+    });  
     // === ЛОГИКА УДАЛЕНИЯ АККАУНТА ===
     safeAddListener('delete-account-btn', 'click', () => {
         if(tourCompleted) {
@@ -1239,7 +1235,11 @@ questions = ticket.filter(q => q !== undefined).sort((a, b) => {
     }
     safeAddListener('confirm-start', 'click', () => {
       document.getElementById('warning-modal').classList.add('hidden');
-      localStorage.setItem('tour_start_time', Date.now());
+      try {
+    localStorage.setItem('tour_start_time', Date.now());
+} catch (e) {
+    console.warn("LocalStorage error:", e);
+}
       
       // Сбрасываем внутренние счетчики
       currentQuestionIndex = 0;
@@ -1488,6 +1488,7 @@ questions = ticket.filter(q => q !== undefined).sort((a, b) => {
         checkProfileAndTour();
     }, 300);
 }); // Самый конец DOMContentLoaded
+
 
 
 
