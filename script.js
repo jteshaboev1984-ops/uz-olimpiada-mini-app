@@ -1084,8 +1084,8 @@ document.addEventListener('DOMContentLoaded', function() {
           currentLang = langToSave;
 
           showScreen('home-screen');
-          await checkProfileAndTour();
-      catch (e) {
+          await checkProfileAndTour(); 
+      } catch (e) { // <--- ТЕПЕРЬ СКОБКА НА МЕСТЕ
           alert(t('error') + ': ' + e.message);
           btn.disabled = false;
           btn.innerHTML = originalText;
@@ -1484,11 +1484,10 @@ questions = ticket.filter(q => q !== undefined).sort((a, b) => {
                 <div class="cert-info"><h4>${t('cert_title')}</h4><p>${new Date().toLocaleDateString()}</p></div>
                 <div class="cert-action"><span class="badge-soon">Soon</span></div>
             </div>`;
-        document.getElementById('certs-modal').classList.remove('hidden');
-    } // <--- ЗАКРЫВАЕМ showCertsModal
+document.getElementById('certs-modal').classList.remove('hidden');
+    } 
 
-    }); // <--- ЗАКРЫВАЕМ DOMContentLoaded (сначала }, потом ) )
+    // ВАЖНО: Добавляем вызов функции, который мы удалили на 1 этапе
+    checkProfileAndTour(); 
 
-
-
-
+}); // Конец DOMContentLoaded
