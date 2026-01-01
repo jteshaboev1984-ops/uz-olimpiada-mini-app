@@ -637,8 +637,7 @@ document.addEventListener('DOMContentLoaded', function() {
           }
 
       } else {
-          let fullName = telegramData.firstName ? (telegramData.firstName + (telegramData.lastName ? ' ' + telegramData.lastName : '')).trim() : 'Foydalanuvchi';
-          const { data: newUser } = await supabaseClient.from('users')
+              const { data: newUser } = await supabaseClient.from('users')
               .insert({ telegram_id: telegramUserId, name: fullName, avatar_url: telegramData.photoUrl })
               .select().single();
           if (newUser) {
@@ -1489,6 +1488,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="cert-action"><span class="badge-soon">Soon</span></div>
             </div>`;
         document.getElementById('certs-modal').classList.remove('hidden');
-        checkProfileAndTour();
-});
+    } // <--- ЗАКРЫВАЕМ showCertsModal
+
+    checkProfileAndTour(); // Запускаем проверку
+}); // <--- ЗАКРЫВАЕМ DOMContentLoaded (сначала }, потом ) )
+
 
