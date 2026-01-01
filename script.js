@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v74 (Fixed: Language Priority from DB)');
+    console.log('App Started: v77 (FULL RESTORE + BIGINT FIX)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -1028,6 +1028,16 @@ try {
     document.getElementById('save-profile').addEventListener('click', async () => {
       if (isSavingProfile) return; // Если сохранение уже идет — выходим
 
+      // --- ИСПРАВЛЕНИЕ: ПРОВЕРКА ID ПЕРЕД СОХРАНЕНИЕМ ---
+      if (!telegramUserId || telegramUserId === "null") {
+          if (window.Telegram && Telegram.WebApp.initDataUnsafe.user) {
+              telegramUserId = Telegram.WebApp.initDataUnsafe.user.id.toString();
+          } else {
+              alert("Telegram ID topilmadi. Iltimos, ilovani qayta oching.");
+              return;
+          }
+      }
+
       const fullName = document.getElementById('full-name-input').value.trim();
       const classVal = document.getElementById('class-select').value;
       const region = document.getElementById('region-select').value;
@@ -1048,6 +1058,7 @@ try {
           btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('save_saving')}`;
 
           const updateData = { 
+              telegram_id: Number(telegramUserId), // ИСПРАВЛЕНИЕ: Приводим к числу (BigInt)
               full_name: fullName, 
               class: classVal, 
               region: region, 
@@ -1059,7 +1070,7 @@ try {
 
           const { data, error } = await supabaseClient
               .from('users')
-              .upsert({ telegram_id: telegramUserId, ...updateData }, { onConflict: 'telegram_id' })
+              .upsert(updateData, { onConflict: 'telegram_id' })
               .select()
               .maybeSingle();
 
@@ -1493,11 +1504,3 @@ questions = ticket.filter(q => q !== undefined).sort((a, b) => {
         checkProfileAndTour();
     }, 300);
 }); // Самый конец DOMContentLoaded
-
-
-
-
-
-
-
-
