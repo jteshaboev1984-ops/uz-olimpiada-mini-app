@@ -1026,14 +1026,12 @@ document.addEventListener('DOMContentLoaded', function() {
           return; 
       }
       
-      let langToSave = isLangLocked ? currentLang : selectedLang;
       const btn = document.getElementById('save-profile');
       const originalText = btn.innerHTML;
       btn.disabled = true;
       btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('save_saving')}`;
-      
+
       try {
-          // Мы обновляем только профиль, telegram_id менять не нужно, он уже есть в базе
           const updateData = { 
               full_name: fullName, 
               class: classVal, 
@@ -1041,31 +1039,34 @@ document.addEventListener('DOMContentLoaded', function() {
               district: district, 
               school: school, 
               research_consent: consent,
-              fixed_language: langToSave 
+              fixed_language: (isLangLocked ? currentLang : selectedLang)
           };
 
+          // ИСПРАВЛЕНИЕ: Мы ищем пользователя по telegram_id, так как он никогда не равен null
           const { data, error } = await supabaseClient
               .from('users')
               .update(updateData)
-              .eq('telegram_id', telegramUserId) // ИСПОЛЬЗУЕМ telegramUserId (он всегда есть)
+              .eq('telegram_id', telegramUserId) 
               .select()
               .single();
 
           if (error) throw error;
           
           currentUserData = data;
+          internalDbId = data.id; // На всякий случай обновляем внутренний ID
           isLangLocked = true;
           isProfileLocked = true;
-          currentLang = langToSave;
+          currentLang = data.fixed_language;
 
           showScreen('home-screen');
           await checkProfileAndTour(); 
+          
       } catch (e) {
           console.error("Save error:", e);
           alert(t('error') + ': ' + e.message);
           btn.disabled = false;
           btn.innerHTML = originalText;
-      } 
+      }
     });
   
     // === ЛОГИКА УДАЛЕНИЯ АККАУНТА ===
@@ -1463,12 +1464,12 @@ questions = ticket.filter(q => q !== undefined).sort((a, b) => {
         document.getElementById('certs-modal').classList.remove('hidden');
     } 
 
-// Даем Telegram время (300мс) на подготовку данных, затем входим
+// Даем Telegram время на передачу данных, затем запускаем приложение
     setTimeout(() => {
-        if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) {
+        if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe.user) {
             tgInitData = Telegram.WebApp.initData;
+            telegramUserId = String(Telegram.WebApp.initDataUnsafe.user.id);
         }
         checkProfileAndTour();
     }, 300);
-}); // Конец DOMContentLoaded
-
+}); // Самый конец DOMContentLoaded
