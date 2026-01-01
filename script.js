@@ -1036,7 +1036,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     document.getElementById('save-profile').addEventListener('click', async () => {
-      // 1. Собираем данные, включая новое поле F.I.O.
       const fullName = document.getElementById('full-name-input').value.trim();
       const classVal = document.getElementById('class-select').value;
       const region = document.getElementById('region-select').value;
@@ -1045,20 +1044,19 @@ document.addEventListener('DOMContentLoaded', function() {
       const consent = document.getElementById('research-consent').checked;
       const selectedLang = document.getElementById('reg-lang-select').value;
       
-      // 2. Добавляем проверку, чтобы поле F.I.O. не было пустым
       if (!fullName || !classVal || !region || !district || !school) { 
           alert(t('alert_fill')); 
           return; 
       }
       
       let langToSave = isLangLocked ? currentLang : selectedLang;
-      
       const btn = document.getElementById('save-profile');
       const originalText = btn.innerHTML;
       btn.disabled = true;
       btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('save_saving')}`;
-
-      const updateData = { 
+      
+      try { // <--- Ориентир: блок должен начинаться с try
+          const updateData = { 
               full_name: fullName, 
               class: classVal, 
               region: region, 
@@ -1070,7 +1068,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
           const { data, error } = await supabaseClient
               .from('users')
-              .update(updateData) // Используем UPDATE вместо UPSERT
+              .update(updateData)
               .eq('id', internalDbId)
               .select()
               .single();
@@ -1084,8 +1082,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
           showScreen('home-screen');
           await checkProfileAndTour(); 
-      } 
-          catch (e) { // <--- ТЕПЕРЬ СКОБКА НА МЕСТЕ
+      } catch (e) { // <--- Ориентир: перед catch ОБЯЗАТЕЛЬНО должна быть скобка }
           alert(t('error') + ': ' + e.message);
           btn.disabled = false;
           btn.innerHTML = originalText;
@@ -1484,13 +1481,10 @@ questions = ticket.filter(q => q !== undefined).sort((a, b) => {
                 <div class="cert-info"><h4>${t('cert_title')}</h4><p>${new Date().toLocaleDateString()}</p></div>
                 <div class="cert-action"><span class="badge-soon">Soon</span></div>
             </div>`;
-document.getElementById('certs-modal').classList.remove('hidden');
+        document.getElementById('certs-modal').classList.remove('hidden');
     } 
 
-    // ВАЖНО: Добавляем вызов функции, который мы удалили на 1 этапе
+    // Запуск приложения
     checkProfileAndTour(); 
 
-}); // Конец DOMContentLoaded
-
-
-
+}); // Конец скрипта
