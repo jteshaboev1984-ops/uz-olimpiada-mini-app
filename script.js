@@ -665,7 +665,7 @@ document.querySelectorAll('[data-i18n]').forEach(el => {
             showScreen('home-screen');
             await fetchStatsData(); // Загружаем статистику только если профиль готов
         }
-
+}
     function fillProfileForm(data) {
         document.getElementById('class-select').value = data.class;
         document.getElementById('region-select').value = data.region;
@@ -1060,14 +1060,20 @@ document.querySelectorAll('[data-i18n]').forEach(el => {
           if (error) throw error;
           
           if (data) {
+              // Эти действия выполняются ТОЛЬКО если данные успешно получены
               currentUserData = data;
               internalDbId = data.id; 
+              isLangLocked = true;
               isProfileLocked = true;
-          }
+              currentLang = data.fixed_language;
 
-          // ПЕРЕХОДИМ НА ГЛАВНУЮ И НЕ ВЫЗЫВАЕМ checkProfileAndTour ПОВТОРНО
-          showScreen('home-screen');
-          await fetchStatsData(); 
+              // Переходим на главную ТОЛЬКО если всё успешно
+              showScreen('home-screen');
+              await fetchStatsData(); 
+          } else {
+              // Если база вернула null, не пускаем пользователя дальше
+              alert("Xatolik: Ma'lumotlar saqlanmadi. Iltimos, qaytadan urinib ko'ring.");
+          } 
           
       } catch (e) {
           alert(t('error') + ': ' + e.message);
@@ -1482,6 +1488,7 @@ questions = ticket.filter(q => q !== undefined).sort((a, b) => {
         checkProfileAndTour();
     }, 300);
 }); // Самый конец DOMContentLoaded
+
 
 
 
