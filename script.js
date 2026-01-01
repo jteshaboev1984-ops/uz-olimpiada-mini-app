@@ -1490,4 +1490,3 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>`;
         document.getElementById('certs-modal').classList.remove('hidden');
         checkProfileAndTour();
-}); // Конец DOMContentLoaded
