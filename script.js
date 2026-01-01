@@ -449,10 +449,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const cabLangSel = document.getElementById('lang-switcher-cab');
         if(cabLangSel) cabLangSel.value = lang;
         
-        document.querySelectorAll('[data-i18n]').forEach(el => {
+document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
             if (translations[lang][key]) {
                 el.innerHTML = translations[lang][key]; 
+            }
+        });
+
+        // ДОБАВЬТЕ ЭТОТ БЛОК ДЛЯ ПЕРЕВОДА ПЛЕЙСХОЛДЕРОВ:
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            const key = el.getAttribute('data-i18n-placeholder');
+            if (translations[lang][key]) {
+                el.placeholder = translations[lang][key];
             }
         });
         updateSelectPlaceholders();
@@ -1046,12 +1054,13 @@ document.addEventListener('DOMContentLoaded', function() {
           const { data, error } = await supabaseClient
               .from('users')
               .update(updateData)
-              .eq('telegram_id', telegramUserId) 
+              .eq('telegram_id', telegramUserId)
               .select()
-              .single();
+              .maybeSingle(); // <--- ТЕПЕРЬ ОШИБКИ НЕ БУДЕТ
 
           if (error) throw error;
-          
+          if (data) internalDbId = data.id; // Синхронизируем ID
+                    
           currentUserData = data;
           internalDbId = data.id; // На всякий случай обновляем внутренний ID
           isLangLocked = true;
@@ -1473,3 +1482,4 @@ questions = ticket.filter(q => q !== undefined).sort((a, b) => {
         checkProfileAndTour();
     }, 300);
 }); // Самый конец DOMContentLoaded
+
