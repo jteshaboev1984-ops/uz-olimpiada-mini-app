@@ -650,17 +650,21 @@ document.querySelectorAll('[data-i18n]').forEach(el => {
             updateMainButton('inactive');
         }
 
-        const isComplete = authData.full_name && authData.class && authData.region && authData.district;
+        // Усиленная проверка на заполненность (проверяем, что поля не пустые)
+        const isComplete = authData.full_name && authData.full_name.length > 2 &&
+                           authData.class && 
+                           authData.region && 
+                           authData.district;
+        
         if (!isComplete) {
             showScreen('reg-screen');
             unlockProfileForm();
-            const backBtn = document.getElementById('reg-back-btn'); if(backBtn) backBtn.classList.add('hidden');
         } else {
             isProfileLocked = true;
             fillProfileForm(authData);
             showScreen('home-screen');
+            await fetchStatsData(); // Загружаем статистику только если профиль готов
         }
-    }
 
     function fillProfileForm(data) {
         document.getElementById('class-select').value = data.class;
@@ -1026,8 +1030,6 @@ document.querySelectorAll('[data-i18n]').forEach(el => {
       const region = document.getElementById('region-select').value;
       const district = document.getElementById('district-select').value;
       const school = document.getElementById('school-input').value.trim();
-      const consent = document.getElementById('research-consent').checked;
-      const selectedLang = document.getElementById('reg-lang-select').value;
       
       if (!fullName || !classVal || !region || !district || !school) { 
           alert(t('alert_fill')); 
@@ -1046,39 +1048,31 @@ document.querySelectorAll('[data-i18n]').forEach(el => {
               region: region, 
               district: district, 
               school: school, 
-              research_consent: consent,
-              fixed_language: (isLangLocked ? currentLang : selectedLang)
+              fixed_language: currentLang
           };
 
-          // ИСПРАВЛЕНИЕ: Мы ищем пользователя по telegram_id, так как он никогда не равен null
-          // ИСПОРАВЛЕНО: Используем upsert, чтобы создать запись, если вы её удалили из базы
           const { data, error } = await supabaseClient
               .from('users')
-              .upsert({ 
-                  telegram_id: telegramUserId, 
-                  ...updateData 
-              }, { onConflict: 'telegram_id' })
+              .upsert({ telegram_id: telegramUserId, ...updateData }, { onConflict: 'telegram_id' })
               .select()
               .maybeSingle();
 
           if (error) throw error;
           
-          // Проверяем, что данные получены, прежде чем читать .id
-                   
           if (data) {
               currentUserData = data;
               internalDbId = data.id; 
-              isLangLocked = true;
               isProfileLocked = true;
-              currentLang = data.fixed_language;
           }
 
+          // ПЕРЕХОДИМ НА ГЛАВНУЮ И НЕ ВЫЗЫВАЕМ checkProfileAndTour ПОВТОРНО
           showScreen('home-screen');
-          await checkProfileAndTour(); 
+          await fetchStatsData(); 
           
       } catch (e) {
-          console.error("Save error:", e);
           alert(t('error') + ': ' + e.message);
+      } finally {
+          // ЭТОТ БЛОК ОБЯЗАТЕЛЬНО ВКЛЮЧИТ КНОПКУ ОБРАТНО
           btn.disabled = false;
           btn.innerHTML = originalText;
       }
@@ -1488,6 +1482,7 @@ questions = ticket.filter(q => q !== undefined).sort((a, b) => {
         checkProfileAndTour();
     }, 300);
 }); // Самый конец DOMContentLoaded
+
 
 
 
