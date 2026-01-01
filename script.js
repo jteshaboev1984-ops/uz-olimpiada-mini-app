@@ -869,7 +869,10 @@ async function checkProfileAndTour() {
 
             const html = `
                 <div class="stat-list-item">
-                    <div class="stat-list-info"><h4>${t('curr_tour')}</h4><p>${t('total_q')}: 15</p></div>
+                    <div class="stat-list-info">
+                        <h4>${t('curr_tour')}</h4>
+                        <p>${t('total_q')}: ${stats.total || 0}</p> 
+                    </div>
                     <div class="stat-list-value" style="color:${stats.correct > 0 ? 'var(--success)' : 'var(--text-sec)'}">
                         ${stats.correct} ${t('correct_txt')}
                     </div>
@@ -1562,6 +1565,7 @@ questions = ticket.filter(q => q !== undefined).sort((a, b) => {
         checkProfileAndTour();
     }, 300);
 }); // Самый конец DOMContentLoaded
+
 
 
 
