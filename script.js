@@ -613,27 +613,25 @@ try {
           classSelect.appendChild(option);
         }
     }
-  async function checkProfileAndTour() {
+async function checkProfileAndTour() {
         if (!tgInitData || tgInitData === "") return;
 
+        // RPC login - .single() qo'shildi, massiv o'rniga ob'ekt olish uchun
         const { data: authData, error: authError } = await supabaseClient.rpc('telegram_login', {
             p_init_data: tgInitData
-        });
+        }).single();
 
         if (authError || !authData) {
             console.error("Auth failed:", authError);
-            alert("Avtorizatsiya rad etildi.");
             return;
         }
 
+        // Ma'lumotlarni sinxronlash
         internalDbId = authData.id;
         currentUserData = authData;
         
-        // Берем ID из базы, если его нет — из данных Телеграм. Без String(null)
         if (authData.telegram_id) {
             telegramUserId = String(authData.telegram_id);
-        } else if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
-            telegramUserId = String(window.Telegram.WebApp.initDataUnsafe.user.id);
         }
 
         const elCN = document.getElementById('cab-name'); if(elCN) elCN.textContent = authData.full_name || authData.name;
@@ -646,6 +644,7 @@ try {
             if(document.getElementById('lang-switcher-cab')) document.getElementById('lang-switcher-cab').disabled = true;
         }
 
+        // Profil to'liqligini tekshirish (isComplete)
         const isComplete = authData.full_name && authData.full_name.length > 2 &&
                            authData.class && authData.region && authData.district;
         
@@ -660,24 +659,45 @@ try {
             await fetchStatsData(); 
         }
 
-        // Поиск активного тура (теперь внутри функции)
-        const { data: tourData } = await supabaseClient.from('tours').select('*').eq('is_active', true).maybeSingle();
+        // TUR TEKSHIRUVI - faol turni qidirish
+        const { data: tourData, error: tourErr } = await supabaseClient
+            .from('tours')
+            .select('*')
+            .eq('is_active', true)
+            .maybeSingle();
+
+        if (tourErr) console.error("Tour fetch error:", tourErr);
+
         if (tourData) {
             currentTourId = tourData.id;
             currentTourTitle = tourData.title;
             currentTourEndDate = tourData.end_date;
-            const { data: progress } = await supabaseClient.from('tour_progress').select('*').eq('user_id', internalDbId).eq('tour_id', currentTourId).maybeSingle();
+            
+            const { data: progress } = await supabaseClient
+                .from('tour_progress')
+                .select('*')
+                .eq('user_id', internalDbId)
+                .eq('tour_id', currentTourId)
+                .maybeSingle();
+
             if (progress) {
                 tourCompleted = true;
                 updateMainButton('completed');
             } else {
                 updateMainButton('start', currentTourTitle);
             }
+            // Tur topilgandan keyin statistikani yangilash
+            await fetchStatsData();
         } else {
             updateMainButton('inactive');
         }
     }
+    
     function fillProfileForm(data) {
+        // Ismni formaga to'ldirish qatori qo'shildi:
+        const nameInput = document.getElementById('full-name-input');
+        if (nameInput) nameInput.value = data.full_name || '';
+        
         document.getElementById('class-select').value = data.class;
         document.getElementById('region-select').value = data.region;
         const districtSelect = document.getElementById('district-select');
@@ -1530,5 +1550,6 @@ questions = ticket.filter(q => q !== undefined).sort((a, b) => {
         checkProfileAndTour();
     }, 300);
 }); // Самый конец DOMContentLoaded
+
 
 
