@@ -678,11 +678,19 @@ document.addEventListener('DOMContentLoaded', function() {
             isProfileLocked = true;
             isLangLocked = true;
             
+            // FIX: Lock language switcher in cabinet after registration
             const cabLang = document.getElementById('lang-switcher-cab');
-            if (cabLang) cabLang.disabled = true;
+            if (cabLang) {
+                cabLang.disabled = true;
+                cabLang.style.opacity = '0.5';
+                cabLang.style.cursor = 'not-allowed';
+            }
             
             const regLang = document.getElementById('reg-lang-select');
-            if (regLang) regLang.disabled = true;
+            if (regLang) {
+                regLang.disabled = true;
+                regLang.style.opacity = '0.5';
+            }
 
             fillProfileForm(authData);
             showScreen('home-screen');
@@ -1201,13 +1209,27 @@ document.addEventListener('DOMContentLoaded', function() {
                     isProfileLocked = true;
                     isLangLocked = true;
                     
+                    // FIX: Lock language switcher immediately after saving profile
+                    const cabLang = document.getElementById('lang-switcher-cab');
+                    if (cabLang) {
+                        cabLang.disabled = true;
+                        cabLang.style.opacity = '0.5';
+                        cabLang.style.cursor = 'not-allowed';
+                    }
+                    
+                    const regLangEl = document.getElementById('reg-lang-select');
+                    if (regLangEl) {
+                        regLangEl.disabled = true;
+                        regLangEl.style.opacity = '0.5';
+                    }
+                    
                     // Update localStorage to match saved language
                     try {
                         localStorage.setItem('user_lang', currentLang);
                     } catch (e) { console.warn(e); }
                     
                     showScreen('home-screen');
-                    await fetchStatsData(); 
+                    await fetchStatsData();
                 } else {
                     alert("Xatolik: Ma'lumotlar bazadan qaytmadi.");
                 }
@@ -1379,11 +1401,16 @@ document.addEventListener('DOMContentLoaded', function() {
             activeBtn.innerHTML = `<i class="fa-solid fa-check"></i> ${t('tour_completed_btn')}`;
             activeBtn.className = 'btn-success-clickable';
             activeBtn.disabled = false;
-            activeBtn.style.background = ""; 
+            activeBtn.style.background = "linear-gradient(135deg, #34C759 0%, #30D158 100%)"; 
+            activeBtn.style.color = "#fff";
             if (certCard) certCard.classList.remove('hidden'); 
+            
+            // FIX: Show message that tour is already completed - no repeat access allowed
             activeBtn.addEventListener('click', () => {
                 const modal = document.getElementById('tour-info-modal');
-                if (modal) modal.classList.remove('hidden');
+                if (modal) {
+                    modal.classList.remove('hidden');
+                }
             });
         } else {
             const displayTitle = formatTourTitle(title || t('start_tour_btn'));
