@@ -1051,16 +1051,24 @@ document.querySelectorAll('[data-i18n]').forEach(el => {
           };
 
           // ИСПРАВЛЕНИЕ: Мы ищем пользователя по telegram_id, так как он никогда не равен null
+          // ИСПОРАВЛЕНО: Используем upsert, чтобы создать запись, если вы её удалили из базы
           const { data, error } = await supabaseClient
               .from('users')
-              .update(updateData)
-              .eq('telegram_id', telegramUserId)
+              .upsert({ 
+                  telegram_id: telegramUserId, 
+                  ...updateData 
+              }, { onConflict: 'telegram_id' })
               .select()
-              .maybeSingle(); // <--- ТЕПЕРЬ ОШИБКИ НЕ БУДЕТ
+              .maybeSingle();
 
           if (error) throw error;
-          if (data) internalDbId = data.id; // Синхронизируем ID
-                    
+          
+          // Проверяем, что данные получены, прежде чем читать .id
+          if (data) {
+              currentUserData = data;
+              internalDbId = data.id; 
+          }
+                              
           currentUserData = data;
           internalDbId = data.id; // На всякий случай обновляем внутренний ID
           isLangLocked = true;
@@ -1482,4 +1490,5 @@ questions = ticket.filter(q => q !== undefined).sort((a, b) => {
         checkProfileAndTour();
     }, 300);
 }); // Самый конец DOMContentLoaded
+
 
