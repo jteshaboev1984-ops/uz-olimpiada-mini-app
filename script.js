@@ -932,7 +932,6 @@ document.addEventListener('DOMContentLoaded', function() {
             fullList.sort((a, b) => b.score - a.score);
             renderLeaderboardUI(fullList, podium, listEl);
             updateMyStickyBar(fullList, stickyBar);
-
         } catch (e) {
             console.error(e);
             podium.innerHTML = `<p style="text-align:center;color:red;">${t('error')}</p>`;
@@ -1491,4 +1490,5 @@ document.getElementById('certs-modal').classList.remove('hidden');
     checkProfileAndTour(); 
 
 }); // Конец DOMContentLoaded
+
 
