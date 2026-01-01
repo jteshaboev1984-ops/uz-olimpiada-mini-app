@@ -495,32 +495,31 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // === ИНИЦИАЛИЗАЦИЯ TELEGRAM & LANGUAGE ===
+    // === ИНИЦИАЛИЗАЦИЯ TELEGRAM (SECURE MODE) ===
+    let tgInitData = ""; 
     if (window.Telegram && window.Telegram.WebApp) {
-      Telegram.WebApp.ready();
-      Telegram.WebApp.expand();
-      
-      const user = Telegram.WebApp.initDataUnsafe.user;
-      
-      if (user && user.id) {
-        telegramUserId = Number(user.id);
-        telegramData.firstName = user.first_name;
-        telegramData.lastName = user.last_name;
-        if (user.photo_url) telegramData.photoUrl = user.photo_url;
-        telegramData.languageCode = user.language_code;
+        Telegram.WebApp.ready();
+        Telegram.WebApp.expand();
+        
+        // Берем сырую строку для валидации подписи на сервере (Безопасность)
+        tgInitData = Telegram.WebApp.initData; 
+        
+        const user = Telegram.WebApp.initDataUnsafe.user;
+        if (user) {
+            // Исправляем ошибку точности: ID теперь строго строка (Стабильность)
+            telegramUserId = user.id.toString(); 
+            telegramData.firstName = user.first_name;
+            telegramData.lastName = user.last_name;
+            telegramData.photoUrl = user.photo_url;
+            telegramData.languageCode = user.language_code;
 
-        document.getElementById('reg-user-name').textContent = telegramData.firstName + ' ' + (telegramData.lastName || '');
-        document.getElementById('home-user-name').textContent = telegramData.firstName || t('lb_participant');
-        if(telegramData.photoUrl) {
-            document.getElementById('cab-avatar-img').src = telegramData.photoUrl;
+            // Сразу обновляем базовые элементы интерфейса
+            const elRN = document.getElementById('reg-user-name'); if(elRN) elRN.textContent = user.first_name + ' ' + (user.last_name || '');
+            const elHN = document.getElementById('home-user-name'); if(elHN) elHN.textContent = user.first_name;
+            const elCI = document.getElementById('cab-avatar-img'); if(elCI && user.photo_url) elCI.src = user.photo_url;
         }
-      } else {
-        console.warn("No Telegram user found. Running in Test Mode.");
-        if (!localStorage.getItem('test_user_id')) {
-             localStorage.setItem('test_user_id', Math.floor(Math.random() * 1000000000));
-        }
-        telegramUserId = Number(localStorage.getItem('test_user_id'));
-        document.getElementById('reg-user-name').textContent = 'Test User';
-      }
+    } else {
+        console.error("Ilova faqat Telegram ichida ishlaydi.");
     }
 
     const savedLang = localStorage.getItem('user_lang');
@@ -593,94 +592,89 @@ document.addEventListener('DOMContentLoaded', function() {
   
     // === ГЛАВНАЯ ЛОГИКА ===
     async function checkProfileAndTour() {
-      const { data: userData } = await supabaseClient.from('users').select('*').eq('telegram_id', telegramUserId).maybeSingle();
-      
-      if (userData) {
-          internalDbId = userData.id;
-          currentUserData = userData; 
+        // 1. БЕЗОПАСНЫЙ ВХОД: Вызываем SQL-функцию (RPC)
+        const { data: authData, error: authError } = await supabaseClient.rpc('telegram_login', {
+            p_init_data: tgInitData
+        });
 
-          if (telegramData.firstName) {
-              let tgName = telegramData.firstName + (telegramData.lastName ? ' ' + telegramData.lastName : '');
-              tgName = tgName.trim();
-              if (!userData.name || userData.name !== tgName) {
-                  await supabaseClient.from('users').update({ name: tgName }).eq('id', userData.id);
-                  currentUserData.name = tgName; 
-              }
-          }
-          document.getElementById('cab-name').textContent = currentUserData.name;
-          document.getElementById('cab-id').textContent = String(telegramUserId).slice(-6); 
-          if(currentUserData.avatar_url) document.getElementById('cab-avatar-img').src = currentUserData.avatar_url;
+        // Если ошибка — значит Telegram-данные не прошли проверку безопасности
+        if (authError || !authData) {
+            console.error("Auth failed:", authError);
+            alert("Avtorizatsiya xatosi. Iltimos, qayta kiring.");
+            return;
+        }
 
-          // === ПРИНУДИТЕЛЬНАЯ УСТАНОВКА ЯЗЫКА ИЗ БАЗЫ (FIXED) ===
-          if (userData.fixed_language) {
-              isLangLocked = true;
-              currentLang = userData.fixed_language; // Обновляем переменную
-              setLanguage(userData.fixed_language);  // Обновляем UI
-              localStorage.setItem('user_lang', userData.fixed_language); // Обновляем память
-          } 
-          
-          const isOldUserReady = (userData.class && userData.region && userData.district && userData.school);
-          
-          if (userData.fixed_language || isOldUserReady) {
-              isLangLocked = true;
-              const cabLang = document.getElementById('lang-switcher-cab');
-              if(cabLang) cabLang.disabled = true;
-              const cabMsg = document.getElementById('lang-lock-msg');
-              if(cabMsg) cabMsg.classList.remove('hidden');
+        // Сохраняем ID пользователя и его данные из БД в память приложения
+        internalDbId = authData.id;
+        currentUserData = authData;
 
-              const regLang = document.getElementById('reg-lang-select');
-              if(regLang) regLang.disabled = true;
-          }
+        // 2. ОБНОВЛЯЕМ ИНТЕРФЕЙС КАБИНЕТА
+        const elCN = document.getElementById('cab-name'); 
+        if(elCN) elCN.textContent = authData.full_name || authData.name || "Ishtirokchi";
+        
+        const elID = document.getElementById('cab-id'); 
+        if(elID) elID.textContent = String(authData.telegram_id).slice(-6);
 
-          if (isOldUserReady) {
-              isProfileLocked = true;
-          }
+        const elCI = document.getElementById('cab-avatar-img');
+        if(elCI && authData.avatar_url) elCI.src = authData.avatar_url;
 
-      } else {
-              const { data: newUser } = await supabaseClient.from('users')
-              .insert({ telegram_id: telegramUserId, name: fullName, avatar_url: telegramData.photoUrl })
-              .select().single();
-          if (newUser) {
-              internalDbId = newUser.id;
-              currentUserData = newUser;
-          }
-      }
+        // 3. БЛОКИРОВКА ЯЗЫКА (Если он уже зафиксирован в базе)
+        if (authData.fixed_language) {
+            isLangLocked = true;
+            currentLang = authData.fixed_language;
+            setLanguage(authData.fixed_language);
+            
+            const cabLang = document.getElementById('lang-switcher-cab');
+            if(cabLang) cabLang.disabled = true;
+            const cabMsg = document.getElementById('lang-lock-msg');
+            if(cabMsg) cabMsg.classList.remove('hidden');
+        }
 
-      const now = new Date().toISOString();
-      const { data: tourData } = await supabaseClient.from('tours').select('*').lte('start_date', now).gte('end_date', now).eq('is_active', true).maybeSingle();
+        // 4. ПОИСК АКТИВНОГО ТУРА
+        const now = new Date().toISOString();
+        const { data: tourData } = await supabaseClient
+            .from('tours')
+            .select('*')
+            .lte('start_date', now)
+            .gte('end_date', now)
+            .eq('is_active', true)
+            .maybeSingle();
+        
+        if (tourData) {
+            currentTourId = tourData.id; 
+            currentTourTitle = tourData.title; 
+            currentTourEndDate = tourData.end_date;
+            
+            // Проверяем, сдавал ли уже пользователь этот тур
+            const { data: progress } = await supabaseClient
+                .from('tour_progress')
+                .select('*')
+                .eq('user_id', internalDbId)
+                .eq('tour_id', tourData.id)
+                .maybeSingle();
+                
+            tourCompleted = !!progress;
+            
+            setLanguage(currentLang);
+            await fetchStatsData(); // Загружаем статистику для кабинета
+        } else {
+            updateMainButton('inactive');
+        }
 
-      if (!tourData) {
-          updateMainButton('inactive');
-      } else {
-          currentTourId = tourData.id;
-          currentTourTitle = tourData.title; 
-          currentTourEndDate = tourData.end_date; 
-          
-          if (internalDbId && currentTourId) {
-              await fetchStatsData(); 
-              const { data: progress } = await supabaseClient.from('tour_progress').select('*').eq('user_id', internalDbId).eq('tour_id', currentTourId).maybeSingle();
-              if (progress) {
-                  tourCompleted = true;
-                  updateMainButton('completed');
-                  document.getElementById('subjects-title').textContent = t('curr_tour'); 
-              } else {
-                  tourCompleted = false;
-                  updateMainButton('start', formatTourTitle(tourData.title));
-                  document.getElementById('subjects-title').textContent = t('subjects_title');
-              }
-          }
-      }
-      
-      const isProfileComplete = currentUserData && currentUserData.class && currentUserData.region && currentUserData.district && currentUserData.school;
-      
-      if (!currentUserData || !isProfileComplete) {
-        showScreen('reg-screen');
-        unlockProfileForm();
-        document.getElementById('reg-back-btn').classList.add('hidden'); 
-      } else {
-        fillProfileForm(currentUserData);
-        showScreen('home-screen');
-      }
+        // 5. ПРОВЕРКА ЗАПОЛНЕННОСТИ ПРОФИЛЯ
+        // Если нет официального ФИО или класса — отправляем на регистрацию
+        const isProfileComplete = authData.full_name && authData.class && authData.region && authData.district;
+        
+        if (!isProfileComplete) {
+            showScreen('reg-screen');
+            unlockProfileForm();
+            const backBtn = document.getElementById('reg-back-btn');
+            if(backBtn) backBtn.classList.add('hidden');
+        } else {
+            isProfileLocked = true;
+            fillProfileForm(authData);
+            showScreen('home-screen');
+        }
     }
 
     function fillProfileForm(data) {
@@ -1064,11 +1058,9 @@ document.addEventListener('DOMContentLoaded', function() {
       const originalText = btn.innerHTML;
       btn.disabled = true;
       btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('save_saving')}`;
-      
-      try {
-          const updateData = { 
-              telegram_id: telegramUserId, 
-              full_name: fullName, // <-- Теперь данные уходят в вашу новую колонку
+
+      const updateData = { 
+              full_name: fullName, 
               class: classVal, 
               region: region, 
               district: district, 
@@ -1076,33 +1068,24 @@ document.addEventListener('DOMContentLoaded', function() {
               research_consent: consent,
               fixed_language: langToSave 
           };
-          // ... остальной код (if telegramData.photoUrl и т.д.) оставляйте как есть
-          // ... updateData obyekti yuqorisidagi qism ...
+
+          const { data, error } = await supabaseClient
+              .from('users')
+              .update(updateData) // Используем UPDATE вместо UPSERT
+              .eq('id', internalDbId)
+              .select()
+              .single();
+
+          if (error) throw error;
           
-          if (telegramData.photoUrl) updateData.avatar_url = telegramData.photoUrl;
-          
-          // 1. Telegramdan kelgan ismni 'name' ustuniga saqlaymiz
-          let tgName = (telegramData.firstName + (telegramData.lastName ? ' ' + telegramData.lastName : '')).trim();
-          if (tgName) updateData.name = tgName;
-          
-          // 2. Foydalanuvchi qo'lda yozgan F.I.O. ni 'full_name' ustuniga saqlaymiz 
-          // (fullName tepada inputdan const qilib olingan, shuni ishlatamiz)
-          updateData.full_name = fullName;
-          
-          const { data, error } = await supabaseClient.from('users').upsert(updateData, { onConflict: 'telegram_id' }).select().single(); 
-          // ... qolgan qismi ... 
-          if(error) throw error;
-          
-          internalDbId = data.id;
           currentUserData = data;
-          
           isLangLocked = true;
           isProfileLocked = true;
           currentLang = langToSave;
 
           showScreen('home-screen');
-          checkProfileAndTour(); 
-      } catch (e) {
+          await checkProfileAndTour();
+      catch (e) {
           alert(t('error') + ': ' + e.message);
           btn.disabled = false;
           btn.innerHTML = originalText;
@@ -1382,16 +1365,23 @@ questions = ticket.filter(q => q !== undefined).sort((a, b) => {
       }
       
       const q = questions[currentQuestionIndex];
-      const questionIdNumber = Number(q.id);
-
+// Вызываем проверку на сервере (RPC)
       const { data: isCorrect, error: rpcError } = await supabaseClient.rpc('check_user_answer', {
-          p_question_id: questionIdNumber,
+          p_question_id: Number(q.id),
           p_user_answer: selectedAnswer
       });
+
+      // FAIL-SAFE: Если сервер выдал ошибку или интернет пропал
+      if (rpcError) {
+          console.error("RPC Error:", rpcError);
+          alert("Aloqa xatosi. Javob saqlanmadi. Qayta urinib ko'ring.");
+          nextBtn.disabled = false;
+          nextBtn.innerHTML = t('repeat');
+          return; // ОСТАНАВЛИВАЕМ код, чтобы не потерять ответ пользователя
+      }
       
       const finalIsCorrect = (isCorrect === true);
-      if (finalIsCorrect) correctCount++;
-      
+      if (finalIsCorrect) correctCount++;      
       try {
           const { error } = await supabaseClient.from('user_answers').upsert({
               user_id: internalDbId, question_id: q.id, answer: selectedAnswer, is_correct: finalIsCorrect
@@ -1497,8 +1487,8 @@ questions = ticket.filter(q => q !== undefined).sort((a, b) => {
         document.getElementById('certs-modal').classList.remove('hidden');
     } // <--- ЗАКРЫВАЕМ showCertsModal
 
-    checkProfileAndTour(); // Запускаем проверку
-}); // <--- ЗАКРЫВАЕМ DOMContentLoaded (сначала }, потом ) )
+    }); // <--- ЗАКРЫВАЕМ DOMContentLoaded (сначала }, потом ) )
+
 
 
 
