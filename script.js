@@ -1084,7 +1084,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
           showScreen('home-screen');
           await checkProfileAndTour(); 
-      } catch (e) { // <--- ТЕПЕРЬ СКОБКА НА МЕСТЕ
+      } 
+          catch (e) { // <--- ТЕПЕРЬ СКОБКА НА МЕСТЕ
           alert(t('error') + ': ' + e.message);
           btn.disabled = false;
           btn.innerHTML = originalText;
@@ -1490,5 +1491,6 @@ document.getElementById('certs-modal').classList.remove('hidden');
     checkProfileAndTour(); 
 
 }); // Конец DOMContentLoaded
+
 
 
