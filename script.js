@@ -633,11 +633,17 @@ try {
             return;
         }
 
-        // 3. Синхронизация данных (убирает ошибку null reading 'id')
+        // 3. Синхронизация данных
         internalDbId = authData.id;
         currentUserData = authData;
-        telegramUserId = String(authData.telegram_id);
 
+        // ИСПРАВЛЕНИЕ: Защита от появления строки "null" или "undefined"
+        if (authData.telegram_id) {
+            telegramUserId = String(authData.telegram_id);
+        } else if (window.Telegram && Telegram.WebApp.initDataUnsafe.user) {
+            // Если в базе нет ID, берем его напрямую из Телеграм
+            telegramUserId = String(Telegram.WebApp.initDataUnsafe.user.id);
+        }
         // Обновление кабинета
         const elCN = document.getElementById('cab-name'); if(elCN) elCN.textContent = authData.full_name || authData.name;
         const elID = document.getElementById('cab-id'); if(elID) elID.textContent = String(telegramUserId).slice(-6);
@@ -1028,6 +1034,13 @@ try {
     document.getElementById('save-profile').addEventListener('click', async () => {
       if (isSavingProfile) return; // Если сохранение уже идет — выходим
 
+      // --- ИСПРАВЛЕНИЕ: Проверяем ID еще раз перед отправкой ---
+      if (!telegramUserId || telegramUserId === "null") {
+          if (window.Telegram && Telegram.WebApp.initDataUnsafe.user) {
+              telegramUserId = Telegram.WebApp.initDataUnsafe.user.id.toString();
+          }
+      }
+
       const fullName = document.getElementById('full-name-input').value.trim();
       const classVal = document.getElementById('class-select').value;
       const region = document.getElementById('region-select').value;
@@ -1042,12 +1055,14 @@ try {
       const btn = document.getElementById('save-profile');
       const originalText = btn.innerHTML;
 
-      try { // Блок try начинается ЗДЕСЬ (Пункт 1 анализа)
+      try { 
           isSavingProfile = true;
           btn.disabled = true;
           btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('save_saving')}`;
 
           const updateData = { 
+              // ИСПРАВЛЕНИЕ: Явно преобразуем ID в число для формата BIGINT
+              telegram_id: Number(telegramUserId), 
               full_name: fullName, 
               class: classVal, 
               region: region, 
@@ -1059,10 +1074,10 @@ try {
 
           const { data, error } = await supabaseClient
               .from('users')
-              .upsert({ telegram_id: telegramUserId, ...updateData }, { onConflict: 'telegram_id' })
+              .upsert(updateData, { onConflict: 'telegram_id' })
               .select()
               .maybeSingle();
-
+          
           if (error) throw error;
           
          if (data) {
@@ -1483,13 +1498,18 @@ questions = ticket.filter(q => q !== undefined).sort((a, b) => {
             </div>`;
         document.getElementById('certs-modal').classList.remove('hidden');
     } 
-
 // Даем Telegram время на передачу данных, затем запускаем приложение
     setTimeout(() => {
         if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe.user) {
             tgInitData = Telegram.WebApp.initData;
-            telegramUserId = String(Telegram.WebApp.initDataUnsafe.user.id);
+            
+            // ИСПРАВЛЕНИЕ: Гарантируем, что ID берется как строка, но только если он существует
+            const tgUser = Telegram.WebApp.initDataUnsafe.user;
+            if (tgUser && tgUser.id) {
+                telegramUserId = String(tgUser.id);
+            }
         }
         checkProfileAndTour();
     }, 300);
 }); // Самый конец DOMContentLoaded
+
