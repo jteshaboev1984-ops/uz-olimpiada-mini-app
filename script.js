@@ -1064,16 +1064,14 @@ document.querySelectorAll('[data-i18n]').forEach(el => {
           if (error) throw error;
           
           // Проверяем, что данные получены, прежде чем читать .id
+                   
           if (data) {
               currentUserData = data;
               internalDbId = data.id; 
+              isLangLocked = true;
+              isProfileLocked = true;
+              currentLang = data.fixed_language;
           }
-                              
-          currentUserData = data;
-          internalDbId = data.id; // На всякий случай обновляем внутренний ID
-          isLangLocked = true;
-          isProfileLocked = true;
-          currentLang = data.fixed_language;
 
           showScreen('home-screen');
           await checkProfileAndTour(); 
@@ -1490,5 +1488,6 @@ questions = ticket.filter(q => q !== undefined).sort((a, b) => {
         checkProfileAndTour();
     }, 300);
 }); // Самый конец DOMContentLoaded
+
 
 
