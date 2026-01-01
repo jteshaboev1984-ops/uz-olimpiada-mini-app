@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v74 (Fixed: Language Priority from DB)');
+    console.log('App Started: v75 (All Bugs Fixed)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI';
     const { createClient } = supabase;
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+
     // === ФУНКЦИЯ РЕНДЕРИНГА LATEX ===
     function renderLaTeX() {
         if (window.renderMathInElement) {
@@ -38,7 +39,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     {left: "$$", right: "$$", display: true},
                     {left: "$", right: "$", display: false}
                 ],
-                throwOnError : false
+                throwOnError: false
             });
         }
     } 
@@ -432,7 +433,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     function t(key) {
-        return translations[currentLang][key] || key;
+        return (translations[currentLang] && translations[currentLang][key]) || key;
     }
 
     function setLanguage(lang) {
@@ -444,22 +445,21 @@ document.addEventListener('DOMContentLoaded', function() {
         currentLang = lang;
         
         const regLangSel = document.getElementById('reg-lang-select');
-        if(regLangSel) regLangSel.value = lang;
+        if (regLangSel) regLangSel.value = lang;
         
         const cabLangSel = document.getElementById('lang-switcher-cab');
-        if(cabLangSel) cabLangSel.value = lang;
+        if (cabLangSel) cabLangSel.value = lang;
         
-document.querySelectorAll('[data-i18n]').forEach(el => {
+        document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
-            if (translations[lang][key]) {
+            if (translations[lang] && translations[lang][key]) {
                 el.innerHTML = translations[lang][key]; 
             }
         });
 
-        // ДОБАВЬТЕ ЭТОТ БЛОК ДЛЯ ПЕРЕВОДА ПЛЕЙСХОЛДЕРОВ:
         document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
             const key = el.getAttribute('data-i18n-placeholder');
-            if (translations[lang][key]) {
+            if (translations[lang] && translations[lang][key]) {
                 el.placeholder = translations[lang][key];
             }
         });
@@ -473,7 +473,7 @@ document.querySelectorAll('[data-i18n]').forEach(el => {
             updateMainButton('inactive');
         }
         
-        if(currentTourId) fetchStatsData();
+        if (currentTourId) fetchStatsData();
     }
 
     function updateSelectPlaceholders() {
@@ -487,76 +487,88 @@ document.querySelectorAll('[data-i18n]').forEach(el => {
         if (classSel && classSel.options.length > 0) classSel.options[0].textContent = t('select_class');
     }
 
-    if(document.getElementById('lang-switcher-cab')) {
-        document.getElementById('lang-switcher-cab').addEventListener('change', (e) => {
-            if(!isLangLocked) {
+    const langSwitcherCab = document.getElementById('lang-switcher-cab');
+    if (langSwitcherCab) {
+        langSwitcherCab.addEventListener('change', (e) => {
+            if (!isLangLocked) {
                 setLanguage(e.target.value);
                 try {
                     localStorage.setItem('user_lang', e.target.value); 
                 } catch (err) { console.warn(err); }
             } else {
-                // Если язык заблокирован, возвращаем селект в прежнее состояние и выводим alert
-                document.getElementById('lang-switcher-cab').value = currentLang;
+                langSwitcherCab.value = currentLang;
                 alert(t('lang_locked_reason'));
             }
         });
     }
     
-    if(document.getElementById('reg-lang-select')) {
-        document.getElementById('reg-lang-select').addEventListener('change', (e) => {
-            if(!isLangLocked) {
+    const regLangSelect = document.getElementById('reg-lang-select');
+    if (regLangSelect) {
+        regLangSelect.addEventListener('change', (e) => {
+            if (!isLangLocked) {
                 setLanguage(e.target.value);
-                // Добавляем сохранение в память и здесь тоже
                 try {
                     localStorage.setItem('user_lang', e.target.value);
                 } catch (err) { console.warn(err); }
             }
         });
     }
-    // === ИНИЦИАЛИЗАЦИЯ TELEGRAM & LANGUAGE ===
+
     // === ИНИЦИАЛИЗАЦИЯ TELEGRAM (SECURE MODE) ===
     let tgInitData = ""; 
     if (window.Telegram && window.Telegram.WebApp) {
         Telegram.WebApp.ready();
         Telegram.WebApp.expand();
         
-        // Берем сырую строку для валидации подписи на сервере (Безопасность)
         tgInitData = Telegram.WebApp.initData; 
         
         const user = Telegram.WebApp.initDataUnsafe.user;
         if (user) {
-            // Исправляем ошибку точности: ID теперь строго строка (Стабильность)
-            telegramUserId = user.id.toString(); 
+            telegramUserId = String(user.id); 
             telegramData.firstName = user.first_name;
             telegramData.lastName = user.last_name;
             telegramData.photoUrl = user.photo_url;
             telegramData.languageCode = user.language_code;
 
-            // Сразу обновляем базовые элементы интерфейса
-            const elRN = document.getElementById('reg-user-name'); if(elRN) elRN.textContent = user.first_name + ' ' + (user.last_name || '');
-            const elHN = document.getElementById('home-user-name'); if(elHN) elHN.textContent = user.first_name;
-            const elCI = document.getElementById('cab-avatar-img'); if(elCI && user.photo_url) elCI.src = user.photo_url;
+            const elRN = document.getElementById('reg-user-name'); 
+            if (elRN) elRN.textContent = user.first_name + ' ' + (user.last_name || '');
+            const elHN = document.getElementById('home-user-name'); 
+            if (elHN) elHN.textContent = user.first_name;
+            const elCI = document.getElementById('cab-avatar-img'); 
+            if (elCI && user.photo_url) elCI.src = user.photo_url;
         }
     } else {
         console.error("Ilova faqat Telegram ichida ishlaydi.");
     }
 
-    let savedLang = null;
-try {
-    savedLang = localStorage.getItem('user_lang');
-} catch (e) {
-    console.warn("LocalStorage access denied");
-}
-    if (savedLang) {
-        setLanguage(savedLang);
-    } else if (telegramData.languageCode) {
-        if (telegramData.languageCode === 'ru') setLanguage('ru');
-        else if (telegramData.languageCode === 'en') setLanguage('en');
-        else setLanguage('uz');
-    } else {
-        setLanguage('uz');
+    // FIX: Language priority - DB language takes precedence over localStorage
+    function initializeLanguage(dbLang) {
+        // Priority: 1. DB fixed_language, 2. localStorage, 3. Telegram language, 4. default 'uz'
+        if (dbLang) {
+            setLanguage(dbLang);
+            return;
+        }
+        
+        let savedLang = null;
+        try {
+            savedLang = localStorage.getItem('user_lang');
+        } catch (e) {
+            console.warn("LocalStorage access denied");
+        }
+        
+        if (savedLang && translations[savedLang]) {
+            setLanguage(savedLang);
+        } else if (telegramData.languageCode) {
+            if (telegramData.languageCode === 'ru') setLanguage('ru');
+            else if (telegramData.languageCode === 'en') setLanguage('en');
+            else setLanguage('uz');
+        } else {
+            setLanguage('uz');
+        }
     }
 
+    // Initial language setup (will be overridden by DB if user exists)
+    initializeLanguage(null);
     
     // === ДАННЫЕ РЕГИОНОВ ===
     const regions = {
@@ -581,25 +593,26 @@ try {
     if (regionSelect) {
         regionSelect.innerHTML = `<option value="" disabled selected>${t('select_region')}</option>`;
         Object.keys(regions).sort().forEach(region => {
-          const option = document.createElement('option');
-          option.value = region;
-          option.textContent = region;
-          regionSelect.appendChild(option);
+            const option = document.createElement('option');
+            option.value = region;
+            option.textContent = region;
+            regionSelect.appendChild(option);
         });
         
         regionSelect.addEventListener('change', () => {
-          const districtSelect = document.getElementById('district-select');
-          districtSelect.innerHTML = `<option value="" disabled selected>${t('select_district')}</option>`;
-          districtSelect.disabled = false;
-          const selected = regionSelect.value;
-          if (selected && regions[selected]) {
-            regions[selected].sort().forEach(district => {
-              const option = document.createElement('option');
-              option.value = district;
-              option.textContent = district;
-              districtSelect.appendChild(option);
-            });
-          }
+            const districtSelect = document.getElementById('district-select');
+            if (!districtSelect) return;
+            districtSelect.innerHTML = `<option value="" disabled selected>${t('select_district')}</option>`;
+            districtSelect.disabled = false;
+            const selected = regionSelect.value;
+            if (selected && regions[selected]) {
+                regions[selected].sort().forEach(district => {
+                    const option = document.createElement('option');
+                    option.value = district;
+                    option.textContent = district;
+                    districtSelect.appendChild(option);
+                });
+            }
         });
     }
   
@@ -607,16 +620,16 @@ try {
     if (classSelect) {
         classSelect.innerHTML = `<option value="" disabled selected>${t('select_class')}</option>`;
         for (let i = 8; i <= 11; i++) {
-          const option = document.createElement('option');
-          option.value = i;
-          option.textContent = i + ' ' + t('class_s');
-          classSelect.appendChild(option);
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = i + ' ' + t('class_s');
+            classSelect.appendChild(option);
         }
     }
-async function checkProfileAndTour() {
+
+    async function checkProfileAndTour() {
         if (!tgInitData || tgInitData === "") return;
 
-        // RPC login - .single() qo'shildi, massiv o'rniga ob'ekt olish uchun
         const { data: authData, error: authError } = await supabaseClient.rpc('telegram_login', {
             p_init_data: tgInitData
         }).single();
@@ -626,7 +639,6 @@ async function checkProfileAndTour() {
             return;
         }
 
-        // Ma'lumotlarni sinxronlash
         internalDbId = authData.id;
         currentUserData = authData;
         
@@ -634,42 +646,50 @@ async function checkProfileAndTour() {
             telegramUserId = String(authData.telegram_id);
         }
 
-        const elCN = document.getElementById('cab-name'); if(elCN) elCN.textContent = authData.full_name || authData.name;
-        const elID = document.getElementById('cab-id'); if(elID) elID.textContent = String(telegramUserId).slice(-6);
+        const elCN = document.getElementById('cab-name'); 
+        if (elCN) elCN.textContent = authData.full_name || authData.name;
+        const elID = document.getElementById('cab-id'); 
+        if (elID) elID.textContent = String(telegramUserId).slice(-6);
 
+        // FIX: Set language from DB FIRST (priority over localStorage)
         if (authData.fixed_language) {
             isLangLocked = true;
             currentLang = authData.fixed_language;
             setLanguage(currentLang);
-            if(document.getElementById('lang-switcher-cab')) document.getElementById('lang-switcher-cab').disabled = true;
+            
+            // Also update localStorage to match DB
+            try {
+                localStorage.setItem('user_lang', authData.fixed_language);
+            } catch (e) { console.warn(e); }
+            
+            const cabLang = document.getElementById('lang-switcher-cab');
+            if (cabLang) cabLang.disabled = true;
         }
 
-        // Profil to'liqligini tekshirish (isComplete)
         const isComplete = authData.full_name && authData.full_name.length > 2 &&
                            authData.class && authData.region && authData.district;
         
         if (!isComplete) {
             showScreen('reg-screen');
             unlockProfileForm();
-            const backBtn = document.getElementById('reg-back-btn'); if(backBtn) backBtn.classList.add('hidden');
+            const backBtn = document.getElementById('reg-back-btn'); 
+            if (backBtn) backBtn.classList.add('hidden');
         } else {
-            // Если всё заполнено — блокируем форму и смену языка
             isProfileLocked = true;
-            isLangLocked = true; // Блокируем логику смены языка
+            isLangLocked = true;
             
-            // Физически отключаем селекты выбора языка
             const cabLang = document.getElementById('lang-switcher-cab');
-            if(cabLang) cabLang.disabled = true;
+            if (cabLang) cabLang.disabled = true;
             
             const regLang = document.getElementById('reg-lang-select');
-            if(regLang) regLang.disabled = true;
+            if (regLang) regLang.disabled = true;
 
             fillProfileForm(authData);
             showScreen('home-screen');
             await fetchStatsData(); 
         }
 
-        // TUR TEKSHIRUVI - faol turni qidirish
+        // TUR TEKSHIRUVI
         const { data: tourData, error: tourErr } = await supabaseClient
             .from('tours')
             .select('*')
@@ -696,7 +716,6 @@ async function checkProfileAndTour() {
             } else {
                 updateMainButton('start', currentTourTitle);
             }
-            // Tur topilgandan keyin statistikani yangilash
             await fetchStatsData();
         } else {
             updateMainButton('inactive');
@@ -704,28 +723,37 @@ async function checkProfileAndTour() {
     }
     
     function fillProfileForm(data) {
-        // Ismni formaga to'ldirish qatori qo'shildi:
         const nameInput = document.getElementById('full-name-input');
         if (nameInput) nameInput.value = data.full_name || '';
         
-        document.getElementById('class-select').value = data.class;
-        document.getElementById('region-select').value = data.region;
+        const classSelectEl = document.getElementById('class-select');
+        if (classSelectEl) classSelectEl.value = data.class;
+        
+        const regionSelectEl = document.getElementById('region-select');
+        if (regionSelectEl) regionSelectEl.value = data.region;
+        
         const districtSelect = document.getElementById('district-select');
-        districtSelect.innerHTML = `<option value="" disabled selected>${t('select_district')}</option>`;
-        if (regions[data.region]) {
-          regions[data.region].sort().forEach(district => {
-            const option = document.createElement('option');
-            option.value = district;
-            option.textContent = district;
-            districtSelect.appendChild(option);
-          });
+        if (districtSelect) {
+            districtSelect.innerHTML = `<option value="" disabled selected>${t('select_district')}</option>`;
+            if (regions[data.region]) {
+                regions[data.region].sort().forEach(district => {
+                    const option = document.createElement('option');
+                    option.value = district;
+                    option.textContent = district;
+                    districtSelect.appendChild(option);
+                });
+            }
+            districtSelect.value = data.district;
         }
-        districtSelect.value = data.district;
-        document.getElementById('school-input').value = data.school;
-        document.getElementById('research-consent').checked = data.research_consent || false;
+        
+        const schoolInput = document.getElementById('school-input');
+        if (schoolInput) schoolInput.value = data.school;
+        
+        const researchConsent = document.getElementById('research-consent');
+        if (researchConsent) researchConsent.checked = data.research_consent || false;
         
         const langSelect = document.getElementById('reg-lang-select');
-        if(langSelect && data.fixed_language) {
+        if (langSelect && data.fixed_language) {
             langSelect.value = data.fixed_language;
             langSelect.disabled = true;
         }
@@ -736,42 +764,52 @@ async function checkProfileAndTour() {
         const lockMsg = document.getElementById('reg-locked-msg');
         const backBtn = document.getElementById('reg-back-btn');
         
-        saveBtn.classList.add('hidden');
-        lockMsg.classList.remove('hidden');
-        
-        if(permanent) {
-            lockMsg.innerHTML = `<i class="fa-solid fa-lock"></i> 
-                                 <div style="text-align:left; margin-left:8px;">
-                                    <div style="font-weight:700;">${t('profile_locked_msg')}</div>
-                                    <div style="font-size:10px; font-weight:400; opacity:0.8;">${t('profile_locked_hint')}</div>
-                                 </div>`;
-            lockMsg.style.background = "#E8F5E9"; 
-            lockMsg.style.color = "#2E7D32";
-            lockMsg.style.border = "1px solid #C8E6C9";
-        } else {
-            lockMsg.innerHTML = `<i class="fa-solid fa-lock"></i> <span>${t('profile_locked_msg')}</span>`;
+        if (saveBtn) saveBtn.classList.add('hidden');
+        if (lockMsg) {
+            lockMsg.classList.remove('hidden');
+            
+            if (permanent) {
+                lockMsg.innerHTML = `<i class="fa-solid fa-lock"></i> 
+                                     <div style="text-align:left; margin-left:8px;">
+                                        <div style="font-weight:700;">${t('profile_locked_msg')}</div>
+                                        <div style="font-size:10px; font-weight:400; opacity:0.8;">${t('profile_locked_hint')}</div>
+                                     </div>`;
+                lockMsg.style.background = "#E8F5E9"; 
+                lockMsg.style.color = "#2E7D32";
+                lockMsg.style.border = "1px solid #C8E6C9";
+            } else {
+                lockMsg.innerHTML = `<i class="fa-solid fa-lock"></i> <span>${t('profile_locked_msg')}</span>`;
+            }
         }
 
-        backBtn.classList.remove('hidden');
+        if (backBtn) backBtn.classList.remove('hidden');
         
         document.querySelectorAll('#reg-screen input, #reg-screen select').forEach(el => el.disabled = true);
     }
 
     function unlockProfileForm() {
-        document.getElementById('save-profile').classList.remove('hidden');
-        document.getElementById('reg-back-btn').classList.add('hidden');
-        document.getElementById('reg-locked-msg').classList.add('hidden');
+        const saveBtn = document.getElementById('save-profile');
+        const backBtn = document.getElementById('reg-back-btn');
+        const lockMsg = document.getElementById('reg-locked-msg');
+        
+        if (saveBtn) saveBtn.classList.remove('hidden');
+        if (backBtn) backBtn.classList.add('hidden');
+        if (lockMsg) lockMsg.classList.add('hidden');
+        
         document.querySelectorAll('#reg-screen input, #reg-screen select').forEach(el => el.disabled = false);
     }
 
     // === АНТИ-ЧИТ: ДЕТЕКТОР СВОРАЧИВАНИЯ ===
     function handleVisibilityChange() {
         const quizScreen = document.getElementById('quiz-screen');
+        if (!quizScreen) return;
+        
         if (document.hidden && !quizScreen.classList.contains('hidden') && !tourCompleted) {
             cheatWarningCount++;
             
             if (cheatWarningCount === 1) {
-                document.getElementById('cheat-warning-modal').classList.remove('hidden');
+                const cheatModal = document.getElementById('cheat-warning-modal');
+                if (cheatModal) cheatModal.classList.remove('hidden');
             } else if (cheatWarningCount >= 2) {
                 finishTour(); 
                 alert(t('cheat_msg')); 
@@ -779,7 +817,6 @@ async function checkProfileAndTour() {
         }
     }
     document.addEventListener("visibilitychange", handleVisibilityChange);
-
 
     // === ЛОГИКА ТЕСТА, СТАТИСТИКИ И ЛИДЕРБОРДА ===
     
@@ -794,7 +831,11 @@ async function checkProfileAndTour() {
 
         if (qData) tourQuestionsCache = qData;
         
-        const { data: aData } = await supabaseClient.from('user_answers').select('question_id, is_correct').eq('user_id', internalDbId);
+        const { data: aData } = await supabaseClient
+            .from('user_answers')
+            .select('question_id, is_correct')
+            .eq('user_id', internalDbId);
+        
         if (aData) userAnswersCache = aData;
         updateDashboardStats();
     }
@@ -806,7 +847,8 @@ async function checkProfileAndTour() {
         
         subjectPrefixes.forEach(prefix => {
             const stats = calculateSubjectStats(prefix);
-            // ИСПРАВЛЕНИЕ: Используем реальное количество вопросов из базы (stats.total) вместо 15
+            // FIX: Properly declare percent variable
+            let percent = 0;
             if (stats.total > 0) {
                 percent = Math.round((stats.correct / stats.total) * 100); 
             }
@@ -820,9 +862,12 @@ async function checkProfileAndTour() {
             totalCorrect += stats.correct;
         });
         
-        document.getElementById('cab-score').textContent = totalCorrect;
-        if(tourCompleted) totalTours = 1;
-        document.getElementById('cab-tours').textContent = totalTours;
+        const cabScore = document.getElementById('cab-score');
+        if (cabScore) cabScore.textContent = totalCorrect;
+        
+        if (tourCompleted) totalTours = 1;
+        const cabTours = document.getElementById('cab-tours');
+        if (cabTours) cabTours.textContent = totalTours;
     }
 
     function calculateSubjectStats(prefix) {
@@ -841,13 +886,12 @@ async function checkProfileAndTour() {
         const targetKeywords = keywords[prefix] || [prefix];
 
         const subjectQuestions = tourQuestionsCache.filter(q => {
-            if(!q.subject) return false;
+            if (!q.subject) return false;
             const s = q.subject.toLowerCase();
             return targetKeywords.some(k => s.includes(k));
         });
 
         let correct = 0;
-        let total = 0; 
         subjectQuestions.forEach(q => {
             const answer = userAnswersCache.find(a => a.question_id === q.id);
             if (answer && answer.is_correct) correct++;
@@ -860,47 +904,48 @@ async function checkProfileAndTour() {
         const content = document.getElementById('sd-content');
         const title = document.getElementById('sd-title');
         
+        if (!modal || !content) return;
+        
         let subjTitle = t('subj_' + prefix);
-        if(!subjTitle || subjTitle === ('subj_' + prefix)) subjTitle = prefix.toUpperCase();
+        if (!subjTitle || subjTitle === ('subj_' + prefix)) subjTitle = prefix.toUpperCase();
 
-        if (modal && content) {
-            title.textContent = subjTitle;
-            let stats = calculateSubjectStats(prefix);
-
-            const html = `
-                <div class="stat-list-item">
-                    <div class="stat-list-info">
-                        <h4>${t('curr_tour')}</h4>
-                        <p>${t('total_q')}: ${stats.total || 0}</p> 
-                    </div>
-                    <div class="stat-list-value" style="color:${stats.correct > 0 ? 'var(--success)' : 'var(--text-sec)'}">
-                        ${stats.correct} ${t('correct_txt')}
-                    </div>
-                </div>`;
-            content.innerHTML = html; 
-            modal.classList.remove('hidden');
-        }
-    }
+        if (title) title.textContent = subjTitle;
+        
+        const stats = calculateSubjectStats(prefix);
+        const html = `
+            <div class="stat-list-item">
+                <div class="stat-list-info">
+                    <h4>${t('curr_tour')}</h4>
+                    <p>${t('total_q')}: ${stats.total || 0}</p> 
+                </div>
+                <div class="stat-list-value" style="color:${stats.correct > 0 ? 'var(--success)' : 'var(--text-sec)'}">
+                    ${stats.correct} ${t('correct_txt')}
+                </div>
+            </div>`;
+        content.innerHTML = html; 
+        modal.classList.remove('hidden');
+    };
 
     // === ЛИДЕРБОРД ===
     window.setLeaderboardFilter = function(filter) {
         currentLbFilter = filter;
         document.querySelectorAll('.lb-segment').forEach(el => el.classList.remove('active'));
-        document.getElementById(`filter-${filter}`).classList.add('active');
+        const filterEl = document.getElementById(`filter-${filter}`);
+        if (filterEl) filterEl.classList.add('active');
         loadLeaderboard();
-    }
+    };
 
     async function loadLeaderboard() {
         const podium = document.getElementById('lb-podium');
         const listEl = document.getElementById('lb-list');
         const stickyBar = document.getElementById('lb-user-sticky');
         
-        if(podium) podium.innerHTML = `<p style="text-align:center;width:100%;color:#999;margin-top:20px;"><i class="fa-solid fa-spinner fa-spin"></i> ${t('loading')}</p>`;
-        if(listEl) listEl.innerHTML = '';
+        if (podium) podium.innerHTML = `<p style="text-align:center;width:100%;color:#999;margin-top:20px;"><i class="fa-solid fa-spinner fa-spin"></i> ${t('loading')}</p>`;
+        if (listEl) listEl.innerHTML = '';
 
         if (!currentUserData && internalDbId) {
-             const { data } = await supabaseClient.from('users').select('*').eq('id', internalDbId).single();
-             currentUserData = data;
+            const { data } = await supabaseClient.from('users').select('*').eq('id', internalDbId).single();
+            currentUserData = data;
         }
 
         let progressData = [];
@@ -910,11 +955,11 @@ async function checkProfileAndTour() {
                 let query = supabaseClient.from('tour_progress').select('user_id, score').order('score', { ascending: false }).limit(50);
                 if (currentTourId) query = query.eq('tour_id', currentTourId);
                 const { data, error } = await query;
-                if(error) throw error;
-                progressData = data;
+                if (error) throw error;
+                progressData = data || [];
             } else {
                 if (!currentUserData) {
-                    podium.innerHTML = '<p style="text-align:center;width:100%;color:#999;">Error: No Profile</p>';
+                    if (podium) podium.innerHTML = '<p style="text-align:center;width:100%;color:#999;">Error: No Profile</p>';
                     return;
                 }
                 let userQuery = supabaseClient.from('users').select('id');
@@ -935,21 +980,20 @@ async function checkProfileAndTour() {
             }
 
             if (!progressData || progressData.length === 0) {
-                 podium.innerHTML = `<p style="text-align:center;width:100%;color:#999;margin-top:20px;">${t('no_data')}</p>`;
-                 return;
+                if (podium) podium.innerHTML = `<p style="text-align:center;width:100%;color:#999;margin-top:20px;">${t('no_data')}</p>`;
+                return;
             }
 
             const userIdsToFetch = [...new Set(progressData.map(p => p.user_id))];
-            let usersData = [];
-            const { data, error } = await supabaseClient
+            const { data: usersData, error } = await supabaseClient
                 .from('users')
                 .select('id, name, full_name, class, avatar_url, region, district, school') 
                 .in('id', userIdsToFetch);
+            
             if (error) throw error;
-            usersData = data;
 
-            let fullList = progressData.map(p => {
-                const u = usersData.find(user => user.id === p.user_id);
+            const fullList = progressData.map(p => {
+                const u = (usersData || []).find(user => user.id === p.user_id);
                 if (!u) return null;
                 return {
                     id: u.id,
@@ -969,67 +1013,65 @@ async function checkProfileAndTour() {
             updateMyStickyBar(fullList, stickyBar);
         } catch (e) {
             console.error(e);
-            podium.innerHTML = `<p style="text-align:center;color:red;">${t('error')}</p>`;
+            if (podium) podium.innerHTML = `<p style="text-align:center;color:red;">${t('error')}</p>`;
         }
     }
 
     function renderLeaderboardUI(list, podiumEl, listEl) {
+        if (!podiumEl || !listEl) return;
+        
         podiumEl.innerHTML = '';
         listEl.innerHTML = '';
         
-        // Топ-3 игрока (Подиум)
         const top3 = [list[1], list[0], list[2]]; 
         const ranks = ['second', 'first', 'third'];
         const rkClasses = ['rk-2', 'rk-1', 'rk-3'];
         const realRanks = [2, 1, 3];
+        const defaultAvatar = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%23E1E1E6"/><text x="50" y="60" font-size="40" text-anchor="middle" fill="%23666">?</text></svg>';
 
         top3.forEach((player, i) => {
             if (player) {
                 const avatarHtml = player.avatarUrl 
-                    ? `<img src="${player.avatarUrl}" class="winner-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3135/3135715.png'">`
-                    : `<div class="winner-img" style="background:#E1E1E6; display:flex; align-items:center; justify-content:center; font-size:24px; color:#666;">${player.name[0]}</div>`;
+                    ? `<img src="${player.avatarUrl}" class="winner-img" onerror="this.src='${defaultAvatar}'">`
+                    : `<div class="winner-img" style="background:#E1E1E6; display:flex; align-items:center; justify-content:center; font-size:24px; color:#666;">${player.name[0] || '?'}</div>`;
 
-                // Сокращенная локация для подиума
                 const shortLoc = (player.region || "").split(' ')[0] + ", " + (player.district || "").replace(' tumani', '').replace(' района', '');
 
-                let html = `
+                const html = `
                     <div class="winner ${ranks[i]}">
                         <div class="avatar-wrapper">
                             ${avatarHtml}
                             <div class="rank-circle ${rkClasses[i]}">${realRanks[i]}</div>
                         </div>
-                        <div class="winner-name">${player.name.split(' ').slice(0,2).join(' ')}</div>
+                        <div class="winner-name">${player.name.split(' ').slice(0, 2).join(' ')}</div>
                         <div class="winner-class" style="font-size:10px; opacity:0.8; line-height:1.2; margin-top:3px;">
-                            📍 ${shortLoc}<br>🏫 №${player.school}
+                            📍 ${shortLoc}<br>🏫 №${player.school || '?'}
                         </div>
                         <div class="winner-score">${player.score}</div>
                     </div>
                 `;
                 podiumEl.insertAdjacentHTML('beforeend', html);
             } else {
-                 podiumEl.insertAdjacentHTML('beforeend', `<div class="winner ${ranks[i]}" style="opacity:0"></div>`);
+                podiumEl.insertAdjacentHTML('beforeend', `<div class="winner ${ranks[i]}" style="opacity:0"></div>`);
             }
         });
 
-        // Основной список (4 место и ниже)
         list.slice(3).forEach((player, index) => {
             const realRank = index + 4;
             const avatarHtml = player.avatarUrl 
                 ? `<img src="${player.avatarUrl}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
                 : '';
-            const fallbackAvatar = `<div class="no-img">${player.name[0]}</div>`;
+            const fallbackAvatar = `<div class="no-img">${player.name[0] || '?'}</div>`;
 
-            // Умное сокращение ФИО (только Имя и Фамилия)
             const displayName = player.name.split(' ').slice(0, 2).join(' ');
             
-            // Умное сокращение локации
             const reg = (player.region || "").replace(" viloyati", "").replace(" shahri", "").replace(" vil", "");
             const dist = (player.district || "").replace(" tumani", "").replace(" района", "");
-            const metaInfo = `📍 ${reg}, ${dist} • 🏫 №${player.school}`;
+            const metaInfo = `📍 ${reg}, ${dist} • 🏫 №${player.school || '?'}`;
 
-            let cardStyle = player.isMe ? 'background:#F0F8FF; border:1px solid var(--primary);' : '';
+            const cardStyle = player.isMe ? 'background:#F0F8FF; border:1px solid var(--primary);' : '';
 
-            let html = `
+            const html = `
                 <div class="leader-card" style="${cardStyle}">
                     <div class="l-rank">${realRank}</div>
                     <div class="l-avatar">
@@ -1048,130 +1090,163 @@ async function checkProfileAndTour() {
     }
 
     async function updateMyStickyBar(currentList, stickyEl) {
-        if (!internalDbId) return;
+        if (!internalDbId || !stickyEl) return;
+        
         let me = currentList.find(p => p.isMe);
         let myRank = currentList.findIndex(p => p.isMe) + 1;
 
         if (!me && currentTourId) {
-             const { data } = await supabaseClient.from('tour_progress').select('score').eq('user_id', internalDbId).eq('tour_id', currentTourId).maybeSingle();
-             if (data) {
-                 me = { score: data.score };
-                 myRank = "50+";
-             }
+            const { data } = await supabaseClient
+                .from('tour_progress')
+                .select('score')
+                .eq('user_id', internalDbId)
+                .eq('tour_id', currentTourId)
+                .maybeSingle();
+            
+            if (data) {
+                me = { score: data.score };
+                myRank = "50+";
+            }
         }
+        
         if (me) {
-            document.getElementById('my-rank-val').textContent = myRank === "50+" ? ">50" : `#${myRank}`;
-            if(currentUserData) document.getElementById('my-class-val').textContent = `${currentUserData.class} ${t('class_s')}`;
-            document.getElementById('my-score-val').textContent = me.score;
+            const myRankVal = document.getElementById('my-rank-val');
+            if (myRankVal) myRankVal.textContent = myRank === "50+" ? ">50" : `#${myRank}`;
+            
+            const myClassVal = document.getElementById('my-class-val');
+            if (myClassVal && currentUserData) myClassVal.textContent = `${currentUserData.class} ${t('class_s')}`;
+            
+            const myScoreVal = document.getElementById('my-score-val');
+            if (myScoreVal) myScoreVal.textContent = me.score;
+            
             stickyEl.classList.remove('hidden');
-            document.getElementById('cab-rank').textContent = myRank === "50+" ? ">50" : `#${myRank}`;
+            
+            const cabRank = document.getElementById('cab-rank');
+            if (cabRank) cabRank.textContent = myRank === "50+" ? ">50" : `#${myRank}`;
         } else {
             stickyEl.classList.add('hidden');
         }
     }
-    // Флаг защиты от повторных нажатий (Пункт 6 анализа)
+
+    // Флаг защиты от повторных нажатий
     let isSavingProfile = false;
 
-    document.getElementById('save-profile').addEventListener('click', async () => {
-      if (isSavingProfile) return; // Если сохранение уже идет — выходим
+    const saveProfileBtn = document.getElementById('save-profile');
+    if (saveProfileBtn) {
+        saveProfileBtn.addEventListener('click', async () => {
+            if (isSavingProfile) return;
 
-      // --- НОВАЯ ПРОВЕРКА ТУТ ---
-      // Если ID почему-то стал текстом "null", пробуем взять его из WebApp еще раз
-      if (!telegramUserId || telegramUserId === "null" || telegramUserId === "undefined") {
-          if (window.Telegram && Telegram.WebApp.initDataUnsafe.user) {
-              telegramUserId = String(Telegram.WebApp.initDataUnsafe.user.id);
-          }
-      }
+            if (!telegramUserId || telegramUserId === "null" || telegramUserId === "undefined") {
+                if (window.Telegram && Telegram.WebApp.initDataUnsafe.user) {
+                    telegramUserId = String(Telegram.WebApp.initDataUnsafe.user.id);
+                }
+            }
 
-      // Если ID всё еще нет (например, открыли не в боте) — стоп
-      if (!telegramUserId || telegramUserId === "null" || isNaN(Number(telegramUserId))) {
-          alert("Xatolik: Telegram ID topilmadi. Iltimos botni qayta ishga tushiring.");
-          return;
-      }
-      // --- КОНЕЦ НОВОЙ ПРОВЕРКИ ---
-      const fullName = document.getElementById('full-name-input').value.trim();
-      const classVal = document.getElementById('class-select').value;
-      const region = document.getElementById('region-select').value;
-      const district = document.getElementById('district-select').value;
-      const school = document.getElementById('school-input').value.trim();
-      
-      if (!fullName || !classVal || !region || !district || !school) { 
-          alert(t('alert_fill')); 
-          return; 
-      }
-      
-      const btn = document.getElementById('save-profile');
-      const originalText = btn.innerHTML;
+            if (!telegramUserId || telegramUserId === "null" || isNaN(Number(telegramUserId))) {
+                alert("Xatolik: Telegram ID topilmadi. Iltimos botni qayta ishga tushiring.");
+                return;
+            }
 
-      try { 
-          isSavingProfile = true;
-          btn.disabled = true;
-          btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('save_saving')}`;
+            const fullNameInput = document.getElementById('full-name-input');
+            const classSelectEl = document.getElementById('class-select');
+            const regionSelectEl = document.getElementById('region-select');
+            const districtSelectEl = document.getElementById('district-select');
+            const schoolInput = document.getElementById('school-input');
+            const researchConsent = document.getElementById('research-consent');
 
-          const updateData = { 
-              // ИСПРАВЛЕНИЕ: Явно преобразуем ID в число для формата BIGINT
-              telegram_id: Number(telegramUserId), 
-              full_name: fullName, 
-              class: classVal, 
-              region: region, 
-              district: district, 
-              school: school, 
-              research_consent: document.getElementById('research-consent').checked,
-              fixed_language: currentLang
-          };
+            const fullName = fullNameInput ? fullNameInput.value.trim() : '';
+            const classVal = classSelectEl ? classSelectEl.value : '';
+            const region = regionSelectEl ? regionSelectEl.value : '';
+            const district = districtSelectEl ? districtSelectEl.value : '';
+            const school = schoolInput ? schoolInput.value.trim() : '';
+            
+            if (!fullName || !classVal || !region || !district || !school) { 
+                alert(t('alert_fill')); 
+                return; 
+            }
+            
+            const btn = document.getElementById('save-profile');
+            const originalText = btn.innerHTML;
 
-          const { data, error } = await supabaseClient
-              .from('users')
-              .upsert({ 
-                  // ИСПРАВЛЕНИЕ: Принудительно преобразуем telegramUserId в Number.
-                  // База данных ожидает bigint (число), и Number() гарантирует это.
-                  telegram_id: Number(telegramUserId), 
-                  ...updateData 
-              }, { onConflict: 'telegram_id' })
-              .select()
-              .maybeSingle();
-          
-          if (error) throw error;
-          
-         if (data) {
-              currentUserData = data;
-              internalDbId = data.id; 
-              isProfileLocked = true;
-              
-              // FAQAT ma'lumot saqlangan bo'lsa asosiy sahifaga o'tamiz
-              showScreen('home-screen');
-              await fetchStatsData(); 
-          } else {
-              alert("Xatolik: Ma'lumotlar bazadan qaytmadi.");
-          }
-      } catch (e) {
-          console.error("Save error:", e);
-          alert(t('error') + ': ' + e.message);
-      } finally {
-          isSavingProfile = false;
-          btn.disabled = false;
-          btn.innerHTML = originalText;
-      }
-    });  
+            try { 
+                isSavingProfile = true;
+                btn.disabled = true;
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('save_saving')}`;
+
+                const updateData = { 
+                    telegram_id: Number(telegramUserId), 
+                    full_name: fullName, 
+                    class: classVal, 
+                    region: region, 
+                    district: district, 
+                    school: school, 
+                    research_consent: researchConsent ? researchConsent.checked : false,
+                    fixed_language: currentLang
+                };
+
+                const { data, error } = await supabaseClient
+                    .from('users')
+                    .upsert({ 
+                        telegram_id: Number(telegramUserId), 
+                        ...updateData 
+                    }, { onConflict: 'telegram_id' })
+                    .select()
+                    .maybeSingle();
+                
+                if (error) throw error;
+                
+                if (data) {
+                    currentUserData = data;
+                    internalDbId = data.id; 
+                    isProfileLocked = true;
+                    isLangLocked = true;
+                    
+                    // Update localStorage to match saved language
+                    try {
+                        localStorage.setItem('user_lang', currentLang);
+                    } catch (e) { console.warn(e); }
+                    
+                    showScreen('home-screen');
+                    await fetchStatsData(); 
+                } else {
+                    alert("Xatolik: Ma'lumotlar bazadan qaytmadi.");
+                }
+            } catch (e) {
+                console.error("Save error:", e);
+                alert(t('error') + ': ' + e.message);
+            } finally {
+                isSavingProfile = false;
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
+    }
+
     // === ЛОГИКА УДАЛЕНИЯ АККАУНТА ===
     safeAddListener('delete-account-btn', 'click', () => {
-        if(tourCompleted) {
+        if (tourCompleted) {
             alert(t('del_error_active_tour'));
         } else {
-            document.getElementById('delete-confirm-modal').classList.remove('hidden');
+            const modal = document.getElementById('delete-confirm-modal');
+            if (modal) modal.classList.remove('hidden');
         }
     });
 
     safeAddListener('confirm-delete-btn', 'click', async () => {
         const btn = document.getElementById('confirm-delete-btn');
+        if (!btn) return;
+        
         btn.disabled = true;
         btn.innerHTML = '...';
         
         try {
             const { error } = await supabaseClient.from('users').delete().eq('id', internalDbId);
-            if(error) throw error;
+            if (error) throw error;
             
-            localStorage.clear();
+            try {
+                localStorage.clear();
+            } catch (e) { console.warn(e); }
+            
             location.reload(); 
         } catch (e) {
             alert(t('error') + ': ' + e.message);
@@ -1186,8 +1261,11 @@ async function checkProfileAndTour() {
         const end = currentTourEndDate ? new Date(currentTourEndDate) : null;
         
         if (end && now < end) {
-            document.getElementById('review-unlock-date').textContent = end.toLocaleDateString() + ' ' + end.toLocaleTimeString().slice(0,5);
-            document.getElementById('review-lock-modal').classList.remove('hidden');
+            const unlockDate = document.getElementById('review-unlock-date');
+            if (unlockDate) unlockDate.textContent = end.toLocaleDateString() + ' ' + end.toLocaleTimeString().slice(0, 5);
+            
+            const modal = document.getElementById('review-lock-modal');
+            if (modal) modal.classList.remove('hidden');
         } else {
             alert("Tahlil uchun ruxsat ochiq (Keyingi yangilanishda bu yerda to'liq tahlil oynasi bo'ladi).");
         }
@@ -1196,9 +1274,10 @@ async function checkProfileAndTour() {
     // === QUIZ LOGIC ===
     async function handleStartClick() {
         const btn = document.getElementById('main-action-btn');
+        if (!btn) return;
+        
         btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('loading')}`;
         
-        // 1. Загружаем все вопросы тура на нужном языке одним запросом
         const { data: allQ, error } = await supabaseClient
             .from('questions')
             .select('*')
@@ -1211,7 +1290,7 @@ async function checkProfileAndTour() {
             return; 
         }
 
-        // 2. Вспомогательная функция для точного поиска по предмету и сложности
+        // FIX: Handle empty fallback arrays safely
         const pick = (subj, diff) => {
             const keywords = {
                 'math': ['matematika', 'математика', 'math'],
@@ -1228,22 +1307,25 @@ async function checkProfileAndTour() {
                 keys.some(k => q.subject.toLowerCase().includes(k)) && 
                 q.difficulty === diff
             );
-            // Если нужной сложности нет, берем любую другую этого же предмета
-            if (pool.length === 0) {
-                const fallback = allQ.filter(q => q.subject && keys.some(k => q.subject.toLowerCase().includes(k)));
+            
+            if (pool.length > 0) {
+                return pool[Math.floor(Math.random() * pool.length)];
+            }
+            
+            // Fallback: any question from this subject
+            const fallback = allQ.filter(q => q.subject && keys.some(k => q.subject.toLowerCase().includes(k)));
+            if (fallback.length > 0) {
                 return fallback[Math.floor(Math.random() * fallback.length)];
             }
-            return pool[Math.floor(Math.random() * pool.length)];
+            
+            return undefined; // FIX: Return undefined instead of undefined array access
         };
 
-        // 3. Сборка билета (Математика 1-1-1 + Скользящий баланс для остальных)
-        // Математика всегда получает Easy, Medium и Hard
         const ticket = [pick('math', 'Easy'), pick('math', 'Medium'), pick('math', 'Hard')];
         
-        // Для остальных 6 предметов создаем скользящий банк (7 Easy, 4 Medium, 1 Hard)
         const others = ['eng', 'phys', 'chem', 'bio', 'it', 'eco'];
         let diffPool = ['Hard', 'Medium', 'Medium', 'Medium', 'Medium', 'Easy', 'Easy', 'Easy', 'Easy', 'Easy', 'Easy', 'Easy'];
-        diffPool.sort(() => 0.5 - Math.random()); // Перемешиваем сложности
+        diffPool.sort(() => 0.5 - Math.random());
 
         let poolIdx = 0;
         others.forEach(subj => {
@@ -1251,25 +1333,30 @@ async function checkProfileAndTour() {
             ticket.push(pick(subj, diffPool[poolIdx++]));
         });
 
-        // 1. Создаем веса для сложности
-const diffWeights = { 'Easy': 1, 'Medium': 2, 'Hard': 3 };
+        const diffWeights = { 'Easy': 1, 'Medium': 2, 'Hard': 3 };
 
-// 2. Сначала фильтруем, потом сортируем по сложности (Лесенка)
-questions = ticket.filter(q => q !== undefined).sort((a, b) => {
-    return diffWeights[a.difficulty] - diffWeights[b.difficulty];
-});
+        questions = ticket.filter(q => q !== undefined).sort((a, b) => {
+            return (diffWeights[a.difficulty] || 0) - (diffWeights[b.difficulty] || 0);
+        });
 
-// Теперь вопросы всегда будут идти: сначала все Easy, потом Medium, потом Hard.
+        if (questions.length === 0) {
+            alert("Savollar topilmadi / Вопросы не найдены.");
+            updateMainButton('start', formatTourTitle(currentTourTitle)); 
+            return;
+        }
 
-        // 4. ТОЧНЫЙ РАСЧЕТ ВРЕМЕНИ
         const totalSeconds = questions.reduce((acc, q) => acc + (q.time_limit_seconds || 60), 0);
         const totalMinutes = Math.ceil(totalSeconds / 60);
 
-        // Обновляем данные в модальном окне уведомления
-        document.getElementById('warn-q-val').textContent = questions.length + ' ' + t('questions');
-        document.getElementById('warn-time-val').textContent = totalMinutes + ' ' + t('minutes');
+        const warnQVal = document.getElementById('warn-q-val');
+        if (warnQVal) warnQVal.textContent = questions.length + ' ' + t('questions');
         
-        document.getElementById('warning-modal').classList.remove('hidden');
+        const warnTimeVal = document.getElementById('warn-time-val');
+        if (warnTimeVal) warnTimeVal.textContent = totalMinutes + ' ' + t('minutes');
+        
+        const warningModal = document.getElementById('warning-modal');
+        if (warningModal) warningModal.classList.remove('hidden');
+        
         updateMainButton('start', formatTourTitle(currentTourTitle)); 
     }
 
@@ -1294,9 +1381,11 @@ questions = ticket.filter(q => q !== undefined).sort((a, b) => {
             activeBtn.disabled = false;
             activeBtn.style.background = ""; 
             if (certCard) certCard.classList.remove('hidden'); 
-            activeBtn.addEventListener('click', () => document.getElementById('tour-info-modal').classList.remove('hidden'));
+            activeBtn.addEventListener('click', () => {
+                const modal = document.getElementById('tour-info-modal');
+                if (modal) modal.classList.remove('hidden');
+            });
         } else {
-            // Применяем форматирование заголовка
             const displayTitle = formatTourTitle(title || t('start_tour_btn'));
             activeBtn.innerHTML = `<i class="fa-solid fa-play"></i> ${displayTitle}`;
             activeBtn.className = 'btn-primary';
@@ -1306,231 +1395,345 @@ questions = ticket.filter(q => q !== undefined).sort((a, b) => {
             activeBtn.addEventListener('click', handleStartClick);
         }
     }
+
     safeAddListener('confirm-start', 'click', () => {
-      document.getElementById('warning-modal').classList.add('hidden');
-      try {
-    localStorage.setItem('tour_start_time', Date.now());
-} catch (e) {
-    console.warn("LocalStorage error:", e);
-}
-      
-      // Сбрасываем внутренние счетчики
-      currentQuestionIndex = 0;
-      correctCount = 0;
-      showScreen('quiz-screen');
-      
-      // Считаем сумму секунд билета для таймера
-      const totalSeconds = questions.reduce((acc, q) => acc + (q.time_limit_seconds || 60), 0);
-      startTimer(totalSeconds);
-      showQuestion();
+        const warningModal = document.getElementById('warning-modal');
+        if (warningModal) warningModal.classList.add('hidden');
+        
+        try {
+            localStorage.setItem('tour_start_time', Date.now().toString());
+        } catch (e) {
+            console.warn("LocalStorage error:", e);
+        }
+        
+        currentQuestionIndex = 0;
+        correctCount = 0;
+        cheatWarningCount = 0; // Reset cheat counter
+        
+        showScreen('quiz-screen');
+        
+        const totalSeconds = questions.reduce((acc, q) => acc + (q.time_limit_seconds || 60), 0);
+        startTimer(totalSeconds);
+        showQuestion();
     });
 
-      function startTimer(seconds) {
-      let timeLeft = seconds;
-      const timerEl = document.getElementById('timer');
-      if (timerInterval) clearInterval(timerInterval);
-      timerInterval = setInterval(() => {
-        const mins = Math.floor(timeLeft / 60);
-        const secs = timeLeft % 60;
-        timerEl.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-        if (timeLeft <= 0) { clearInterval(timerInterval); finishTour(); }
-        timeLeft--;
-      }, 1000);
+    function startTimer(seconds) {
+        let timeLeft = seconds;
+        const timerEl = document.getElementById('timer');
+        
+        // FIX: Clear existing timer to prevent memory leaks
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+        
+        timerInterval = setInterval(() => {
+            if (!timerEl) {
+                clearInterval(timerInterval);
+                return;
+            }
+            
+            const mins = Math.floor(timeLeft / 60);
+            const secs = timeLeft % 60;
+            timerEl.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            
+            if (timeLeft <= 0) { 
+                clearInterval(timerInterval); 
+                timerInterval = null;
+                finishTour(); 
+            }
+            timeLeft--;
+        }, 1000);
     }
 
     function showQuestion() {
-      const q = questions[currentQuestionIndex];
-      document.getElementById('question-number').textContent = currentQuestionIndex + 1;
-      document.getElementById('total-q-count').textContent = questions.length;
-      
-      let diffBadge = '';
-      if(q.difficulty === 'Easy') diffBadge = '🟢 Easy';
-      if(q.difficulty === 'Medium') diffBadge = '🟡 Medium';
-      if(q.difficulty === 'Hard') diffBadge = '🔴 Hard';
+        const q = questions[currentQuestionIndex];
+        if (!q) return;
+        
+        const questionNumber = document.getElementById('question-number');
+        if (questionNumber) questionNumber.textContent = currentQuestionIndex + 1;
+        
+        const totalQCount = document.getElementById('total-q-count');
+        if (totalQCount) totalQCount.textContent = questions.length;
+        
+        let diffBadge = '';
+        if (q.difficulty === 'Easy') diffBadge = '🟢 Easy';
+        if (q.difficulty === 'Medium') diffBadge = '🟡 Medium';
+        if (q.difficulty === 'Hard') diffBadge = '🔴 Hard';
 
-      document.getElementById('subject-tag').innerHTML = (q.subject || 'Q') + ' <span style="opacity:0.6; margin-left:5px; font-size:10px;">' + diffBadge + '</span>';
-      
-      const imgCont = document.getElementById('q-img-cont');
-      const img = document.getElementById('q-img');
-      const loader = imgCont.querySelector('.img-loader');
+        const subjectTag = document.getElementById('subject-tag');
+        if (subjectTag) subjectTag.innerHTML = (q.subject || 'Q') + ' <span style="opacity:0.6; margin-left:5px; font-size:10px;">' + diffBadge + '</span>';
+        
+        const imgCont = document.getElementById('q-img-cont');
+        const img = document.getElementById('q-img');
+        
+        if (imgCont && img) {
+            const loader = imgCont.querySelector('.img-loader');
 
-      if (q.image_url) {
-          imgCont.classList.remove('hidden');
-          loader.classList.remove('hidden'); 
-          img.classList.add('hidden'); 
-          
-          img.onload = () => {
-              loader.classList.add('hidden');
-              img.classList.remove('hidden');
-          };
-          img.onerror = () => {
-              imgCont.classList.add('hidden'); 
-          };
-          img.src = q.image_url;
-      } else {
-          imgCont.classList.add('hidden');
-          img.src = '';
-      }
+            if (q.image_url) {
+                imgCont.classList.remove('hidden');
+                if (loader) loader.classList.remove('hidden'); 
+                img.classList.add('hidden'); 
+                
+                img.onload = () => {
+                    if (loader) loader.classList.add('hidden');
+                    img.classList.remove('hidden');
+                };
+                img.onerror = () => {
+                    imgCont.classList.add('hidden'); 
+                };
+                img.src = q.image_url;
+            } else {
+                imgCont.classList.add('hidden');
+                img.src = '';
+            }
+        }
 
-      document.getElementById('question-text').innerHTML = q.question_text;
-      const timeForQ = q.time_limit_seconds || 60;
-      document.getElementById('q-time-hint').innerHTML = `<i class="fa-solid fa-hourglass-half"></i> ${timeForQ}s`;
-      document.getElementById('quiz-progress-fill').style.width = `${((currentQuestionIndex + 1) / questions.length) * 100}%`;
-      const container = document.getElementById('options-container');
-      container.innerHTML = '';
-      const nextBtn = document.getElementById('next-button');
-      nextBtn.disabled = true;
-      nextBtn.innerHTML = `${t('btn_next')} <i class="fa-solid fa-arrow-right"></i>`;
-      selectedAnswer = null;
-      const optionsText = (q.options_text || '').trim();
-      if (optionsText !== '') {
-        const options = optionsText.split('\n');
-        const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
-        options.forEach((option, index) => {
-          if (option.trim()) {
-            const letter = letters[index] || '';
-            const btn = document.createElement('div');
-            btn.className = 'option-card';
-            btn.innerHTML = `<div class="option-circle">${letter}</div><div class="option-text">${option.trim()}</div>`;
-            btn.onclick = () => {
-              document.querySelectorAll('.option-card').forEach(b => b.classList.remove('selected'));
-              btn.classList.add('selected');
-              const optText = option.trim();
-              const isLetterOption = optText.match(/^[A-DА-Г][)\.\s]/i);
-              selectedAnswer = isLetterOption ? optText.charAt(0).toUpperCase() : optText;
-              if (!selectedAnswer && letter) selectedAnswer = letter;
-              if (!selectedAnswer) selectedAnswer = optText;
-              nextBtn.disabled = false;
-            };
-            container.appendChild(btn);
-          }
-        });
-      } else {
-        const textarea = document.createElement('textarea');
-        textarea.className = 'answer-input';
-        textarea.placeholder = t('answer_placeholder');
-        textarea.rows = 2;
-        textarea.addEventListener('input', () => {
-          selectedAnswer = textarea.value.trim();
-          nextBtn.disabled = selectedAnswer.length === 0;
-        });
-        container.appendChild(textarea);
-      }
-        renderLaTeX(); // <--- Вставьте это здесь
-}
+        const questionText = document.getElementById('question-text');
+        if (questionText) questionText.innerHTML = q.question_text || '';
+        
+        const timeForQ = q.time_limit_seconds || 60;
+        const qTimeHint = document.getElementById('q-time-hint');
+        if (qTimeHint) qTimeHint.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> ${timeForQ}s`;
+        
+        const progressFill = document.getElementById('quiz-progress-fill');
+        if (progressFill) progressFill.style.width = `${((currentQuestionIndex + 1) / questions.length) * 100}%`;
+        
+        const container = document.getElementById('options-container');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        const nextBtn = document.getElementById('next-button');
+        if (nextBtn) {
+            nextBtn.disabled = true;
+            nextBtn.innerHTML = `${t('btn_next')} <i class="fa-solid fa-arrow-right"></i>`;
+        }
+        
+        selectedAnswer = null;
+        
+        const optionsText = (q.options_text || '').trim();
+        if (optionsText !== '') {
+            const options = optionsText.split('\n');
+            const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+            options.forEach((option, index) => {
+                if (option.trim()) {
+                    const letter = letters[index] || '';
+                    const btn = document.createElement('div');
+                    btn.className = 'option-card';
+                    btn.innerHTML = `<div class="option-circle">${letter}</div><div class="option-text">${option.trim()}</div>`;
+                    btn.onclick = () => {
+                        document.querySelectorAll('.option-card').forEach(b => b.classList.remove('selected'));
+                        btn.classList.add('selected');
+                        const optText = option.trim();
+                        const isLetterOption = optText.match(/^[A-DА-Г][)\.\s]/i);
+                        selectedAnswer = isLetterOption ? optText.charAt(0).toUpperCase() : optText;
+                        if (!selectedAnswer && letter) selectedAnswer = letter;
+                        if (!selectedAnswer) selectedAnswer = optText;
+                        if (nextBtn) nextBtn.disabled = false;
+                    };
+                    container.appendChild(btn);
+                }
+            });
+        } else {
+            const textarea = document.createElement('textarea');
+            textarea.className = 'answer-input';
+            textarea.placeholder = t('answer_placeholder');
+            textarea.rows = 2;
+            textarea.addEventListener('input', () => {
+                selectedAnswer = textarea.value.trim();
+                if (nextBtn) nextBtn.disabled = selectedAnswer.length === 0;
+            });
+            container.appendChild(textarea);
+        }
+        
+        renderLaTeX();
+    }
     
     safeAddListener('next-button', 'click', async () => {
-      const nextBtn = document.getElementById('next-button');
-      nextBtn.disabled = true;
-      nextBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('saving_ans')}`;
-      
-      if (!internalDbId) {
-          const { data } = await supabaseClient.from('users').select('id').eq('telegram_id', telegramUserId).maybeSingle();
-          if(data) internalDbId = data.id;
-      }
-      
-      const q = questions[currentQuestionIndex];
-// Вызываем проверку на сервере (RPC)
-      const { data: isCorrect, error: rpcError } = await supabaseClient.rpc('check_user_answer', {
-          p_question_id: Number(q.id),
-          p_user_answer: selectedAnswer
-      });
+        const nextBtn = document.getElementById('next-button');
+        if (!nextBtn) return;
+        
+        nextBtn.disabled = true;
+        nextBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('saving_ans')}`;
+        
+        if (!internalDbId) {
+            const { data } = await supabaseClient
+                .from('users')
+                .select('id')
+                .eq('telegram_id', telegramUserId)
+                .maybeSingle();
+            if (data) internalDbId = data.id;
+        }
+        
+        const q = questions[currentQuestionIndex];
+        if (!q) return;
 
-      // FAIL-SAFE: Если сервер выдал ошибку или интернет пропал
-      if (rpcError) {
-          console.error("RPC Error:", rpcError);
-          alert("Aloqa xatosi. Javob saqlanmadi. Qayta urinib ko'ring.");
-          nextBtn.disabled = false;
-          nextBtn.innerHTML = t('repeat');
-          return; // ОСТАНАВЛИВАЕМ код, чтобы не потерять ответ пользователя
-      }
-      
-      const finalIsCorrect = (isCorrect === true);
-      if (finalIsCorrect) correctCount++;      
-      try {
-          const { error } = await supabaseClient.from('user_answers').upsert({
-              user_id: internalDbId, question_id: q.id, answer: selectedAnswer, is_correct: finalIsCorrect
+        const { data: isCorrect, error: rpcError } = await supabaseClient.rpc('check_user_answer', {
+            p_question_id: Number(q.id),
+            p_user_answer: selectedAnswer
+        });
+
+        if (rpcError) {
+            console.error("RPC Error:", rpcError);
+            alert("Aloqa xatosi. Javob saqlanmadi. Qayta urinib ko'ring.");
+            nextBtn.disabled = false;
+            nextBtn.innerHTML = t('repeat');
+            return;
+        }
+        
+        const finalIsCorrect = (isCorrect === true);
+        if (finalIsCorrect) correctCount++;
+        
+        try {
+            // FIX: Correct onConflict syntax (no space)
+            const { error } = await supabaseClient.from('user_answers').upsert({
+                user_id: internalDbId, 
+                question_id: q.id, 
+                answer: selectedAnswer, 
+                is_correct: finalIsCorrect
             }, { onConflict: 'user_id,question_id' });
-          if (error) throw error;
-          
-          currentQuestionIndex++;
-          if (currentQuestionIndex < questions.length) showQuestion();
-          else finishTour();
-      } catch (e) {
-          alert('Error: ' + e.message);
-          nextBtn.disabled = false;
-          nextBtn.innerHTML = t('repeat');
-      }
+            
+            if (error) throw error;
+            
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                showQuestion();
+            } else {
+                finishTour();
+            }
+        } catch (e) {
+            alert('Error: ' + e.message);
+            nextBtn.disabled = false;
+            nextBtn.innerHTML = t('repeat');
+        }
     });
 
     async function finishTour() {
-      clearInterval(timerInterval);
-      tourCompleted = true;
-      
-      const start = localStorage.getItem('tour_start_time');
-      const timeTaken = start ? Math.floor((Date.now() - Number(start)) / 1000) : 0;
-      
-      try {
-          await supabaseClient.from('tour_progress').upsert({
-              user_id: internalDbId,
-              tour_id: currentTourId,
-              score: correctCount, 
-              total_time_taken: timeTaken
-          }, { onConflict: 'user_id, tour_id' }); 
-      } catch (e) { console.error("Time update failed", e); }
+        // FIX: Clear timer to prevent memory leak
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+        
+        tourCompleted = true;
+        
+        let timeTaken = 0;
+        try {
+            const start = localStorage.getItem('tour_start_time');
+            timeTaken = start ? Math.floor((Date.now() - Number(start)) / 1000) : 0;
+        } catch (e) {
+            console.warn(e);
+        }
+        
+        try {
+            // FIX: Correct onConflict syntax (no space)
+            await supabaseClient.from('tour_progress').upsert({
+                user_id: internalDbId,
+                tour_id: currentTourId,
+                score: correctCount, 
+                total_time_taken: timeTaken
+            }, { onConflict: 'user_id,tour_id' }); 
+        } catch (e) { 
+            console.error("Progress save failed", e); 
+        }
 
-      const percent = Math.round((correctCount / questions.length) * 100);
-      showScreen('result-screen');
-      document.getElementById('res-tour-title').textContent = formatTourTitle(currentTourTitle || "1-Tur");
-      document.getElementById('res-total').textContent = questions.length;
-      document.getElementById('res-correct').textContent = correctCount;
-      document.getElementById('result-percent').textContent = `${percent}%`;
-      const circle = document.getElementById('result-circle');
-      if (circle) circle.style.background = `conic-gradient(var(--primary) 0% ${percent}%, #E5E5EA ${percent}% 100%)`;
-      updateMainButton('completed');
-      document.getElementById('subjects-title').textContent = t('curr_tour'); 
-      fetchStatsData(); 
+        const percent = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
+        
+        showScreen('result-screen');
+        
+        const resTourTitle = document.getElementById('res-tour-title');
+        if (resTourTitle) resTourTitle.textContent = formatTourTitle(currentTourTitle || "1-Tur");
+        
+        const resTotal = document.getElementById('res-total');
+        if (resTotal) resTotal.textContent = questions.length;
+        
+        const resCorrect = document.getElementById('res-correct');
+        if (resCorrect) resCorrect.textContent = correctCount;
+        
+        const resultPercent = document.getElementById('result-percent');
+        if (resultPercent) resultPercent.textContent = `${percent}%`;
+        
+        const circle = document.getElementById('result-circle');
+        if (circle) circle.style.background = `conic-gradient(var(--primary) 0% ${percent}%, #E5E5EA ${percent}% 100%)`;
+        
+        updateMainButton('completed');
+        
+        const subjectsTitle = document.getElementById('subjects-title');
+        if (subjectsTitle) subjectsTitle.textContent = t('curr_tour'); 
+        
+        fetchStatsData(); 
     }
+
     function showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-        document.getElementById(screenId).classList.remove('hidden');
+        const screen = document.getElementById(screenId);
+        if (screen) screen.classList.remove('hidden');
         window.scrollTo(0, 0);
     }
+
     window.openExternalLink = function(url) {
-        if(window.Telegram && Telegram.WebApp) Telegram.WebApp.openLink(url);
-        else window.open(url, '_blank');
-    }
+        if (window.Telegram && Telegram.WebApp) {
+            Telegram.WebApp.openLink(url);
+        } else {
+            window.open(url, '_blank');
+        }
+    };
+
     function safeAddListener(id, event, handler) {
         const el = document.getElementById(id);
         if (el) el.addEventListener(event, handler);
     }
+
     safeAddListener('open-cabinet-btn', 'click', () => { 
         showScreen('cabinet-screen'); 
         loadLeaderboard(); 
     });
+    
     safeAddListener('close-cabinet', 'click', () => showScreen('home-screen'));
     
     safeAddListener('btn-edit-profile', 'click', () => {
         showScreen('reg-screen');
-        if(isProfileLocked) lockProfileForm(true); 
-        else unlockProfileForm();
-        document.getElementById('reg-back-btn').classList.remove('hidden'); 
+        if (isProfileLocked) {
+            lockProfileForm(true); 
+        } else {
+            unlockProfileForm();
+        }
+        const backBtn = document.getElementById('reg-back-btn');
+        if (backBtn) backBtn.classList.remove('hidden'); 
     });
+    
     safeAddListener('reg-back-btn', 'click', () => showScreen('cabinet-screen'));
 
     safeAddListener('leaderboard-btn', 'click', () => {
         showScreen('leaderboard-screen');
         setLeaderboardFilter('republic');
     });
+    
     safeAddListener('lb-back', 'click', () => showScreen('home-screen'));
-    safeAddListener('about-btn', 'click', () => document.getElementById('about-modal').classList.remove('hidden'));
-    safeAddListener('close-about', 'click', () => document.getElementById('about-modal').classList.add('hidden'));
+    safeAddListener('about-btn', 'click', () => {
+        const modal = document.getElementById('about-modal');
+        if (modal) modal.classList.remove('hidden');
+    });
+    
+    safeAddListener('close-about', 'click', () => {
+        const modal = document.getElementById('about-modal');
+        if (modal) modal.classList.add('hidden');
+    });
     
     safeAddListener('exit-app-btn', 'click', () => {
+        // FIX: Clear timer before exit
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+        
         if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) {
             Telegram.WebApp.close();
         } else {
-            localStorage.clear();
+            try {
+                localStorage.clear();
+            } catch (e) { console.warn(e); }
             location.reload();
         }
     });
@@ -1538,35 +1741,50 @@ questions = ticket.filter(q => q !== undefined).sort((a, b) => {
     safeAddListener('home-cert-btn', 'click', () => showCertsModal());
     safeAddListener('download-certificate-res-btn', 'click', () => showCertsModal());
     safeAddListener('btn-open-certs-cab', 'click', () => showCertsModal()); 
-    safeAddListener('cancel-start', 'click', () => document.getElementById('warning-modal').classList.add('hidden'));
+    safeAddListener('cancel-start', 'click', () => {
+        const modal = document.getElementById('warning-modal');
+        if (modal) modal.classList.add('hidden');
+    });
     safeAddListener('back-home', 'click', () => showScreen('home-screen'));
     safeAddListener('back-home-x', 'click', () => showScreen('home-screen'));
+
     function showCertsModal() {
         const container = document.getElementById('certs-list-container');
-        container.innerHTML = `
-            <div class="cert-card">
-                <div class="cert-icon"><i class="fa-solid fa-file-pdf"></i></div>
-                <div class="cert-info"><h4>${t('cert_title')}</h4><p>${new Date().toLocaleDateString()}</p></div>
-                <div class="cert-action"><span class="badge-soon">Soon</span></div>
-            </div>`;
-        document.getElementById('certs-modal').classList.remove('hidden');
-    } 
-// Даем Telegram время на передачу данных, затем запускаем приложение
+        if (container) {
+            container.innerHTML = `
+                <div class="cert-card">
+                    <div class="cert-icon"><i class="fa-solid fa-file-pdf"></i></div>
+                    <div class="cert-info"><h4>${t('cert_title')}</h4><p>${new Date().toLocaleDateString()}</p></div>
+                    <div class="cert-action"><span class="badge-soon">Soon</span></div>
+                </div>`;
+        }
+        const modal = document.getElementById('certs-modal');
+        if (modal) modal.classList.remove('hidden');
+    }
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+    });
+
+    // Initialize app after Telegram data is ready
     setTimeout(() => {
         if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe.user) {
             tgInitData = Telegram.WebApp.initData;
             
-            // ИСПРАВЛЕНИЕ: Гарантируем, что ID берется как строка, но только если он существует
-            const tgUser = Telegram.WebApp.initDataUnsafe.user;
-            if (tgUser && tgUser.id) {
-                telegramUserId = String(tgUser.id);
+            const user = Telegram.WebApp.initDataUnsafe.user;
+            if (user && user.id) {
+                telegramUserId = String(user.id);
             }
+            
+            checkProfileAndTour();
+        } else {
+            console.warn("Telegram WebApp not available or no user data");
+            // For testing outside Telegram
+            checkProfileAndTour();
         }
-        checkProfileAndTour();
-    }, 300);
-}); // Самый конец DOMContentLoaded
-
-
-
-
-
+    }, 100);
+});
