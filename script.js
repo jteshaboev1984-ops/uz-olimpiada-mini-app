@@ -492,10 +492,12 @@ document.querySelectorAll('[data-i18n]').forEach(el => {
             if(!isLangLocked) {
                 setLanguage(e.target.value);
                 try {
-    localStorage.setItem('user_lang', e.target.value); 
-} catch (e) {
-    console.warn("LocalStorage error:", e);
-} 
+                    localStorage.setItem('user_lang', e.target.value); 
+                } catch (err) { console.warn(err); }
+            } else {
+                // Если язык заблокирован, возвращаем селект в прежнее состояние и выводим alert
+                document.getElementById('lang-switcher-cab').value = currentLang;
+                alert(t('lang_locked_reason'));
             }
         });
     }
@@ -644,6 +646,7 @@ try {
             isLangLocked = true;
             currentLang = authData.fixed_language;
             setLanguage(currentLang);
+            if(document.getElementById('lang-switcher-cab')) document.getElementById('lang-switcher-cab').disabled = true;
         }
 
         // 4. Проверка полноты профиля (усиленная)
@@ -893,7 +896,7 @@ try {
             let usersData = [];
             const { data, error } = await supabaseClient
                 .from('users')
-                .select('id, name, class, avatar_url, region, district, school') 
+                .select('id, name, full_name, class, avatar_url, region, district, school') 
                 .in('id', userIdsToFetch);
             if (error) throw error;
             usersData = data;
@@ -903,7 +906,7 @@ try {
                 if (!u) return null;
                 return {
                     id: u.id,
-                    name: u.name || t('anonymous'), 
+                    name: u.full_name || u.name || t('anonymous'),
                     classVal: u.class || '?',
                     region: u.region,
                     district: u.district,
@@ -1488,6 +1491,7 @@ questions = ticket.filter(q => q !== undefined).sort((a, b) => {
         checkProfileAndTour();
     }, 300);
 }); // Самый конец DOMContentLoaded
+
 
 
 
