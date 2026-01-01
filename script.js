@@ -1484,7 +1484,12 @@ questions = ticket.filter(q => q !== undefined).sort((a, b) => {
         document.getElementById('certs-modal').classList.remove('hidden');
     } 
 
-    // Запуск приложения
-    checkProfileAndTour(); 
-
-}); // Конец скрипта
+    // Даем Telegram 200мс на подготовку данных, затем входим
+    setTimeout(() => {
+        // Если мы в Telegram, пробуем войти через RPC
+        if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) {
+            tgInitData = Telegram.WebApp.initData;
+        }
+        checkProfileAndTour();
+    }, 200);
+});
