@@ -1032,7 +1032,8 @@ document.addEventListener('DOMContentLoaded', function() {
       btn.disabled = true;
       btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('save_saving')}`;
       
-      try { // <--- Ориентир: блок должен начинаться с try
+      try {
+          // Мы обновляем только профиль, telegram_id менять не нужно, он уже есть в базе
           const updateData = { 
               full_name: fullName, 
               class: classVal, 
@@ -1046,7 +1047,7 @@ document.addEventListener('DOMContentLoaded', function() {
           const { data, error } = await supabaseClient
               .from('users')
               .update(updateData)
-              .eq('id', internalDbId)
+              .eq('telegram_id', telegramUserId) // ИСПОЛЬЗУЕМ telegramUserId (он всегда есть)
               .select()
               .single();
 
@@ -1059,7 +1060,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
           showScreen('home-screen');
           await checkProfileAndTour(); 
-      } catch (e) { // <--- Ориентир: перед catch ОБЯЗАТЕЛЬНО должна быть скобка }
+      } catch (e) {
+          console.error("Save error:", e);
           alert(t('error') + ': ' + e.message);
           btn.disabled = false;
           btn.innerHTML = originalText;
@@ -1469,3 +1471,4 @@ questions = ticket.filter(q => q !== undefined).sort((a, b) => {
         checkProfileAndTour();
     }, 300);
 }); // Конец DOMContentLoaded
+
