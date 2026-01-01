@@ -592,84 +592,61 @@ document.addEventListener('DOMContentLoaded', function() {
   
     // === ГЛАВНАЯ ЛОГИКА ===
     async function checkProfileAndTour() {
-        // 1. БЕЗОПАСНЫЙ ВХОД: Вызываем SQL-функцию (RPC)
+        // Проверка: видит ли скрипт данные от Telegram
+        if (!tgInitData || tgInitData === "") {
+            alert("Ошибка: Telegram ma'lumotlari topilmadi (initData is empty).\n\nПопробуйте открыть приложение ТОЛЬКО через кнопку Menu в боте.");
+            return;
+        }
+
         const { data: authData, error: authError } = await supabaseClient.rpc('telegram_login', {
             p_init_data: tgInitData
         });
 
-        // Если ошибка — значит Telegram-данные не прошли проверку безопасности
-        if (authError || !authData) {
+        // Если база данных вернула ошибку соединения или прав
+        if (authError) {
             console.error("Auth failed:", authError);
-            alert("Avtorizatsiya xatosi. Iltimos, qayta kiring.");
+            alert("Server xatosi (RPC):\n" + authError.message + "\nCode: " + authError.code);
             return;
         }
 
-        // Сохраняем ID пользователя и его данные из БД в память приложения
+        // Если база вернула "ничего" (null) — значит Токен бота в SQL-функции неверный
+        if (!authData) {
+            alert("Avtorizatsiya rad etildi.\n\nПроверьте BOT TOKEN внутри SQL-функции telegram_login в Supabase!");
+            return;
+        }
+
+        // Если проверка прошла успешно, сохраняем данные
         internalDbId = authData.id;
         currentUserData = authData;
 
-        // 2. ОБНОВЛЯЕМ ИНТЕРФЕЙС КАБИНЕТА
-        const elCN = document.getElementById('cab-name'); 
-        if(elCN) elCN.textContent = authData.full_name || authData.name || "Ishtirokchi";
-        
-        const elID = document.getElementById('cab-id'); 
-        if(elID) elID.textContent = String(authData.telegram_id).slice(-6);
+        const elCN = document.getElementById('cab-name'); if(elCN) elCN.textContent = authData.full_name || authData.name;
+        const elID = document.getElementById('cab-id'); if(elID) elID.textContent = String(authData.telegram_id).slice(-6);
+        const elCI = document.getElementById('cab-avatar-img'); if(elCI && authData.avatar_url) elCI.src = authData.avatar_url;
 
-        const elCI = document.getElementById('cab-avatar-img');
-        if(elCI && authData.avatar_url) elCI.src = authData.avatar_url;
-
-        // 3. БЛОКИРОВКА ЯЗЫКА (Если он уже зафиксирован в базе)
         if (authData.fixed_language) {
             isLangLocked = true;
             currentLang = authData.fixed_language;
             setLanguage(authData.fixed_language);
-            
-            const cabLang = document.getElementById('lang-switcher-cab');
-            if(cabLang) cabLang.disabled = true;
-            const cabMsg = document.getElementById('lang-lock-msg');
-            if(cabMsg) cabMsg.classList.remove('hidden');
         }
 
-        // 4. ПОИСК АКТИВНОГО ТУРА
         const now = new Date().toISOString();
-        const { data: tourData } = await supabaseClient
-            .from('tours')
-            .select('*')
-            .lte('start_date', now)
-            .gte('end_date', now)
-            .eq('is_active', true)
-            .maybeSingle();
+        const { data: tourData } = await supabaseClient.from('tours').select('*').lte('start_date', now).gte('end_date', now).eq('is_active', true).maybeSingle();
         
         if (tourData) {
-            currentTourId = tourData.id; 
-            currentTourTitle = tourData.title; 
-            currentTourEndDate = tourData.end_date;
-            
-            // Проверяем, сдавал ли уже пользователь этот тур
-            const { data: progress } = await supabaseClient
-                .from('tour_progress')
-                .select('*')
-                .eq('user_id', internalDbId)
-                .eq('tour_id', tourData.id)
-                .maybeSingle();
-                
+            currentTourId = tourData.id; currentTourTitle = tourData.title; currentTourEndDate = tourData.end_date;
+            const { data: progress } = await supabaseClient.from('tour_progress').select('*').eq('user_id', internalDbId).eq('tour_id', tourData.id).maybeSingle();
             tourCompleted = !!progress;
-            
             setLanguage(currentLang);
-            await fetchStatsData(); // Загружаем статистику для кабинета
+            await fetchStatsData();
         } else {
             updateMainButton('inactive');
         }
 
-        // 5. ПРОВЕРКА ЗАПОЛНЕННОСТИ ПРОФИЛЯ
-        // Если нет официального ФИО или класса — отправляем на регистрацию
-        const isProfileComplete = authData.full_name && authData.class && authData.region && authData.district;
-        
-        if (!isProfileComplete) {
+        const isComplete = authData.full_name && authData.class && authData.region && authData.district;
+        if (!isComplete) {
             showScreen('reg-screen');
             unlockProfileForm();
-            const backBtn = document.getElementById('reg-back-btn');
-            if(backBtn) backBtn.classList.add('hidden');
+            const backBtn = document.getElementById('reg-back-btn'); if(backBtn) backBtn.classList.add('hidden');
         } else {
             isProfileLocked = true;
             fillProfileForm(authData);
@@ -1484,12 +1461,11 @@ questions = ticket.filter(q => q !== undefined).sort((a, b) => {
         document.getElementById('certs-modal').classList.remove('hidden');
     } 
 
-    // Даем Telegram 200мс на подготовку данных, затем входим
+// Даем Telegram время (300мс) на подготовку данных, затем входим
     setTimeout(() => {
-        // Если мы в Telegram, пробуем войти через RPC
         if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) {
             tgInitData = Telegram.WebApp.initData;
         }
         checkProfileAndTour();
-    }, 200);
-});
+    }, 300);
+}); // Конец DOMContentLoaded
