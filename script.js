@@ -653,7 +653,17 @@ async function checkProfileAndTour() {
             unlockProfileForm();
             const backBtn = document.getElementById('reg-back-btn'); if(backBtn) backBtn.classList.add('hidden');
         } else {
+            // Если всё заполнено — блокируем форму и смену языка
             isProfileLocked = true;
+            isLangLocked = true; // Блокируем логику смены языка
+            
+            // Физически отключаем селекты выбора языка
+            const cabLang = document.getElementById('lang-switcher-cab');
+            if(cabLang) cabLang.disabled = true;
+            
+            const regLang = document.getElementById('reg-lang-select');
+            if(regLang) regLang.disabled = true;
+
             fillProfileForm(authData);
             showScreen('home-screen');
             await fetchStatsData(); 
@@ -796,8 +806,10 @@ async function checkProfileAndTour() {
         
         subjectPrefixes.forEach(prefix => {
             const stats = calculateSubjectStats(prefix);
-            let percent = 0;
-            if (stats.correct > 0) percent = Math.round((stats.correct / 15) * 100); 
+            // ИСПРАВЛЕНИЕ: Используем реальное количество вопросов из базы (stats.total) вместо 15
+            if (stats.total > 0) {
+                percent = Math.round((stats.correct / stats.total) * 100); 
+            }
             if (percent > 100) percent = 100; 
 
             const percentEl = document.getElementById(`${prefix}-percent`);
@@ -1550,6 +1562,7 @@ questions = ticket.filter(q => q !== undefined).sort((a, b) => {
         checkProfileAndTour();
     }, 300);
 }); // Самый конец DOMContentLoaded
+
 
 
 
