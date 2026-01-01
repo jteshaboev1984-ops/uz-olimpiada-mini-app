@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v73 (Fixed: Language Priority from DB)');
+    console.log('App Started: v74 (Fixed: Language Priority from DB)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -1491,3 +1491,4 @@ document.getElementById('certs-modal').classList.remove('hidden');
     checkProfileAndTour(); 
 
 }); // Конец DOMContentLoaded
+
