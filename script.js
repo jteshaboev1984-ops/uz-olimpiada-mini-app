@@ -713,11 +713,19 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
     console.log('[checkProfileAndTour] tgInitData head:', (tgInitData || '').slice(0, 120));
 
     if (!tgInitData || tgInitData === "") {
-        console.error('[checkProfileAndTour] INITDATA EMPTY -> STOP');
-        alert('INITDATA пустой. Открой мини-апп строго из Telegram бота (не из браузера).');
-        return;
-    }
-
+  console.error('[checkProfileAndTour] INITDATA EMPTY');
+  document.body.innerHTML = `
+    <div style="padding:30px; text-align:center; font-family:system-ui; color:#333;">
+      <h2>⚠️ Приложение недоступно</h2>
+      <p>Этот мини-экран работает <b>только внутри Telegram</b>.</p>
+      <p>Пожалуйста, откройте его через официального бота.</p>
+      <p style="margin-top:20px; font-size:12px; color:#888;">
+        (initData пуст)
+      </p>
+    </div>
+  `;
+  return;
+}
     // Временно вызываем debug-функцию (чтобы проверить что RPC реально запускается)
     const { data: authData, error: authError } = await supabaseClient
         .rpc('telegram_login_debug', { p_init_data: tgInitData })
@@ -1941,6 +1949,7 @@ dbg('[telegram_login_debug] error:', authError);
     checkProfileAndTour();
 }, 200);
 });
+
 
 
 
