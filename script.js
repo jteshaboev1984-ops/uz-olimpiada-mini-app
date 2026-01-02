@@ -1201,24 +1201,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('save_saving')}`;
 
                 const updateData = { 
-                    telegram_id: Number(telegramUserId), 
-                    full_name: fullName, 
-                    class: classVal, 
-                    region: region, 
-                    district: district, 
-                    school: school, 
-                    research_consent: researchConsent ? researchConsent.checked : false,
-                    fixed_language: currentLang
-                };
+        full_name: fullName, 
+        class: classVal, 
+        region: region, 
+        district: district, 
+        school: school, 
+        research_consent: researchConsent ? researchConsent.checked : false,
+        fixed_language: currentLang
+    };
 
-                const { data, error } = await supabaseClient
-                    .from('users')
-                    .upsert({ 
-                        telegram_id: Number(telegramUserId), 
-                        ...updateData 
-                    }, { onConflict: 'telegram_id' })
-                    .select()
-                    .maybeSingle();
+    const { data, error } = await supabaseClient
+        .from('users')
+        .update(updateData)
+        .eq('id', internalDbId)
+        .select()
+        .maybeSingle();
                 
                 if (error) throw error;
                 
@@ -1914,3 +1911,4 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 100);
 });
+
