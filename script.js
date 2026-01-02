@@ -1,3 +1,28 @@
+<script>
+(function () {
+  function showCrash(title, err) {
+    try {
+      document.body.innerHTML =
+        '<div style="padding:16px;font-family:system-ui">' +
+        '<h3 style="margin:0 0 8px">⚠️ ' + title + '</h3>' +
+        '<pre style="white-space:pre-wrap;background:#f6f6f6;padding:12px;border-radius:8px">' +
+        (err && (err.stack || err.message || String(err)) ? (err.stack || err.message || String(err)) : 'no details') +
+        '</pre>' +
+        '</div>';
+    } catch(e) {}
+  }
+
+  window.addEventListener('error', function (e) {
+    showCrash('JS Error', e.error || e.message);
+  });
+
+  window.addEventListener('unhandledrejection', function (e) {
+    showCrash('Promise Rejection', e.reason);
+  });
+
+  console.log('[BOOT] early ok', location.href, navigator.userAgent);
+})();
+
 console.log('[BOOT] location:', location.href);
 console.log('[BOOT] Telegram object:', window.Telegram);
 console.log('[BOOT] initData now:', window.Telegram?.WebApp?.initData || '(empty)');
@@ -1954,3 +1979,4 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
         }
         isTestActive = false;
     });
+
