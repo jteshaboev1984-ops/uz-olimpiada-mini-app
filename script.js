@@ -1,3 +1,7 @@
+console.log('[BOOT] location:', location.href);
+console.log('[BOOT] Telegram object:', window.Telegram);
+console.log('[BOOT] initData now:', window.Telegram?.WebApp?.initData || '(empty)');
+console.log('[BOOT] initDataUnsafe now:', window.Telegram?.WebApp?.initDataUnsafe || null);
 document.addEventListener('DOMContentLoaded', function() {
     console.log('App Started: v76 (All Bugs Fixed - GitHub Ready)');
   
@@ -1924,6 +1928,7 @@ document.addEventListener('DOMContentLoaded', function() {
     checkProfileAndTour();
 }, 200);
 });
+
 
 
 
