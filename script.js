@@ -542,7 +542,7 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
         
         tgInitData = Telegram.WebApp.initData; 
         
-        const user = Telegram.WebApp.initDataUnsafe.user;
+        const user = Telegram.WebApp.initDataUnsafe?.user;
         if (user) {
             telegramUserId = String(user.id); 
             telegramData.firstName = user.first_name;
@@ -1931,6 +1931,7 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
     checkProfileAndTour();
 }, 200);
 });
+
 
 
 
