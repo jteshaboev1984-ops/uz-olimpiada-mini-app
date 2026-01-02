@@ -41,7 +41,8 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 // Важно: используем window.supabase из CDN
 const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
-
+const supabaseClient = supabase;
+    
 console.log('[SUPABASE] createClient OK');
 console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKey || '').length);
     // === ФУНКЦИЯ РЕНДЕРИНГА LATEX ===
@@ -1931,6 +1932,7 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
     checkProfileAndTour();
 }, 200);
 });
+
 
 
 
