@@ -37,11 +37,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // === НАСТРОЙКИ SUPABASE ===
     import { createClient } from '@supabase/supabase-js'
-
+    
     const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
     const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI';
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+    console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKey || '').length);
     // === ФУНКЦИЯ РЕНДЕРИНГА LATEX ===
     function renderLaTeX() {
         if (window.renderMathInElement) {
@@ -1929,6 +1930,7 @@ document.addEventListener('DOMContentLoaded', function() {
     checkProfileAndTour();
 }, 200);
 });
+
 
 
 
