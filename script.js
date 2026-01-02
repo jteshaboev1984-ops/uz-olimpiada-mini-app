@@ -1,5 +1,17 @@
 <script>
-(function () {
+(function(){
+  function showErr(title, err){
+    const box = document.createElement('pre');
+    box.style.cssText = "position:fixed;z-index:99999;left:0;right:0;top:0;max-height:60vh;overflow:auto;background:#111;color:#0f0;padding:12px;font-size:12px;white-space:pre-wrap";
+    box.textContent = title + "\n" + (err?.stack || err?.message || String(err));
+    document.documentElement.appendChild(box);
+  }
+
+  window.addEventListener('error', (e) => showErr('JS ERROR', e.error || e.message));
+  window.addEventListener('unhandledrejection', (e) => showErr('PROMISE REJECTION', e.reason));
+})();
+  
+  (function () {
   function showCrash(title, err) {
     try {
       document.body.innerHTML =
@@ -86,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function () {
             el.textContent += args.map(a => typeof a === 'string' ? a : JSON.stringify(a, null, 2)).join(' ') + "\n";
         }
     }
-    console.log('App Started: v78 (All Bugs Fixed - GitHub Ready)');
+    console.log('App Started: v79 (All Bugs Fixed - GitHub Ready)');
   
    // === ПЕРЕМЕННЫЕ ТЕСТА И АНТИ-ЧИТА ===
     let questions = [];
@@ -1982,5 +1994,6 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
         }
         isTestActive = false;
     });
+
 
 
