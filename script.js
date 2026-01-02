@@ -1918,10 +1918,13 @@ document.addEventListener('DOMContentLoaded', function() {
     tgInitData = Telegram?.WebApp?.initData || "";
     console.log('[setTimeout] tgInitData len:', tgInitData.length);
     console.log('[setTimeout] tgInitData head:', tgInitData.slice(0, 120));
+    console.log('[TG] initData:', Telegram?.WebApp?.initData || '');
+    console.log('[TG] initDataUnsafe:', Telegram?.WebApp?.initDataUnsafe || null);
 
     checkProfileAndTour();
 }, 200);
 });
+
 
 
 
