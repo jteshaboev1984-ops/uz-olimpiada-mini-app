@@ -699,11 +699,11 @@ document.addEventListener('DOMContentLoaded', function() {
             p_init_data: tgInitData
         }).single();
 
-        if (authError || !authData) {
-            console.error("Auth failed:", authError);
-            return;
-        }
-
+        if (authError || !authData || !authData.id) {
+    console.error("Auth failed:", authError);
+    alert("Avtorizatsiya xatosi (Database Error). Iltimos, botni qayta ishga tushiring.");
+    return;
+}
         internalDbId = authData.id;
         currentUserData = authData;
         
@@ -1911,4 +1911,5 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 100);
 });
+
 
