@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('App Started: v75 (All Bugs Fixed)');
+    console.log('App Started: v76 (All Bugs Fixed - GitHub Ready)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let tourCompleted = false;
     let isLangLocked = false; 
     let isProfileLocked = false; 
+    
+    // FIX #1: Флаг для отслеживания инициализации
+    let isInitialized = false;
 
     // === ПЕРЕМЕННЫЕ ТЕСТА И АНТИ-ЧИТА ===
     let questions = [];
@@ -24,6 +27,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let timerInterval = null;
     let selectedAnswer = null;
     let cheatWarningCount = 0; 
+    
+    // FIX #3: Флаг для отслеживания активного теста (для анти-чита)
+    let isTestActive = false;
 
     // === НАСТРОЙКИ SUPABASE ===
     const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
@@ -436,12 +442,19 @@ document.addEventListener('DOMContentLoaded', function() {
         return (translations[currentLang] && translations[currentLang][key]) || key;
     }
 
-    function setLanguage(lang) {
-        if (isLangLocked && lang !== currentLang) {
+    // FIX #2: Улучшенная функция setLanguage - не вызывает повторные обновления UI если язык не изменился
+    function setLanguage(lang, forceUpdate = false) {
+        if (isLangLocked && lang !== currentLang && !forceUpdate) {
             return; 
         }
         
         if (!translations[lang]) lang = 'uz'; 
+        
+        // Если язык не изменился и не форсированное обновление - выходим
+        if (lang === currentLang && !forceUpdate && isInitialized) {
+            return;
+        }
+        
         currentLang = lang;
         
         const regLangSel = document.getElementById('reg-lang-select');
@@ -473,7 +486,7 @@ document.addEventListener('DOMContentLoaded', function() {
             updateMainButton('inactive');
         }
         
-        if (currentTourId) fetchStatsData();
+        if (currentTourId && isInitialized) fetchStatsData();
     }
 
     function updateSelectPlaceholders() {
@@ -541,11 +554,12 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error("Ilova faqat Telegram ichida ishlaydi.");
     }
 
-    // FIX: Language priority - DB language takes precedence over localStorage
+    // FIX #2: Исправленная функция инициализации языка - единая точка инициализации
     function initializeLanguage(dbLang) {
         // Priority: 1. DB fixed_language, 2. localStorage, 3. Telegram language, 4. default 'uz'
-        if (dbLang) {
-            setLanguage(dbLang);
+        if (dbLang && translations[dbLang]) {
+            currentLang = dbLang;
+            setLanguage(dbLang, true); // force update
             return;
         }
         
@@ -557,19 +571,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         if (savedLang && translations[savedLang]) {
-            setLanguage(savedLang);
+            currentLang = savedLang;
+            setLanguage(savedLang, true);
         } else if (telegramData.languageCode) {
-            if (telegramData.languageCode === 'ru') setLanguage('ru');
-            else if (telegramData.languageCode === 'en') setLanguage('en');
-            else setLanguage('uz');
+            if (telegramData.languageCode === 'ru') {
+                currentLang = 'ru';
+                setLanguage('ru', true);
+            } else if (telegramData.languageCode === 'en') {
+                currentLang = 'en';
+                setLanguage('en', true);
+            } else {
+                currentLang = 'uz';
+                setLanguage('uz', true);
+            }
         } else {
-            setLanguage('uz');
+            currentLang = 'uz';
+            setLanguage('uz', true);
         }
     }
 
-    // Initial language setup (will be overridden by DB if user exists)
-    initializeLanguage(null);
-    
     // === ДАННЫЕ РЕГИОНОВ ===
     const regions = {
         "Toshkent shahri": ["Bektemir tumani", "Chilonzor tumani", "Mirobod tumani", "Mirzo Ulug'bek tumani", "Olmazor tumani", "Sergeli tumani", "Shayxontohur tumani", "Uchtepa tumani", "Yakkasaroy tumani", "Yangihayot tumani", "Yashnobod tumani", "Yunusobod tumani"],
@@ -627,6 +647,29 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // FIX #1: Исправленная проверка профиля - правильная валидация isComplete
+    function isProfileComplete(authData) {
+        if (!authData) return false;
+        
+        // FIX: Правильная проверка полей с учётом типов данных
+        const hasFullName = typeof authData.full_name === 'string' && 
+                           authData.full_name.trim().length > 2;
+        
+        // class может быть числом или строкой, проверяем что это не null/undefined и не пустое значение
+        const hasClass = authData.class !== null && 
+                        authData.class !== undefined && 
+                        authData.class !== '' && 
+                        authData.class !== 0;
+        
+        const hasRegion = typeof authData.region === 'string' && 
+                         authData.region.trim() !== '';
+        
+        const hasDistrict = typeof authData.district === 'string' && 
+                           authData.district.trim() !== '';
+        
+        return hasFullName && hasClass && hasRegion && hasDistrict;
+    }
+
     async function checkProfileAndTour() {
         if (!tgInitData || tgInitData === "") return;
 
@@ -651,23 +694,30 @@ document.addEventListener('DOMContentLoaded', function() {
         const elID = document.getElementById('cab-id'); 
         if (elID) elID.textContent = String(telegramUserId).slice(-6);
 
-        // FIX: Set language from DB FIRST (priority over localStorage)
-        if (authData.fixed_language) {
+        // FIX #2: Устанавливаем язык из БД ПЕРВЫМ (приоритет над localStorage)
+        // Только здесь, единожды, после получения данных из БД
+        if (authData.fixed_language && translations[authData.fixed_language]) {
             isLangLocked = true;
-            currentLang = authData.fixed_language;
-            setLanguage(currentLang);
+            initializeLanguage(authData.fixed_language);
             
-            // Also update localStorage to match DB
+            // Обновляем localStorage чтобы соответствовал БД
             try {
                 localStorage.setItem('user_lang', authData.fixed_language);
             } catch (e) { console.warn(e); }
             
             const cabLang = document.getElementById('lang-switcher-cab');
-            if (cabLang) cabLang.disabled = true;
+            if (cabLang) {
+                cabLang.disabled = true;
+                cabLang.style.opacity = '0.5';
+                cabLang.style.cursor = 'not-allowed';
+            }
+        } else {
+            // Если язык не зафиксирован - инициализируем из localStorage/Telegram
+            initializeLanguage(null);
         }
 
-        const isComplete = authData.full_name && authData.full_name.length > 2 &&
-                           authData.class && authData.region && authData.district;
+        // FIX #1: Используем улучшенную проверку профиля
+        const isComplete = isProfileComplete(authData);
         
         if (!isComplete) {
             showScreen('reg-screen');
@@ -678,7 +728,7 @@ document.addEventListener('DOMContentLoaded', function() {
             isProfileLocked = true;
             isLangLocked = true;
             
-            // FIX: Lock language switcher in cabinet after registration
+            // FIX: Блокируем переключатели языка в кабинете после регистрации
             const cabLang = document.getElementById('lang-switcher-cab');
             if (cabLang) {
                 cabLang.disabled = true;
@@ -697,11 +747,13 @@ document.addEventListener('DOMContentLoaded', function() {
             await fetchStatsData(); 
         }
 
-        // TUR TEKSHIRUVI
+        // FIX #4: Исправленный запрос активного тура с order и limit
         const { data: tourData, error: tourErr } = await supabaseClient
             .from('tours')
             .select('*')
             .eq('is_active', true)
+            .order('created_at', { ascending: false })
+            .limit(1)
             .maybeSingle();
 
         if (tourErr) console.error("Tour fetch error:", tourErr);
@@ -710,194 +762,139 @@ document.addEventListener('DOMContentLoaded', function() {
             currentTourId = tourData.id;
             currentTourTitle = tourData.title;
             currentTourEndDate = tourData.end_date;
+
+            // FIX #5: Получаем статистику по всем языкам (убираем фильтр по языку)
+            const { data: qData } = await supabaseClient
+                .from('questions')
+                .select('*')
+                .eq('tour_id', currentTourId)
+                .order('order_index', { ascending: true });
             
-            const { data: progress } = await supabaseClient
+            if (qData) tourQuestionsCache = qData;
+
+            const { data: pData } = await supabaseClient
                 .from('tour_progress')
                 .select('*')
                 .eq('user_id', internalDbId)
                 .eq('tour_id', currentTourId)
                 .maybeSingle();
 
-            if (progress) {
+            if (pData && pData.score !== null) {
                 tourCompleted = true;
                 updateMainButton('completed');
             } else {
                 updateMainButton('start', currentTourTitle);
             }
-            await fetchStatsData();
         } else {
             updateMainButton('inactive');
         }
+        
+        // FIX #2: Помечаем что инициализация завершена
+        isInitialized = true;
     }
-    
+
     function fillProfileForm(data) {
-        const nameInput = document.getElementById('full-name-input');
-        if (nameInput) nameInput.value = data.full_name || '';
-        
+        const fullNameInput = document.getElementById('full-name-input');
         const classSelectEl = document.getElementById('class-select');
-        if (classSelectEl) classSelectEl.value = data.class;
-        
         const regionSelectEl = document.getElementById('region-select');
-        if (regionSelectEl) regionSelectEl.value = data.region;
-        
-        const districtSelect = document.getElementById('district-select');
-        if (districtSelect) {
-            districtSelect.innerHTML = `<option value="" disabled selected>${t('select_district')}</option>`;
-            if (regions[data.region]) {
-                regions[data.region].sort().forEach(district => {
-                    const option = document.createElement('option');
-                    option.value = district;
-                    option.textContent = district;
-                    districtSelect.appendChild(option);
-                });
-            }
-            districtSelect.value = data.district;
-        }
-        
+        const districtSelectEl = document.getElementById('district-select');
         const schoolInput = document.getElementById('school-input');
-        if (schoolInput) schoolInput.value = data.school;
-        
-        const researchConsent = document.getElementById('research-consent');
-        if (researchConsent) researchConsent.checked = data.research_consent || false;
-        
-        const langSelect = document.getElementById('reg-lang-select');
-        if (langSelect && data.fixed_language) {
-            langSelect.value = data.fixed_language;
-            langSelect.disabled = true;
-        }
-    }
 
-    function lockProfileForm(permanent = false) {
-        const saveBtn = document.getElementById('save-profile');
-        const lockMsg = document.getElementById('reg-locked-msg');
-        const backBtn = document.getElementById('reg-back-btn');
+        if (fullNameInput) fullNameInput.value = data.full_name || '';
+        if (classSelectEl) classSelectEl.value = data.class || '';
         
-        if (saveBtn) saveBtn.classList.add('hidden');
-        if (lockMsg) {
-            lockMsg.classList.remove('hidden');
+        if (regionSelectEl && data.region) {
+            regionSelectEl.value = data.region;
+            regionSelectEl.dispatchEvent(new Event('change'));
             
-            if (permanent) {
-                lockMsg.innerHTML = `<i class="fa-solid fa-lock"></i> 
-                                     <div style="text-align:left; margin-left:8px;">
-                                        <div style="font-weight:700;">${t('profile_locked_msg')}</div>
-                                        <div style="font-size:10px; font-weight:400; opacity:0.8;">${t('profile_locked_hint')}</div>
-                                     </div>`;
-                lockMsg.style.background = "#E8F5E9"; 
-                lockMsg.style.color = "#2E7D32";
-                lockMsg.style.border = "1px solid #C8E6C9";
-            } else {
-                lockMsg.innerHTML = `<i class="fa-solid fa-lock"></i> <span>${t('profile_locked_msg')}</span>`;
-            }
+            setTimeout(() => {
+                if (districtSelectEl && data.district) {
+                    districtSelectEl.value = data.district;
+                }
+            }, 50);
         }
-
-        if (backBtn) backBtn.classList.remove('hidden');
-        
-        document.querySelectorAll('#reg-screen input, #reg-screen select').forEach(el => el.disabled = true);
+        if (schoolInput) schoolInput.value = data.school || '';
     }
-
-    function unlockProfileForm() {
-        const saveBtn = document.getElementById('save-profile');
-        const backBtn = document.getElementById('reg-back-btn');
-        const lockMsg = document.getElementById('reg-locked-msg');
-        
-        if (saveBtn) saveBtn.classList.remove('hidden');
-        if (backBtn) backBtn.classList.add('hidden');
-        if (lockMsg) lockMsg.classList.add('hidden');
-        
-        document.querySelectorAll('#reg-screen input, #reg-screen select').forEach(el => el.disabled = false);
-    }
-
-    // === АНТИ-ЧИТ: ДЕТЕКТОР СВОРАЧИВАНИЯ ===
-    function handleVisibilityChange() {
-        const quizScreen = document.getElementById('quiz-screen');
-        if (!quizScreen) return;
-        
-        if (document.hidden && !quizScreen.classList.contains('hidden') && !tourCompleted) {
-            cheatWarningCount++;
-            
-            if (cheatWarningCount === 1) {
-                const cheatModal = document.getElementById('cheat-warning-modal');
-                if (cheatModal) cheatModal.classList.remove('hidden');
-            } else if (cheatWarningCount >= 2) {
-                finishTour(); 
-                alert(t('cheat_msg')); 
-            }
-        }
-    }
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    // === ЛОГИКА ТЕСТА, СТАТИСТИКИ И ЛИДЕРБОРДА ===
     
-    async function fetchStatsData() {
-        if (!internalDbId || !currentTourId) return;
+    function lockProfileForm(showMessage = false) {
+        const inputs = ['full-name-input', 'class-select', 'region-select', 'district-select', 'school-input', 'research-consent'];
+        inputs.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.disabled = true;
+                el.style.opacity = '0.6';
+            }
+        });
         
+        const regLangEl = document.getElementById('reg-lang-select');
+        if (regLangEl) {
+            regLangEl.disabled = true;
+            regLangEl.style.opacity = '0.5';
+        }
+        
+        const saveBtn = document.getElementById('save-profile');
+        if (saveBtn) saveBtn.classList.add('hidden');
+        
+        const lockedBanner = document.getElementById('reg-locked-banner');
+        if (lockedBanner) lockedBanner.classList.remove('hidden');
+        
+        const warningText = document.getElementById('lang-warning-text');
+        if (warningText) warningText.classList.add('hidden');
+    }
+    
+    function unlockProfileForm() {
+        const inputs = ['full-name-input', 'class-select', 'region-select', 'district-select', 'school-input', 'research-consent'];
+        inputs.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.disabled = false;
+                el.style.opacity = '1';
+            }
+        });
+        
+        const regLangEl = document.getElementById('reg-lang-select');
+        if (regLangEl && !isLangLocked) {
+            regLangEl.disabled = false;
+            regLangEl.style.opacity = '1';
+        }
+        
+        const saveBtn = document.getElementById('save-profile');
+        if (saveBtn) saveBtn.classList.remove('hidden');
+        
+        const lockedBanner = document.getElementById('reg-locked-banner');
+        if (lockedBanner) lockedBanner.classList.add('hidden');
+        
+        const warningText = document.getElementById('lang-warning-text');
+        if (warningText && !isLangLocked) warningText.classList.remove('hidden');
+    }
+
+    // FIX #5: Исправленная статистика - получаем данные по текущему языку пользователя
+    async function fetchStatsData() {
+        if (!currentTourId || !internalDbId) return;
+        
+        // Получаем вопросы только текущего тура на языке пользователя
         const { data: qData } = await supabaseClient
             .from('questions')
-            .select('id, subject')
+            .select('*')
             .eq('tour_id', currentTourId)
-            .eq('language', currentLang); 
-
-        if (qData) tourQuestionsCache = qData;
+            .eq('language', currentLang);
         
-        const { data: aData } = await supabaseClient
+        if (qData) tourQuestionsCache = qData;
+
+        const { data: ansData } = await supabaseClient
             .from('user_answers')
             .select('question_id, is_correct')
             .eq('user_id', internalDbId);
         
-        if (aData) userAnswersCache = aData;
-        updateDashboardStats();
-    }
-
-    function updateDashboardStats() {
-        const subjectPrefixes = ['math', 'eng', 'phys', 'chem', 'bio', 'it', 'eco', 'sat', 'ielts'];
-        let totalCorrect = 0;
-        let totalTours = 0; 
-        
-        subjectPrefixes.forEach(prefix => {
-            const stats = calculateSubjectStats(prefix);
-            // FIX: Properly declare percent variable
-            let percent = 0;
-            if (stats.total > 0) {
-                percent = Math.round((stats.correct / stats.total) * 100); 
-            }
-            if (percent > 100) percent = 100; 
-
-            const percentEl = document.getElementById(`${prefix}-percent`);
-            if (percentEl) percentEl.textContent = `${percent}%`;
-            const barEl = document.getElementById(`${prefix}-bar`);
-            if (barEl) barEl.style.width = `${percent}%`;
-            
-            totalCorrect += stats.correct;
-        });
-        
-        const cabScore = document.getElementById('cab-score');
-        if (cabScore) cabScore.textContent = totalCorrect;
-        
-        if (tourCompleted) totalTours = 1;
-        const cabTours = document.getElementById('cab-tours');
-        if (cabTours) cabTours.textContent = totalTours;
+        if (ansData) {
+            userAnswersCache = ansData;
+        }
     }
 
     function calculateSubjectStats(prefix) {
-        const keywords = {
-            'math': ['matematika', 'математика', 'math'],
-            'eng': ['ingliz', 'английский', 'english'],
-            'phys': ['fizika', 'физика', 'physics'],
-            'chem': ['kimyo', 'химия', 'chemistry'],
-            'bio': ['biologiya', 'биология', 'biology'],
-            'it': ['informatika', 'информатика', 'computer', 'it'],
-            'eco': ['iqtisodiyot', 'экономика', 'economics'],
-            'sat': ['sat'],
-            'ielts': ['ielts']
-        };
-
-        const targetKeywords = keywords[prefix] || [prefix];
-
-        const subjectQuestions = tourQuestionsCache.filter(q => {
-            if (!q.subject) return false;
-            const s = q.subject.toLowerCase();
-            return targetKeywords.some(k => s.includes(k));
-        });
+        const subjectQuestions = tourQuestionsCache.filter(q =>
+            q.subject && q.subject.toLowerCase().startsWith(prefix.toLowerCase())
+        );
 
         let correct = 0;
         subjectQuestions.forEach(q => {
@@ -1209,7 +1206,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     isProfileLocked = true;
                     isLangLocked = true;
                     
-                    // FIX: Lock language switcher immediately after saving profile
+                    // FIX: Блокируем переключатель языка сразу после сохранения профиля
                     const cabLang = document.getElementById('lang-switcher-cab');
                     if (cabLang) {
                         cabLang.disabled = true;
@@ -1223,7 +1220,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         regLangEl.style.opacity = '0.5';
                     }
                     
-                    // Update localStorage to match saved language
+                    // Обновляем localStorage чтобы соответствовал сохранённому языку
                     try {
                         localStorage.setItem('user_lang', currentLang);
                     } catch (e) { console.warn(e); }
@@ -1283,130 +1280,199 @@ document.addEventListener('DOMContentLoaded', function() {
         const end = currentTourEndDate ? new Date(currentTourEndDate) : null;
         
         if (end && now < end) {
-            const unlockDate = document.getElementById('review-unlock-date');
-            if (unlockDate) unlockDate.textContent = end.toLocaleDateString() + ' ' + end.toLocaleTimeString().slice(0, 5);
-            
-            const modal = document.getElementById('review-lock-modal');
+            const modal = document.getElementById('lock-review-modal');
             if (modal) modal.classList.remove('hidden');
         } else {
-            alert("Tahlil uchun ruxsat ochiq (Keyingi yangilanishda bu yerda to'liq tahlil oynasi bo'ladi).");
+            showScreen('review-screen');
+            loadMistakesReview();
         }
     });
 
-    // === QUIZ LOGIC ===
-    async function handleStartClick() {
-        const btn = document.getElementById('main-action-btn');
-        if (!btn) return;
-        
-        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('loading')}`;
-        
-        const { data: allQ, error } = await supabaseClient
-            .from('questions')
-            .select('*')
-            .eq('tour_id', currentTourId)
-            .eq('language', currentLang);
+    safeAddListener('close-lock-review-modal', 'click', () => {
+        const modal = document.getElementById('lock-review-modal');
+        if (modal) modal.classList.add('hidden');
+    });
 
-        if (error || !allQ || allQ.length === 0) {
-            alert("Savollar topilmadi / Вопросы не найдены.");
-            updateMainButton('start', formatTourTitle(currentTourTitle)); 
-            return; 
+    safeAddListener('review-back-btn', 'click', () => showScreen('cabinet-screen'));
+
+    async function loadMistakesReview() {
+        const container = document.getElementById('review-questions-list');
+        if (!container) return;
+        
+        container.innerHTML = `<p style="text-align:center;color:#999;"><i class="fa-solid fa-spinner fa-spin"></i> ${t('loading')}</p>`;
+        
+        if (!internalDbId || !currentTourId) {
+            container.innerHTML = `<p style="text-align:center;color:#999;">${t('no_data')}</p>`;
+            return;
         }
-
-        // FIX: Handle empty fallback arrays safely
-        const pick = (subj, diff) => {
-            const keywords = {
-                'math': ['matematika', 'математика', 'math'],
-                'eng': ['ingliz', 'английский', 'english'],
-                'phys': ['fizika', 'физика', 'physics'],
-                'chem': ['kimyo', 'химия', 'chemistry'],
-                'bio': ['biologiya', 'биология', 'biology'],
-                'it': ['informatika', 'информатика', 'computer', 'it'],
-                'eco': ['iqtisodiyot', 'экономика', 'economics']
-            };
-            const keys = keywords[subj] || [subj];
-            const pool = allQ.filter(q => 
-                q.subject && 
-                keys.some(k => q.subject.toLowerCase().includes(k)) && 
-                q.difficulty === diff
-            );
-            
-            if (pool.length > 0) {
-                return pool[Math.floor(Math.random() * pool.length)];
-            }
-            
-            // Fallback: any question from this subject
-            const fallback = allQ.filter(q => q.subject && keys.some(k => q.subject.toLowerCase().includes(k)));
-            if (fallback.length > 0) {
-                return fallback[Math.floor(Math.random() * fallback.length)];
-            }
-            
-            return undefined; // FIX: Return undefined instead of undefined array access
-        };
-
-        const ticket = [pick('math', 'Easy'), pick('math', 'Medium'), pick('math', 'Hard')];
         
-        const others = ['eng', 'phys', 'chem', 'bio', 'it', 'eco'];
-        let diffPool = ['Hard', 'Medium', 'Medium', 'Medium', 'Medium', 'Easy', 'Easy', 'Easy', 'Easy', 'Easy', 'Easy', 'Easy'];
-        diffPool.sort(() => 0.5 - Math.random());
-
-        let poolIdx = 0;
-        others.forEach(subj => {
-            ticket.push(pick(subj, diffPool[poolIdx++]));
-            ticket.push(pick(subj, diffPool[poolIdx++]));
+        const { data: answers } = await supabaseClient
+            .from('user_answers')
+            .select('question_id, answer, is_correct')
+            .eq('user_id', internalDbId);
+        
+        if (!answers || answers.length === 0) {
+            container.innerHTML = `<p style="text-align:center;color:#999;">${t('no_data')}</p>`;
+            return;
+        }
+        
+        const questionIds = answers.map(a => a.question_id);
+        const { data: questionsData } = await supabaseClient
+            .from('questions')
+            .select('id, question_text, correct_answer, subject, difficulty, image_url')
+            .in('id', questionIds);
+        
+        if (!questionsData) {
+            container.innerHTML = `<p style="text-align:center;color:#999;">${t('no_data')}</p>`;
+            return;
+        }
+        
+        container.innerHTML = '';
+        
+        questionsData.forEach((q, idx) => {
+            const userAnswer = answers.find(a => a.question_id === q.id);
+            const isCorrect = userAnswer ? userAnswer.is_correct : false;
+            const iconClass = isCorrect ? 'fa-check-circle' : 'fa-times-circle';
+            const iconColor = isCorrect ? '#34C759' : '#FF3B30';
+            
+            const html = `
+                <div class="review-card" style="background:#fff; border-radius:12px; padding:16px; margin-bottom:12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                        <span style="font-weight:600; color:#333;">#${idx + 1}. ${q.subject || ''}</span>
+                        <i class="fa-solid ${iconClass}" style="color:${iconColor}; font-size:18px;"></i>
+                    </div>
+                    ${q.image_url ? `<img src="${q.image_url}" style="max-width:100%; border-radius:8px; margin-bottom:8px;">` : ''}
+                    <p style="color:#333; margin-bottom:8px;">${q.question_text || ''}</p>
+                    <div style="font-size:13px; color:#666;">
+                        <p><b>Sizning javobingiz:</b> <span style="color:${isCorrect ? '#34C759' : '#FF3B30'}">${userAnswer ? userAnswer.answer : '-'}</span></p>
+                        <p><b>To'g'ri javob:</b> <span style="color:#34C759">${q.correct_answer || '-'}</span></p>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
         });
+        
+        renderLaTeX();
+    }
 
-        const diffWeights = { 'Easy': 1, 'Medium': 2, 'Hard': 3 };
+    // FIX #3: Исправленный анти-чит - срабатывает ТОЛЬКО во время активного теста
+    document.addEventListener("visibilitychange", function() {
+        // FIX: Проверяем только если тест действительно активен
+        if (!isTestActive) return;
+        
+        if (document.visibilityState === "hidden") {
+            cheatWarningCount++;
+            
+            if (cheatWarningCount >= 2) {
+                // Второе нарушение - завершаем тест принудительно
+                finishTour();
+            } else {
+                // Первое предупреждение
+                const cheatModal = document.getElementById('cheat-warning-modal');
+                if (cheatModal) {
+                    cheatModal.classList.remove('hidden');
+                }
+            }
+        }
+    });
 
-        questions = ticket.filter(q => q !== undefined).sort((a, b) => {
-            return (diffWeights[a.difficulty] || 0) - (diffWeights[b.difficulty] || 0);
-        });
+    safeAddListener('close-cheat-modal', 'click', () => {
+        const modal = document.getElementById('cheat-warning-modal');
+        if (modal) modal.classList.add('hidden');
+    });
 
-        if (questions.length === 0) {
-            alert("Savollar topilmadi / Вопросы не найдены.");
-            updateMainButton('start', formatTourTitle(currentTourTitle)); 
+    // Modals close handlers
+    safeAddListener('close-tour-info', 'click', () => {
+        const modal = document.getElementById('tour-info-modal');
+        if (modal) modal.classList.add('hidden');
+    });
+
+    safeAddListener('close-subject-modal', 'click', () => {
+        const modal = document.getElementById('subject-details-modal');
+        if (modal) modal.classList.add('hidden');
+    });
+
+    safeAddListener('close-certs-modal', 'click', () => {
+        const modal = document.getElementById('certs-modal');
+        if (modal) modal.classList.add('hidden');
+    });
+
+    safeAddListener('cancel-delete-btn', 'click', () => {
+        const modal = document.getElementById('delete-confirm-modal');
+        if (modal) modal.classList.add('hidden');
+    });
+
+    safeAddListener('close-locked-alert', 'click', () => {
+        const modal = document.getElementById('locked-profile-alert');
+        if (modal) modal.classList.add('hidden');
+    });
+
+    // START TOUR LOGIC
+    async function handleStartClick() {
+        if (tourCompleted) {
+            const modal = document.getElementById('tour-info-modal');
+            if (modal) modal.classList.remove('hidden');
             return;
         }
 
-        const totalSeconds = questions.reduce((acc, q) => acc + (q.time_limit_seconds || 60), 0);
-        const totalMinutes = Math.ceil(totalSeconds / 60);
+        if (!currentTourId) {
+            alert(t('no_active_tour'));
+            return;
+        }
 
-        const warnQVal = document.getElementById('warn-q-val');
-        if (warnQVal) warnQVal.textContent = questions.length + ' ' + t('questions');
-        
-        const warnTimeVal = document.getElementById('warn-time-val');
-        if (warnTimeVal) warnTimeVal.textContent = totalMinutes + ' ' + t('minutes');
-        
-        const warningModal = document.getElementById('warning-modal');
-        if (warningModal) warningModal.classList.remove('hidden');
-        
-        updateMainButton('start', formatTourTitle(currentTourTitle)); 
+        // Получаем вопросы на текущем языке пользователя
+        const { data: qData, error: qErr } = await supabaseClient
+            .from('questions')
+            .select('*')
+            .eq('tour_id', currentTourId)
+            .eq('language', currentLang)
+            .order('order_index', { ascending: true });
+
+        if (qErr || !qData || qData.length === 0) {
+            alert(t('error') + ": Questions not found for language: " + currentLang);
+            return;
+        }
+
+        questions = qData;
+        tourQuestionsCache = qData;
+
+        const totalTime = questions.reduce((acc, q) => acc + (q.time_limit_seconds || 60), 0);
+        const totalMinutes = Math.ceil(totalTime / 60);
+
+        const warnModal = document.getElementById('warning-modal');
+        const warnTime = document.getElementById('warn-time');
+        const warnQCount = document.getElementById('warn-q-count');
+
+        if (warnTime) warnTime.textContent = totalMinutes + ' ' + t('minutes');
+        if (warnQCount) warnQCount.textContent = questions.length + ' ' + t('questions');
+
+        if (warnModal) warnModal.classList.remove('hidden');
     }
 
-    function updateMainButton(state, title = "") {
-        const btn = document.getElementById('main-action-btn');
-        const certCard = document.getElementById('home-cert-btn'); 
-        if (!btn) return;
-        
-        const newBtn = btn.cloneNode(true);
-        btn.parentNode.replaceChild(newBtn, btn);
-        const activeBtn = document.getElementById('main-action-btn');
-        
+    function updateMainButton(state, title) {
+        const activeBtn = document.getElementById('active-tour-btn');
+        const certCard = document.getElementById('home-cert-btn');
+        if (!activeBtn) return;
+
+        // Удаляем все слушатели событий
+        const newBtn = activeBtn.cloneNode(true);
+        activeBtn.parentNode.replaceChild(newBtn, activeBtn);
+
         if (state === 'inactive') {
-            activeBtn.innerHTML = `<i class="fa-solid fa-calendar-xmark"></i> ${t('no_active_tour')}`;
-            activeBtn.disabled = true;
-            activeBtn.className = 'btn-primary'; 
-            activeBtn.style.background = "#8E8E93";
-            if (certCard) certCard.classList.add('hidden'); 
+            newBtn.innerHTML = `<i class="fa-solid fa-clock"></i> ${t('no_active_tour')}`;
+            newBtn.className = 'btn-inactive';
+            newBtn.disabled = true;
+            if (certCard) certCard.classList.add('hidden');
         } else if (state === 'completed') {
-            activeBtn.innerHTML = `<i class="fa-solid fa-check"></i> ${t('tour_completed_btn')}`;
-            activeBtn.className = 'btn-success-clickable';
-            activeBtn.disabled = false;
-            activeBtn.style.background = "linear-gradient(135deg, #34C759 0%, #30D158 100%)"; 
-            activeBtn.style.color = "#fff";
+            newBtn.innerHTML = `<i class="fa-solid fa-check"></i> ${t('tour_completed_btn')}`;
+            newBtn.className = 'btn-success-clickable';
+            newBtn.disabled = false;
+            newBtn.style.background = "linear-gradient(135deg, #34C759 0%, #30D158 100%)"; 
+            newBtn.style.color = "#fff";
             if (certCard) certCard.classList.remove('hidden'); 
             
-            // FIX: Show message that tour is already completed - no repeat access allowed
-            activeBtn.addEventListener('click', () => {
+            // FIX: Показываем сообщение что тур уже пройден - повторный доступ запрещён
+            newBtn.addEventListener('click', () => {
                 const modal = document.getElementById('tour-info-modal');
                 if (modal) {
                     modal.classList.remove('hidden');
@@ -1414,12 +1480,12 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         } else {
             const displayTitle = formatTourTitle(title || t('start_tour_btn'));
-            activeBtn.innerHTML = `<i class="fa-solid fa-play"></i> ${displayTitle}`;
-            activeBtn.className = 'btn-primary';
-            activeBtn.disabled = false;
-            activeBtn.style.background = "";
+            newBtn.innerHTML = `<i class="fa-solid fa-play"></i> ${displayTitle}`;
+            newBtn.className = 'btn-primary';
+            newBtn.disabled = false;
+            newBtn.style.background = "";
             if (certCard) certCard.classList.add('hidden'); 
-            activeBtn.addEventListener('click', handleStartClick);
+            newBtn.addEventListener('click', handleStartClick);
         }
     }
 
@@ -1437,6 +1503,9 @@ document.addEventListener('DOMContentLoaded', function() {
         correctCount = 0;
         cheatWarningCount = 0; // Reset cheat counter
         
+        // FIX #3: Активируем анти-чит только когда тест начинается
+        isTestActive = true;
+        
         showScreen('quiz-screen');
         
         const totalSeconds = questions.reduce((acc, q) => acc + (q.time_limit_seconds || 60), 0);
@@ -1448,7 +1517,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let timeLeft = seconds;
         const timerEl = document.getElementById('timer');
         
-        // FIX: Clear existing timer to prevent memory leaks
+        // FIX: Очищаем существующий таймер чтобы предотвратить утечки памяти
         if (timerInterval) {
             clearInterval(timerInterval);
             timerInterval = null;
@@ -1613,7 +1682,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (finalIsCorrect) correctCount++;
         
         try {
-            // FIX: Correct onConflict syntax (no space)
+            // FIX: Правильный синтаксис onConflict (без пробела)
             const { error } = await supabaseClient.from('user_answers').upsert({
                 user_id: internalDbId, 
                 question_id: q.id, 
@@ -1637,11 +1706,14 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     async function finishTour() {
-        // FIX: Clear timer to prevent memory leak
+        // FIX: Очищаем таймер чтобы предотвратить утечку памяти
         if (timerInterval) {
             clearInterval(timerInterval);
             timerInterval = null;
         }
+        
+        // FIX #3: Деактивируем анти-чит после завершения теста
+        isTestActive = false;
         
         tourCompleted = true;
         
@@ -1654,7 +1726,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         try {
-            // FIX: Correct onConflict syntax (no space)
+            // FIX: Правильный синтаксис onConflict (без пробела)
             await supabaseClient.from('tour_progress').upsert({
                 user_id: internalDbId,
                 tour_id: currentTourId,
@@ -1749,11 +1821,14 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     safeAddListener('exit-app-btn', 'click', () => {
-        // FIX: Clear timer before exit
+        // FIX: Очищаем таймер перед выходом
         if (timerInterval) {
             clearInterval(timerInterval);
             timerInterval = null;
         }
+        
+        // FIX: Деактивируем анти-чит при выходе
+        isTestActive = false;
         
         if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) {
             Telegram.WebApp.close();
@@ -1795,6 +1870,7 @@ document.addEventListener('DOMContentLoaded', function() {
             clearInterval(timerInterval);
             timerInterval = null;
         }
+        isTestActive = false;
     });
 
     // Initialize app after Telegram data is ready
@@ -1810,7 +1886,8 @@ document.addEventListener('DOMContentLoaded', function() {
             checkProfileAndTour();
         } else {
             console.warn("Telegram WebApp not available or no user data");
-            // For testing outside Telegram
+            // For testing outside Telegram - initialize language first
+            initializeLanguage(null);
             checkProfileAndTour();
         }
     }, 100);
