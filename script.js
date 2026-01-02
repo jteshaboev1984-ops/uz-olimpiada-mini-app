@@ -699,12 +699,13 @@ document.addEventListener('DOMContentLoaded', function() {
             p_init_data: tgInitData
         }).single();
 
-        if (authError || !authData || !authData.id) {
-    console.error("Auth failed:", authError);
-    alert("Avtorizatsiya xatosi (Database Error). Iltimos, botni qayta ishga tushiring.");
+if (authError || !authData || authData.id == null) {
+    console.error("Auth failed:", authError, authData);
+    alert("Avtorizatsiya xatosi (ID null). Iltimos, botni qayta ishga tushiring.");
     return;
 }
-        internalDbId = authData.id;
+// Гарантируем, что это числовое значение для bigint
+        internalDbId = Number(authData.id);
         currentUserData = authData;
         
         if (authData.telegram_id) {
@@ -1672,15 +1673,13 @@ document.addEventListener('DOMContentLoaded', function() {
         nextBtn.disabled = true;
         nextBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('saving_ans')}`;
         
-        if (!internalDbId) {
-            const { data } = await supabaseClient
-                .from('users')
-                .select('id')
-                .eq('telegram_id', telegramUserId)
-                .maybeSingle();
-            if (data) internalDbId = data.id;
-        }
-        
+        if (!internalDbId || isNaN(Number(internalDbId))) {
+    console.error("Critical error: internalDbId is invalid", internalDbId);
+    alert("Xatolik: Seans muddati tugadi yoki ID xato. Iltimos, sahifani yangilang.");
+    nextBtn.disabled = false;
+    nextBtn.innerHTML = t('repeat');
+    return;
+}        
         const q = questions[currentQuestionIndex];
         if (!q) return;
 
@@ -1899,7 +1898,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const user = Telegram.WebApp.initDataUnsafe.user;
             if (user && user.id) {
-                telegramUserId = String(user.id);
+                telegramUserId = user.id ? String(user.id) : null;
             }
             
             checkProfileAndTour();
@@ -1911,5 +1910,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 100);
 });
+
 
 
