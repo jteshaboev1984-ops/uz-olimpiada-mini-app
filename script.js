@@ -2,9 +2,59 @@ console.log('[BOOT] location:', location.href);
 console.log('[BOOT] Telegram object:', window.Telegram);
 console.log('[BOOT] initData now:', window.Telegram?.WebApp?.initData || '(empty)');
 console.log('[BOOT] initDataUnsafe now:', window.Telegram?.WebApp?.initDataUnsafe || null);
-document.addEventListener('DOMContentLoaded', function() {
-        
-    function dbg(...args) {
+
+document.addEventListener('DOMContentLoaded', function () {
+
+  // ✅ ВАЖНО: объявляем ДО использования
+  let telegramUserId = null;
+  let telegramData = { firstName: null, lastName: null, photoUrl: null, languageCode: null };
+  let tgInitData = "";
+
+  // остальное тоже лучше сюда (хотя бы то, что используется рано)
+  let internalDbId = null;
+  let currentTourId = null;
+  let currentTourTitle = "";
+  let currentTourEndDate = null;
+  let currentUserData = null;
+  let tourQuestionsCache = [];
+  let userAnswersCache = [];
+  let currentLbFilter = 'republic';
+  let currentLang = 'uz';
+  let tourCompleted = false;
+  let isLangLocked = false;
+  let isProfileLocked = false;
+  let isInitialized = false;
+
+  function initTelegram() {
+    const tg = window.Telegram?.WebApp;
+
+    if (!tg) {
+      console.error("Telegram.WebApp not found");
+      tgInitData = "";
+      return;
+    }
+
+    tg.ready();
+    tg.expand?.();
+    tgInitData = tg.initData || "";
+
+    const user = tg.initDataUnsafe?.user;
+    if (user) {
+      telegramUserId = String(user.id);
+      telegramData.firstName = user.first_name || null;
+      telegramData.lastName = user.last_name || null;
+      telegramData.photoUrl = user.photo_url || null;
+      telegramData.languageCode = user.language_code || null;
+    }
+
+    console.log("[initTelegram] initData len:", tgInitData.length);
+    console.log("[initTelegram] initData head:", tgInitData.slice(0, 120));
+  }
+
+  initTelegram();
+  checkProfileAndTour();
+   
+        function dbg(...args) {
         console.log(...args);
         const el = document.getElementById('debug-box');
         if (el) {
@@ -13,26 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     console.log('App Started: v78 (All Bugs Fixed - GitHub Ready)');
   
-    // === ПЕРЕМЕННЫЕ ===
-    let telegramUserId; 
-    let telegramData = { firstName: null, lastName: null, photoUrl: null, languageCode: null };
-    let internalDbId = null; 
-    let currentTourId = null;
-    let currentTourTitle = ""; 
-    let currentTourEndDate = null; 
-    let currentUserData = null;
-    let tourQuestionsCache = [];
-    let userAnswersCache = [];
-    let currentLbFilter = 'republic'; 
-    let currentLang = 'uz'; 
-    let tourCompleted = false;
-    let isLangLocked = false; 
-    let isProfileLocked = false; 
-    
-    // FIX #1: Флаг для отслеживания инициализации
-    let isInitialized = false;
-
-    // === ПЕРЕМЕННЫЕ ТЕСТА И АНТИ-ЧИТА ===
+   // === ПЕРЕМЕННЫЕ ТЕСТА И АНТИ-ЧИТА ===
     let questions = [];
     let currentQuestionIndex = 0;
     let correctCount = 0;
@@ -544,32 +575,7 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
     }
 
     // === ИНИЦИАЛИЗАЦИЯ TELEGRAM (SECURE MODE) ===
-    let tgInitData = ""; 
-    if (window.Telegram && window.Telegram.WebApp) {
-        Telegram.WebApp.ready();
-        Telegram.WebApp.expand();
         
-        tgInitData = Telegram.WebApp.initData; 
-        
-        const user = Telegram.WebApp.initDataUnsafe?.user;
-        if (user) {
-            telegramUserId = String(user.id); 
-            telegramData.firstName = user.first_name;
-            telegramData.lastName = user.last_name;
-            telegramData.photoUrl = user.photo_url;
-            telegramData.languageCode = user.language_code;
-
-            const elRN = document.getElementById('reg-user-name'); 
-            if (elRN) elRN.textContent = user.first_name + ' ' + (user.last_name || '');
-            const elHN = document.getElementById('home-user-name'); 
-            if (elHN) elHN.textContent = user.first_name;
-            const elCI = document.getElementById('cab-avatar-img'); 
-            if (elCI && user.photo_url) elCI.src = user.photo_url;
-        }
-    } else {
-        console.error("Ilova faqat Telegram ichida ishlaydi.");
-    }
-
     // FIX #2: Исправленная функция инициализации языка - единая точка инициализации
     function initializeLanguage(dbLang) {
         // Priority: 1. DB fixed_language, 2. localStorage, 3. Telegram language, 4. default 'uz'
@@ -707,62 +713,46 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
         
         return isComplete;
     }
-
+   
     async function checkProfileAndTour() {
-    console.log('[checkProfileAndTour] tgInitData len:', tgInitData ? tgInitData.length : 0);
-    console.log('[checkProfileAndTour] tgInitData head:', (tgInitData || '').slice(0, 120));
+  console.log('[checkProfileAndTour] tgInitData len:', tgInitData ? tgInitData.length : 0);
+  console.log('[checkProfileAndTour] tgInitData head:', (tgInitData || '').slice(0, 120));
 
-    if (!tgInitData || tgInitData === "") {
-  console.error('[checkProfileAndTour] INITDATA EMPTY');
-  document.body.innerHTML = `
-    <div style="padding:30px; text-align:center; font-family:system-ui; color:#333;">
-      <h2>⚠️ Приложение недоступно</h2>
-      <p>Этот мини-экран работает <b>только внутри Telegram</b>.</p>
-      <p>Пожалуйста, откройте его через официального бота.</p>
-      <p style="margin-top:20px; font-size:12px; color:#888;">
-        (initData пуст)
-      </p>
-    </div>
-  `;
-  return;
-}
-    // Временно вызываем debug-функцию (чтобы проверить что RPC реально запускается)
-    // 1) debug: просто записать initData (не обязательно, но полезно)
-try {
-  const { data: dbgData, error: dbgError } = await supabaseClient
-    .rpc('telegram_login_debug', { p_init_data: tgInitData });
+  if (!tgInitData) {
+    console.error('[checkProfileAndTour] INITDATA EMPTY');
+    document.body.innerHTML = `
+      <div style="padding:30px; text-align:center; font-family:system-ui; color:#333;">
+        <h2>⚠️ Приложение недоступно</h2>
+        <p>Этот мини-экран работает <b>только внутри Telegram</b>.</p>
+        <p>Пожалуйста, откройте его через официального бота.</p>
+        <p style="margin-top:20px; font-size:12px; color:#888;">(initData пуст)</p>
+      </div>
+    `;
+    return;
+  }
 
-  dbg('[telegram_login_debug] data:', dbgData);
-  dbg('[telegram_login_debug] error:', dbgError);
-} catch (e) {
-  console.warn('[telegram_login_debug] skipped', e);
-}
+  // (не обязательно) debug
+  try {
+    const { data: dbgData, error: dbgError } = await supabaseClient
+      .rpc('telegram_login_debug', { p_init_data: tgInitData });
 
-// 2) реальный логин: ВОТ ОН ДОЛЖЕН ВЕРНУТЬ ПОЛЬЗОВАТЕЛЯ
-const { data: authData, error: authError } = await supabaseClient
-  .rpc('telegram_login', { p_init_data: tgInitData })
-  .single();
+    dbg('[telegram_login_debug] data:', dbgData);
+    dbg('[telegram_login_debug] error:', dbgError);
+  } catch (e) {
+    console.warn('[telegram_login_debug] skipped', e);
+  }
 
-dbg('[telegram_login] data:', authData);
-dbg('[telegram_login] error:', authError);
+  // основной логин
+  const { data: authData, error: authError } = await supabaseClient
+    .rpc('telegram_login', { p_init_data: tgInitData })
+    .single();
 
-if (authError) {
-  alert('Auth error: ' + (authError.message || '') + '\n' + (authError.details || ''));
-  return;
-}
-if (!authData) {
-  alert('Auth error: authData null');
-  return;
-}
-if (authData.id == null) {
-  alert('Auth error: id null. Открой Console и пришли мне скрин.');
-  return;
-}
-
-dbg('[telegram_login_debug] data:', authData);
-dbg('[telegram_login_debug] keys:', authData ? Object.keys(authData) : null);
-dbg('[telegram_login_debug] json:', JSON.stringify(authData, null, 2));
-dbg('[telegram_login_debug] error:', authError);
+  dbg('[telegram_login] data:', authData);
+  dbg('[telegram_login] error:', authError);
+  dbg('[telegram_login_debug] data:', authData);
+  dbg('[telegram_login_debug] keys:', authData ? Object.keys(authData) : null);
+  dbg('[telegram_login_debug] json:', JSON.stringify(authData, null, 2));
+  dbg('[telegram_login_debug] error:', authError);
 
 
     if (authError) {
@@ -1295,7 +1285,7 @@ dbg('[telegram_login_debug] error:', authError);
                 
                 if (data) {
                     currentUserData = data;
-                    internalDbId = data.id; 
+                    internalDbId = String(data.id); 
                     isProfileLocked = true;
                     isLangLocked = true;
                     
@@ -1964,38 +1954,3 @@ dbg('[telegram_login_debug] error:', authError);
         }
         isTestActive = false;
     });
-
-    // Initialize app after Telegram data is ready
-    setTimeout(() => {
-    dbg('[setTimeout] Telegram.WebApp exists?', !!(window.Telegram && Telegram.WebApp));
-    dbg('[setTimeout] initDataUnsafe.user:', Telegram?.WebApp?.initDataUnsafe?.user || null);
-
-    tgInitData = Telegram?.WebApp?.initData || "";
-    dbg('[setTimeout] tgInitData len:', tgInitData.length);
-    dbg('[setTimeout] tgInitData head:', tgInitData.slice(0, 120));
-    dbg('[TG] initData:', Telegram?.WebApp?.initData || '');
-    dbg('[TG] initDataUnsafe:', Telegram?.WebApp?.initDataUnsafe || null);
-
-    checkProfileAndTour();
-}, 200);
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
