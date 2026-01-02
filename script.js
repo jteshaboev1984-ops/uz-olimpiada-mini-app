@@ -3,6 +3,14 @@ console.log('[BOOT] Telegram object:', window.Telegram);
 console.log('[BOOT] initData now:', window.Telegram?.WebApp?.initData || '(empty)');
 console.log('[BOOT] initDataUnsafe now:', window.Telegram?.WebApp?.initDataUnsafe || null);
 document.addEventListener('DOMContentLoaded', function() {
+        
+    function dbg(...args) {
+        console.log(...args);
+        const el = document.getElementById('debug-box');
+        if (el) {
+            el.textContent += args.map(a => typeof a === 'string' ? a : JSON.stringify(a, null, 2)).join(' ') + "\n";
+        }
+    }
     console.log('App Started: v76 (All Bugs Fixed - GitHub Ready)');
   
     // === ПЕРЕМЕННЫЕ ===
@@ -715,8 +723,9 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
         .rpc('telegram_login_debug', { p_init_data: tgInitData })
         .single();
 
-    console.log('[telegram_login_debug] data:', authData);
-    console.log('[telegram_login_debug] error:', authError);
+dbg('[telegram_login_debug] data:', authData);
+dbg('[telegram_login_debug] error:', authError);
+
 
     if (authError) {
         alert('Auth error: ' + (authError.message || '') + '\n' + (authError.details || ''));
@@ -1920,18 +1929,19 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
 
     // Initialize app after Telegram data is ready
     setTimeout(() => {
-    console.log('[setTimeout] Telegram.WebApp exists?', !!(window.Telegram && Telegram.WebApp));
-    console.log('[setTimeout] initDataUnsafe.user:', Telegram?.WebApp?.initDataUnsafe?.user || null);
+    dbg('[setTimeout] Telegram.WebApp exists?', !!(window.Telegram && Telegram.WebApp));
+    dbg('[setTimeout] initDataUnsafe.user:', Telegram?.WebApp?.initDataUnsafe?.user || null);
 
     tgInitData = Telegram?.WebApp?.initData || "";
-    console.log('[setTimeout] tgInitData len:', tgInitData.length);
-    console.log('[setTimeout] tgInitData head:', tgInitData.slice(0, 120));
-    console.log('[TG] initData:', Telegram?.WebApp?.initData || '');
-    console.log('[TG] initDataUnsafe:', Telegram?.WebApp?.initDataUnsafe || null);
+    dbg('[setTimeout] tgInitData len:', tgInitData.length);
+    dbg('[setTimeout] tgInitData head:', tgInitData.slice(0, 120));
+    dbg('[TG] initData:', Telegram?.WebApp?.initData || '');
+    dbg('[TG] initDataUnsafe:', Telegram?.WebApp?.initDataUnsafe || null);
 
     checkProfileAndTour();
 }, 200);
 });
+
 
 
 
