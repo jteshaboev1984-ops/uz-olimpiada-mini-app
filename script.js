@@ -104,6 +104,9 @@ const supabaseUrl = 'https://fgwnqxumukkgtzentlxr.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnd25xeHVtdWtrZ3R6ZW50bHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0ODM2MTQsImV4cCI6MjA4MjA1OTYxNH0.vaZipv7a7-H_IyhRORUilvAfzFILWq8YAANQ_o95exI';
 
 // Важно: используем window.supabase из CDN
+if (!window.supabase) {
+  throw new Error('Supabase CDN not loaded: window.supabase is undefined');
+}
 const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
 const supabaseClient = supabase;
     
@@ -1979,4 +1982,5 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
         }
         isTestActive = false;
     });
+
 
