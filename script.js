@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
             el.textContent += args.map(a => typeof a === 'string' ? a : JSON.stringify(a, null, 2)).join(' ') + "\n";
         }
     }
-    console.log('App Started: v77 (All Bugs Fixed - GitHub Ready)');
+    console.log('App Started: v78 (All Bugs Fixed - GitHub Ready)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -727,9 +727,37 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
   return;
 }
     // Временно вызываем debug-функцию (чтобы проверить что RPC реально запускается)
-    const { data: authData, error: authError } = await supabaseClient
-        .rpc('telegram_login_debug', { p_init_data: tgInitData })
-        .single();
+    // 1) debug: просто записать initData (не обязательно, но полезно)
+try {
+  const { data: dbgData, error: dbgError } = await supabaseClient
+    .rpc('telegram_login_debug', { p_init_data: tgInitData });
+
+  dbg('[telegram_login_debug] data:', dbgData);
+  dbg('[telegram_login_debug] error:', dbgError);
+} catch (e) {
+  console.warn('[telegram_login_debug] skipped', e);
+}
+
+// 2) реальный логин: ВОТ ОН ДОЛЖЕН ВЕРНУТЬ ПОЛЬЗОВАТЕЛЯ
+const { data: authData, error: authError } = await supabaseClient
+  .rpc('telegram_login', { p_init_data: tgInitData })
+  .single();
+
+dbg('[telegram_login] data:', authData);
+dbg('[telegram_login] error:', authError);
+
+if (authError) {
+  alert('Auth error: ' + (authError.message || '') + '\n' + (authError.details || ''));
+  return;
+}
+if (!authData) {
+  alert('Auth error: authData null');
+  return;
+}
+if (authData.id == null) {
+  alert('Auth error: id null. Открой Console и пришли мне скрин.');
+  return;
+}
 
 dbg('[telegram_login_debug] data:', authData);
 dbg('[telegram_login_debug] keys:', authData ? Object.keys(authData) : null);
@@ -1951,6 +1979,7 @@ dbg('[telegram_login_debug] error:', authError);
     checkProfileAndTour();
 }, 200);
 });
+
 
 
 
