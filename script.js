@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
             el.textContent += args.map(a => typeof a === 'string' ? a : JSON.stringify(a, null, 2)).join(' ') + "\n";
         }
     }
-    console.log('App Started: v76 (All Bugs Fixed - GitHub Ready)');
+    console.log('App Started: v77 (All Bugs Fixed - GitHub Ready)');
   
     // === ПЕРЕМЕННЫЕ ===
     let telegramUserId; 
@@ -1941,6 +1941,7 @@ dbg('[telegram_login_debug] error:', authError);
     checkProfileAndTour();
 }, 200);
 });
+
 
 
 
