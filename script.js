@@ -649,25 +649,47 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // FIX #1: Исправленная проверка профиля - правильная валидация isComplete
     function isProfileComplete(authData) {
-        if (!authData) return false;
+        if (!authData) {
+            console.log('[isProfileComplete] authData is null/undefined');
+            return false;
+        }
         
-        // FIX: Правильная проверка полей с учётом типов данных
-        const hasFullName = typeof authData.full_name === 'string' && 
-                           authData.full_name.trim().length > 2;
+        // DEBUG: Логируем данные для отладки
+        console.log('[isProfileComplete] Checking profile:', {
+            full_name: authData.full_name,
+            class: authData.class,
+            region: authData.region,
+            district: authData.district
+        });
         
-        // class может быть числом или строкой, проверяем что это не null/undefined и не пустое значение
+        // FIX: Проверяем full_name - должно быть непустой строкой > 2 символов
+        const hasFullName = authData.full_name && 
+                           String(authData.full_name).trim().length > 2;
+        
+        // FIX: class может быть числом (8,9,10,11) или строкой ("8","9","10","11")
+        // Просто проверяем что значение существует и не пустое
         const hasClass = authData.class !== null && 
                         authData.class !== undefined && 
-                        authData.class !== '' && 
-                        authData.class !== 0;
+                        String(authData.class).trim() !== '';
         
-        const hasRegion = typeof authData.region === 'string' && 
-                         authData.region.trim() !== '';
+        // FIX: region и district - проверяем что это непустые строки
+        const hasRegion = authData.region && 
+                         String(authData.region).trim() !== '';
         
-        const hasDistrict = typeof authData.district === 'string' && 
-                           authData.district.trim() !== '';
+        const hasDistrict = authData.district && 
+                           String(authData.district).trim() !== '';
         
-        return hasFullName && hasClass && hasRegion && hasDistrict;
+        const isComplete = hasFullName && hasClass && hasRegion && hasDistrict;
+        
+        console.log('[isProfileComplete] Result:', {
+            hasFullName,
+            hasClass,
+            hasRegion,
+            hasDistrict,
+            isComplete
+        });
+        
+        return isComplete;
     }
 
     async function checkProfileAndTour() {
