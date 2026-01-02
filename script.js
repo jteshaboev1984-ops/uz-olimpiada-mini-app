@@ -705,7 +705,7 @@ if (authError || !authData || authData.id == null) {
     return;
 }
 // Гарантируем, что это числовое значение для bigint
-        internalDbId = Number(authData.id);
+        internalDbId = String(authData.id);
         currentUserData = authData;
         
         if (authData.telegram_id) {
@@ -1673,13 +1673,14 @@ if (authError || !authData || authData.id == null) {
         nextBtn.disabled = true;
         nextBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('saving_ans')}`;
         
-        if (!internalDbId || isNaN(Number(internalDbId))) {
+        if (!internalDbId || internalDbId === "null" || internalDbId === "undefined") {
     console.error("Critical error: internalDbId is invalid", internalDbId);
-    alert("Xatolik: Seans muddati tugadi yoki ID xato. Iltimos, sahifani yangilang.");
+    alert("Xatolik: Seans muddati tugadi yoki ID topilmadi. Iltimos, botni qayta ishga tushiring.");
     nextBtn.disabled = false;
     nextBtn.innerHTML = t('repeat');
     return;
-}        
+}
+        
         const q = questions[currentQuestionIndex];
         if (!q) return;
 
@@ -1910,6 +1911,7 @@ if (authError || !authData || authData.id == null) {
         }
     }, 100);
 });
+
 
 
 
