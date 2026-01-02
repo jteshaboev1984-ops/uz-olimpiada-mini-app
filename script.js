@@ -693,18 +693,36 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function checkProfileAndTour() {
-        if (!tgInitData || tgInitData === "") return;
+    console.log('[checkProfileAndTour] tgInitData len:', tgInitData ? tgInitData.length : 0);
+    console.log('[checkProfileAndTour] tgInitData head:', (tgInitData || '').slice(0, 120));
 
-        const { data: authData, error: authError } = await supabaseClient.rpc('telegram_login', {
-            p_init_data: tgInitData
-        }).single();
+    if (!tgInitData || tgInitData === "") {
+        console.error('[checkProfileAndTour] INITDATA EMPTY -> STOP');
+        alert('INITDATA пустой. Открой мини-апп строго из Telegram бота (не из браузера).');
+        return;
+    }
 
-if (authError || !authData || authData.id == null) {
-    console.error("Auth failed:", authError, authData);
-    alert("Avtorizatsiya xatosi (ID null). Iltimos, botni qayta ishga tushiring.");
-    return;
-}
-// Гарантируем, что это числовое значение для bigint
+    // Временно вызываем debug-функцию (чтобы проверить что RPC реально запускается)
+    const { data: authData, error: authError } = await supabaseClient
+        .rpc('telegram_login_debug', { p_init_data: tgInitData })
+        .single();
+
+    console.log('[telegram_login_debug] data:', authData);
+    console.log('[telegram_login_debug] error:', authError);
+
+    if (authError) {
+        alert('Auth error: ' + (authError.message || '') + '\n' + (authError.details || ''));
+        return;
+    }
+    if (!authData) {
+        alert('Auth error: authData null');
+        return;
+    }
+    if (authData.id == null) {
+        alert('Auth error: id null. Открой Console и пришли мне скрин.');
+        return;
+    }
+
         internalDbId = String(authData.id);
         currentUserData = authData;
         
@@ -1894,22 +1912,15 @@ if (authError || !authData || authData.id == null) {
 
     // Initialize app after Telegram data is ready
     setTimeout(() => {
-        if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe.user) {
-            tgInitData = Telegram.WebApp.initData;
-            
-            const user = Telegram.WebApp.initDataUnsafe.user;
-            if (user && user.id) {
-                telegramUserId = user.id ? String(user.id) : null;
-            }
-            
-            checkProfileAndTour();
-        } else {
-            console.warn("Telegram WebApp not available or no user data");
-            // For testing outside Telegram - initialize language first
-            initializeLanguage(null);
-            checkProfileAndTour();
-        }
-    }, 100);
+    console.log('[setTimeout] Telegram.WebApp exists?', !!(window.Telegram && Telegram.WebApp));
+    console.log('[setTimeout] initDataUnsafe.user:', Telegram?.WebApp?.initDataUnsafe?.user || null);
+
+    tgInitData = Telegram?.WebApp?.initData || "";
+    console.log('[setTimeout] tgInitData len:', tgInitData.length);
+    console.log('[setTimeout] tgInitData head:', tgInitData.slice(0, 120));
+
+    checkProfileAndTour();
+}, 200);
 });
 
 
