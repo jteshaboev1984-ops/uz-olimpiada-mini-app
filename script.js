@@ -732,6 +732,8 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
         .single();
 
 dbg('[telegram_login_debug] data:', authData);
+dbg('[telegram_login_debug] keys:', authData ? Object.keys(authData) : null);
+dbg('[telegram_login_debug] json:', JSON.stringify(authData, null, 2));
 dbg('[telegram_login_debug] error:', authError);
 
 
@@ -1949,6 +1951,7 @@ dbg('[telegram_login_debug] error:', authError);
     checkProfileAndTour();
 }, 200);
 });
+
 
 
 
