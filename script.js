@@ -1888,11 +1888,20 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
     }
 
     function showScreen(screenId) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-        const screen = document.getElementById(screenId);
-        if (screen) screen.classList.remove('hidden');
-        window.scrollTo(0, 0);
+    // Находим наш индикатор загрузки и скрываем его
+    const loader = document.getElementById('app-loader');
+    if (loader) {
+        loader.style.display = 'none';
     }
+
+    // Остальной код переключения экранов
+    document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+    const screen = document.getElementById(screenId);
+    if (screen) {
+        screen.classList.remove('hidden');
+    }
+    window.scrollTo(0, 0);
+}
 
     window.openExternalLink = function(url) {
         if (window.Telegram && Telegram.WebApp) {
@@ -1995,6 +2004,7 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
         }
         isTestActive = false;
     });
+
 
 
 
