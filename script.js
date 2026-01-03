@@ -89,8 +89,33 @@ document.addEventListener('DOMContentLoaded', function () {
     console.log("[initTelegram] initData head:", tgInitData.slice(0, 120));
   }
 
-  initTelegram();
-  checkProfileAndTour();
+  // Безопасный запуск приложения
+async function startApp() {
+    try {
+        initTelegram();
+        await checkProfileAndTour();
+    } catch (err) {
+        console.error("Критическая ошибка при запуске:", err);
+        
+        // Если что-то сломалось, убираем загрузчик и пишем ошибку на экране
+        const loader = document.getElementById('app-loader');
+        if (loader) loader.style.display = 'none';
+        
+        document.body.innerHTML = `
+            <div style="padding: 20px; font-family: sans-serif; text-align: center;">
+                <h2 style="color: #FF3B30;">Ой! Произошла ошибка</h2>
+                <p style="color: #666;">Не удалось запустить приложение. Пожалуйста, попробуйте позже или свяжитесь с поддержкой.</p>
+                <div style="background: #f0f0f0; padding: 10px; border-radius: 8px; font-size: 12px; text-align: left; margin-top: 20px; overflow: auto;">
+                    ${err.message}
+                </div>
+                <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #007AFF; color: white; border: none; border-radius: 8px;">Повторить попытку</button>
+            </div>
+        `;
+    }
+}
+
+// Запускаем нашу безопасную функцию
+startApp();
    
         function dbg(...args) {
         console.log(...args);
@@ -2004,6 +2029,7 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
         }
         isTestActive = false;
     });
+
 
 
 
