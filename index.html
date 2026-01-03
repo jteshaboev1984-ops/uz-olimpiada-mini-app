@@ -13,7 +13,10 @@
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 </head>
 <body>
-
+<div id="app-loader" style="position:fixed; top:0; left:0; width:100%; height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; background:#ffffff; z-index:99999;">
+    <i class="fa-solid fa-graduation-cap fa-bounce" style="font-size: 40px; color: #007AFF; margin-bottom: 20px;"></i>
+    <p style="font-family: sans-serif; color: #8E8E93; font-size: 14px;">Smart Olympiad yuklanmoqda...</p>
+</div>
     <div class="screen hidden" id="reg-screen">
         <div class="header-profile">
             <div class="user-avatar-small"><i class="fa-solid fa-user-pen"></i></div>
@@ -534,6 +537,7 @@
     <pre id="debug-box" style="white-space:pre-wrap;padding:10px;font-size:12px;color:#111;background:#fff;border-top:1px solid #ddd;max-height:40vh;overflow:auto;"></pre>
 </body>
 </html>
+
 
 
 
