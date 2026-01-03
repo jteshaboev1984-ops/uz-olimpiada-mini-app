@@ -1,6 +1,5 @@
 document.body.insertAdjacentHTML('beforeend','<div style="padding:20px;font:16px system-ui;color:#111">EXTERNAL JS RUN ✅</div>');
 
-<script>
 (function(){
   function showErr(title, err){
     const box = document.createElement('pre');
@@ -99,8 +98,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (el) {
             el.textContent += args.map(a => typeof a === 'string' ? a : JSON.stringify(a, null, 2)).join(' ') + "\n";
         }
-    }
-    console.log('App Started: app_79.js (All Bugs Fixed - GitHub Ready)');
+    } 
+    console.log('App Started: app_80.js (All Bugs Fixed - GitHub Ready)');
   
    // === ПЕРЕМЕННЫЕ ТЕСТА И АНТИ-ЧИТА ===
     let questions = [];
@@ -1996,6 +1995,7 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
         }
         isTestActive = false;
     });
+
 
 
 
