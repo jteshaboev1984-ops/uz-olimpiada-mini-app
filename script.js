@@ -821,17 +821,13 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
   dbg('[telegram_login_debug] error:', authError);
 
 
-    if (authError) {
-        alert('Auth error: ' + (authError.message || '') + '\n' + (authError.details || ''));
-        return;
-    }
-    if (!authData) {
-        alert('Auth error: authData null');
-        return;
-    }
-    if (authData.id == null) {
-        alert('Auth error: id null. Открой Console и пришли мне скрин.');
-        return;
+    // Если база данных вернула ошибку или данные пусты
+    if (authError || !authData || authData.id == null) {
+        console.error("Auth error detail:", authError);
+        // Выбрасываем ошибку, чтобы наш "Аварийный выход" из Шага 3 
+        // поймал её, убрал заставку и написал текст на экране.
+        let msg = authError ? authError.message : "Identifikatsiya xatosi (ID null)";
+        throw new Error(msg);
     }
 
         internalDbId = String(authData.id);
@@ -2029,6 +2025,7 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
         }
         isTestActive = false;
     });
+
 
 
 
