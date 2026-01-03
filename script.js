@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function () {
             el.textContent += args.map(a => typeof a === 'string' ? a : JSON.stringify(a, null, 2)).join(' ') + "\n";
         }
     } 
-    console.log('App Started: app_80.js (All Bugs Fixed - GitHub Ready)');
+    console.log('App Started: v80.js');
   
    // === ПЕРЕМЕННЫЕ ТЕСТА И АНТИ-ЧИТА ===
     let questions = [];
@@ -1995,6 +1995,7 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
         }
         isTestActive = false;
     });
+
 
 
 
