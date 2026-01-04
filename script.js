@@ -591,13 +591,19 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
         });
         updateSelectPlaceholders();
         
-        if (tourCompleted) {
-            updateMainButton('completed');
-        } else if (currentTourId) {
-            updateMainButton('start', currentTourTitle); 
-        } else {
-            updateMainButton('inactive');
-        }
+        // Не трогаем главную кнопку пока приложение не инициализировано
+if (!isInitialized) {
+  // оставляем как есть (Yuklanmoqda...)
+} else {
+  if (tourCompleted) {
+    updateMainButton('completed');
+  } else if (currentTourId) {
+    updateMainButton('start', currentTourTitle);
+  } else {
+    updateMainButton('inactive');
+  }
+}
+
         
         if (currentTourId && isInitialized) fetchStatsData();
     }
@@ -2046,6 +2052,7 @@ const { data: tourData, error: tourErr } = await supabaseClient
         isTestActive = false;
     });
 });
+
 
 
 
