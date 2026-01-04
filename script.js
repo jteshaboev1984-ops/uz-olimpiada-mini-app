@@ -135,7 +135,7 @@ startApp();
             el.textContent += args.map(a => typeof a === 'string' ? a : JSON.stringify(a, null, 2)).join(' ') + "\n";
         }
     } 
-    console.log('App Started: v82.js');
+    console.log('App Started: v90.js');
   
    // === ПЕРЕМЕННЫЕ ТЕСТА И АНТИ-ЧИТА ===
     let questions = [];
@@ -2046,6 +2046,7 @@ const { data: tourData, error: tourErr } = await supabaseClient
         isTestActive = false;
     });
 });
+
 
 
 
