@@ -1605,8 +1605,8 @@ const { data: tourData, error: tourErr } = await supabaseClient
         const totalMinutes = Math.ceil(totalTime / 60);
 
         const warnModal = document.getElementById('warning-modal');
-        const warnTime = document.getElementById('warn-time');
-        const warnQCount = document.getElementById('warn-q-count');
+        const warnTime = document.getElementById('warn-time-val');
+        const warnQCount = document.getElementById('warn-q-val');
 
         if (warnTime) warnTime.textContent = totalMinutes + ' ' + t('minutes');
         if (warnQCount) warnQCount.textContent = questions.length + ' ' + t('questions');
@@ -1615,7 +1615,7 @@ const { data: tourData, error: tourErr } = await supabaseClient
     }
 
     function updateMainButton(state, title) {
-        const activeBtn = document.getElementById('active-tour-btn');
+        const activeBtn = document.getElementById('main-action-btn');
         const certCard = document.getElementById('home-cert-btn');
         if (!activeBtn) return;
 
@@ -2046,6 +2046,7 @@ const { data: tourData, error: tourErr } = await supabaseClient
         isTestActive = false;
     });
 });
+
 
 
 
