@@ -933,11 +933,11 @@ const { data: tourData, error: tourErr } = await supabaseClient
 
             // FIX #5: Получаем статистику по всем языкам (убираем фильтр по языку)
             const { data: qData } = await supabaseClient
-                .from('questions')
-                .select('*')
-                .eq('tour_id', currentTourId)
-                .order('order_index', { ascending: true });
-            
+               .from('questions')
+               .select('*')
+               .eq('tour_id', currentTourId)
+               .order('id', { ascending: true });
+
             if (qData) tourQuestionsCache = qData;
 
             const { data: pData } = await supabaseClient
@@ -1591,7 +1591,7 @@ const { data: tourData, error: tourErr } = await supabaseClient
             .select('*')
             .eq('tour_id', currentTourId)
             .eq('language', currentLang)
-            .order('order_index', { ascending: true });
+            .order('id', { ascending: true })
 
         if (qErr || !qData || qData.length === 0) {
             alert(t('error') + ": Questions not found for language: " + currentLang);
@@ -2046,6 +2046,7 @@ const { data: tourData, error: tourErr } = await supabaseClient
         isTestActive = false;
     });
 });
+
 
 
 
