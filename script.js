@@ -832,6 +832,11 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
 
         internalDbId = String(authData.id);
         currentUserData = authData;
+      
+      // ✅ гарантируем telegramUserId: приоритет Telegram -> потом БД
+if (!telegramUserId && authData.telegram_id) {
+  telegramUserId = String(authData.telegram_id);
+}
 
       // ✅ UI имя: сначала Telegram, потом БД, потом "Ishtirokchi"
 const uiName = (() => {
@@ -854,12 +859,6 @@ if (regName) regName.textContent = uiName;
 const cabName = document.getElementById('cab-name');
 if (cabName) cabName.textContent = uiName;
       
-        if (authData.telegram_id) {
-            telegramUserId = String(authData.telegram_id);
-        }
-
-        const elCN = document.getElementById('cab-name'); 
-        if (elCN) elCN.textContent = authData.full_name || authData.name;
         const elID = document.getElementById('cab-id'); 
         if (elID) elID.textContent = String(telegramUserId).slice(-6);
 
