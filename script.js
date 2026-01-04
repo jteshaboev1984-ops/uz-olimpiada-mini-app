@@ -832,7 +832,28 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
 
         internalDbId = String(authData.id);
         currentUserData = authData;
-        
+
+      // ✅ UI имя: сначала Telegram, потом БД, потом "Ishtirokchi"
+const uiName = (() => {
+  const tgName = [telegramData.firstName, telegramData.lastName].filter(Boolean).join(' ').trim();
+  if (tgName) return tgName;
+
+  const dbName = (authData.full_name || authData.name || '').trim();
+  if (dbName) return dbName;
+
+  return t('participant_label'); // Ishtirokchi / Участник
+})();
+
+// ✅ обновляем имя во всех местах интерфейса
+const homeName = document.getElementById('home-user-name');
+if (homeName) homeName.textContent = uiName;
+
+const regName = document.getElementById('reg-user-name');
+if (regName) regName.textContent = uiName;
+
+const cabName = document.getElementById('cab-name');
+if (cabName) cabName.textContent = uiName;
+      
         if (authData.telegram_id) {
             telegramUserId = String(authData.telegram_id);
         }
@@ -2026,6 +2047,7 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
         isTestActive = false;
     });
 });
+
 
 
 
