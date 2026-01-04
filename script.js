@@ -915,14 +915,14 @@ if (cabName) cabName.textContent = uiName;
             await fetchStatsData(); 
         }
 
-        // FIX #4: Исправленный запрос активного тура с order и limit
-        const { data: tourData, error: tourErr } = await supabaseClient
-            .from('tours')
-            .select('*')
-            .eq('is_active', true)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
+        // FIX #4: Исправленный запрос активного тура (в tours нет created_at)
+const { data: tourData, error: tourErr } = await supabaseClient
+    .from('tours')
+    .select('*')
+    .eq('is_active', true)
+    .order('start_date', { ascending: false })   // ✅ ВМЕСТО created_at
+    .limit(1)
+    .maybeSingle();
 
         if (tourErr) console.error("Tour fetch error:", tourErr);
 
@@ -2046,6 +2046,7 @@ if (cabName) cabName.textContent = uiName;
         isTestActive = false;
     });
 });
+
 
 
 
