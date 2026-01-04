@@ -1579,7 +1579,102 @@ const { data: tourData, error: tourErr } = await supabaseClient
     });
 
     // START TOUR LOGIC
-    async function handleStartClick() {
+  function normalizeSubject(s) {
+  return String(s || '').trim().toLowerCase();
+}
+
+function diffRank(d) {
+  const x = String(d || '').toLowerCase();
+  if (x === 'easy') return 1;
+  if (x === 'medium') return 2;
+  if (x === 'hard') return 3;
+  return 99;
+}
+
+function pickRandom(arr, n) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a.slice(0, n);
+}
+
+function buildTourQuestions(allQuestions) {
+  const pool = (allQuestions || []).filter(q => q && q.id);
+
+  // предмета 7: math, chem, bio, eco, it, sat, ielts
+  const SUBJECTS = ['math', 'chem', 'bio', 'eco', 'it', 'sat', 'ielts'];
+
+  // группируем по subject prefix (у тебя в UI используется startsWith(prefix))
+  const bySubj = {};
+  SUBJECTS.forEach(s => bySubj[s] = []);
+  pool.forEach(q => {
+    const subj = normalizeSubject(q.subject);
+    // берём по префиксам как у тебя в статистике: startsWith(prefix)
+    for (const p of SUBJECTS) {
+      if (subj.startsWith(p)) {
+        bySubj[p].push(q);
+        break;
+      }
+    }
+  });
+
+  const selected = [];
+
+  // 1) Математика: строго 3 уровня
+  const mathAll = bySubj.math || [];
+  const mathEasy = mathAll.filter(q => String(q.difficulty) === 'Easy');
+  const mathMed  = mathAll.filter(q => String(q.difficulty) === 'Medium');
+  const mathHard = mathAll.filter(q => String(q.difficulty) === 'Hard');
+
+  // если вдруг какого-то уровня нет — мягкий fallback
+  const mE = (mathEasy[0] ? pickRandom(mathEasy, 1)[0] : pickRandom(mathAll, 1)[0]);
+  const mM = (mathMed[0]  ? pickRandom(mathMed, 1)[0]  : pickRandom(mathAll.filter(q=>q.id!==mE?.id), 1)[0]);
+  const mH = (mathHard[0] ? pickRandom(mathHard, 1)[0] : pickRandom(mathAll.filter(q=>q.id!==mE?.id && q.id!==mM?.id), 1)[0]);
+
+  if (mE) selected.push(mE);
+  if (mM) selected.push(mM);
+  if (mH) selected.push(mH);
+
+  // 2) Остальные предметы: по 2 вопроса (сложность рандом)
+  const others = ['chem', 'bio', 'eco', 'it', 'sat', 'ielts'];
+  others.forEach(s => {
+    const arr = (bySubj[s] || []).filter(q => !selected.some(x => x.id === q.id));
+    const picked = pickRandom(arr, 2);
+    picked.forEach(q => selected.push(q));
+  });
+
+  // 3) Проверка количества
+  if (selected.length !== 15) {
+    console.warn('[buildTourQuestions] expected 15, got', selected.length);
+
+    // если не хватило — добиваем любыми из пула, которых ещё нет
+    const rest = pool.filter(q => !selected.some(x => x.id === q.id));
+    const need = 15 - selected.length;
+    if (need > 0) pickRandom(rest, need).forEach(q => selected.push(q));
+
+    // если вдруг лишнее — обрезаем
+    if (selected.length > 15) selected.length = 15;
+  }
+
+  // 4) Лестенька: Easy -> Medium -> Hard, внутри уровня перемешать
+  const easy = selected.filter(q => diffRank(q.difficulty) === 1);
+  const med  = selected.filter(q => diffRank(q.difficulty) === 2);
+  const hard = selected.filter(q => diffRank(q.difficulty) === 3);
+  const other = selected.filter(q => diffRank(q.difficulty) === 99);
+
+  const ordered = []
+    .concat(pickRandom(easy, easy.length))
+    .concat(pickRandom(med, med.length))
+    .concat(pickRandom(hard, hard.length))
+    .concat(pickRandom(other, other.length));
+
+  // финально гарантируем 15
+  return ordered.slice(0, 15);
+}
+  
+  async function handleStartClick() {
         if (tourCompleted) {
             const modal = document.getElementById('tour-info-modal');
             if (modal) modal.classList.remove('hidden');
@@ -1604,8 +1699,12 @@ const { data: tourData, error: tourErr } = await supabaseClient
             return;
         }
 
-        questions = qData;
-        tourQuestionsCache = qData;
+        questions = buildTourQuestions(qData);
+tourQuestionsCache = questions;
+
+console.log('[TOUR] selected 15 questions:', questions.map(q => ({
+  id: q.id, subj: q.subject, diff: q.difficulty
+})));
 
         const totalTime = questions.reduce((acc, q) => acc + (q.time_limit_seconds || 60), 0);
         const totalMinutes = Math.ceil(totalTime / 60);
@@ -2052,6 +2151,7 @@ const { data: tourData, error: tourErr } = await supabaseClient
         isTestActive = false;
     });
 });
+
 
 
 
