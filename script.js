@@ -951,7 +951,7 @@ if (cabName) cabName.textContent = uiName;
                 tourCompleted = true;
                 updateMainButton('completed');
             } else {
-                updateMainButton('start', currentTourTitle);
+                updateMainButton('start', tourData.title);
             }
         } else {
             updateMainButton('inactive');
@@ -2046,6 +2046,7 @@ if (cabName) cabName.textContent = uiName;
         isTestActive = false;
     });
 });
+
 
 
 
