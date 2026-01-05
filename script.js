@@ -54,8 +54,9 @@ document.addEventListener('DOMContentLoaded', function () {
   let currentTourTitle = "";
   let currentTourEndDate = null;
   let currentUserData = null;
-  let tourQuestionsCache = [];
-  let userAnswersCache = [];
+  let tourQuestionsAllCache = [];     // ВСЕ вопросы тура (для статистики/ошибок)
+  let tourQuestionsSelected = [];     // 15 выбранных на тест (для прохождения)
+  let userAnswersCache = [];          // ответы ТОЛЬКО текущего тура + текущего языка
   let currentLbFilter = 'republic';
   let currentLang = 'uz';
   let tourCompleted = false;
@@ -1084,39 +1085,71 @@ function fillProfileForm(data) {
 
     // FIX #5: Исправленная статистика - получаем данные по текущему языку пользователя
     async function fetchStatsData() {
-        if (!currentTourId || !internalDbId) return;
-        
-        // Получаем вопросы только текущего тура на языке пользователя
-        const { data: qData } = await supabaseClient
-            .from('questions')
-            .select('id, subject, topic, question_text, options_text, type, tour_id, time_limit_seconds, language, difficulty, image_url')
-            .eq('tour_id', currentTourId)
-            .eq('language', currentLang);
-        
-        if (qData) tourQuestionsCache = qData;
+  if (!currentTourId || !internalDbId) return;
 
-        const { data: ansData } = await supabaseClient
-            .from('user_answers')
-            .select('question_id, is_correct')
-            .eq('user_id', internalDbId);
-        
-        if (ansData) {
-            userAnswersCache = ansData;
-        }
-    }
+  // 1) Вопросы текущего тура на текущем языке — для статистики
+  const { data: qData, error: qErr } = await supabaseClient
+    .from('questions')
+    .select('id, subject, topic, difficulty, tour_id, language')
+    .eq('tour_id', currentTourId)
+    .eq('language', currentLang);
+
+  if (qErr) console.error('[fetchStatsData] questions error:', qErr);
+  tourQuestionsAllCache = qData || [];
+
+  // 2) Ответы пользователя ТОЛЬКО по вопросам текущего тура и языка
+  // Важно: это делаем через JOIN к questions (нужна связь question_id -> questions.id)
+  const { data: ansData, error: aErr } = await supabaseClient
+    .from('user_answers')
+    .select(`
+      question_id,
+      is_correct,
+      questions!inner (
+        id,
+        tour_id,
+        language
+      )
+    `)
+    .eq('user_id', internalDbId)
+    .eq('questions.tour_id', currentTourId)
+    .eq('questions.language', currentLang);
+
+  if (aErr) {
+    console.error('[fetchStatsData] answers error:', aErr);
+
+    // fallback (на случай если имя связи в БД не "questions")
+    // тогда статистика будет по текущему туру, но фильтр сделаем вручную:
+    const { data: rawAns, error: rawErr } = await supabaseClient
+      .from('user_answers')
+      .select('question_id, is_correct')
+      .eq('user_id', internalDbId);
+
+    if (rawErr) console.error('[fetchStatsData] fallback answers error:', rawErr);
+
+    const allowedIds = new Set(tourQuestionsAllCache.map(q => q.id));
+    userAnswersCache = (rawAns || []).filter(a => allowedIds.has(a.question_id));
+    return;
+  }
+
+  userAnswersCache = (ansData || []).map(a => ({
+    question_id: a.question_id,
+    is_correct: a.is_correct
+  }));
+}
 
     function calculateSubjectStats(prefix) {
-        const subjectQuestions = tourQuestionsCache.filter(q =>
-            q.subject && q.subject.toLowerCase().startsWith(prefix.toLowerCase())
-        );
+  const subjectQuestions = (tourQuestionsAllCache || []).filter(q =>
+    q.subject && String(q.subject).toLowerCase().startsWith(String(prefix).toLowerCase())
+  );
 
-        let correct = 0;
-        subjectQuestions.forEach(q => {
-            const answer = userAnswersCache.find(a => a.question_id === q.id);
-            if (answer && answer.is_correct) correct++;
-        });
-        return { total: subjectQuestions.length, correct };
-    }
+  let correct = 0;
+  subjectQuestions.forEach(q => {
+    const a = (userAnswersCache || []).find(x => x.question_id === q.id);
+    if (a && a.is_correct) correct++;
+  });
+
+  return { total: subjectQuestions.length, correct };
+}
 
     window.openSubjectStats = function(prefix) {
         const modal = document.getElementById('subject-details-modal');
@@ -1521,54 +1554,73 @@ function fillProfileForm(data) {
             return;
         }
         
-        const { data: answers } = await supabaseClient
-            .from('user_answers')
-            .select('question_id, answer, is_correct')
-            .eq('user_id', internalDbId);
-        
-        if (!answers || answers.length === 0) {
-            container.innerHTML = `<p style="text-align:center;color:#999;">${t('no_data')}</p>`;
-            return;
-        }
-        
-        const questionIds = answers.map(a => a.question_id);
-        const { data: questionsData } = await supabaseClient
-            .from('questions')
-            .select('id, question_text, correct_answer, subject, difficulty, image_url')
-            .in('id', questionIds);
-        
-        if (!questionsData) {
-            container.innerHTML = `<p style="text-align:center;color:#999;">${t('no_data')}</p>`;
-            return;
-        }
-        
-        container.innerHTML = '';
-        
-        questionsData.forEach((q, idx) => {
-            const userAnswer = answers.find(a => a.question_id === q.id);
-            const isCorrect = userAnswer ? userAnswer.is_correct : false;
-            const iconClass = isCorrect ? 'fa-check-circle' : 'fa-times-circle';
-            const iconColor = isCorrect ? '#34C759' : '#FF3B30';
-            
-            const html = `
-                <div class="review-card" style="background:#fff; border-radius:12px; padding:16px; margin-bottom:12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
-                        <span style="font-weight:600; color:#333;">#${idx + 1}. ${q.subject || ''}</span>
-                        <i class="fa-solid ${iconClass}" style="color:${iconColor}; font-size:18px;"></i>
-                    </div>
-                    ${q.image_url ? `<img src="${q.image_url}" style="max-width:100%; border-radius:8px; margin-bottom:8px;">` : ''}
-                    <p style="color:#333; margin-bottom:8px;">${q.question_text || ''}</p>
-                    <div style="font-size:13px; color:#666;">
-                        <p><b>Sizning javobingiz:</b> <span style="color:${isCorrect ? '#34C759' : '#FF3B30'}">${userAnswer ? userAnswer.answer : '-'}</span></p>
-                        <p><b>To'g'ri javob:</b> <span style="color:#34C759">${q.correct_answer || '-'}</span></p>
-                    </div>
-                </div>
-            `;
-            container.insertAdjacentHTML('beforeend', html);
-        });
-        
-        renderLaTeX();
-    }
+        // ✅ Вместо двух запросов (user_answers + questions) делаем один JOIN
+const { data: answers, error } = await supabaseClient
+  .from('user_answers')
+  .select(`
+    answer,
+    is_correct,
+    questions!inner (
+      id,
+      tour_id,
+      language,
+      question_text,
+      correct_answer,
+      subject,
+      difficulty,
+      image_url
+    )
+  `)
+  .eq('user_id', internalDbId)
+  .eq('questions.tour_id', currentTourId)
+  .eq('questions.language', currentLang);
+
+if (error) {
+  console.error('[loadMistakesReview] error:', error);
+  container.innerHTML = `<p style="text-align:center;color:#999;">${t('error')}</p>`;
+  return;
+}
+
+if (!answers || answers.length === 0) {
+  container.innerHTML = `<p style="text-align:center;color:#999;">${t('no_data')}</p>`;
+  return;
+}
+
+container.innerHTML = '';
+
+// (опционально) сортируем по id вопроса, чтобы порядок был стабильный
+answers.sort((a, b) => (a.questions?.id || 0) - (b.questions?.id || 0));
+
+answers.forEach((row, idx) => {
+  const q = row.questions;           // ✅ вопрос из JOIN
+  if (!q) return;
+
+  const isCorrect = !!row.is_correct;
+  const iconClass = isCorrect ? 'fa-check-circle' : 'fa-times-circle';
+  const iconColor = isCorrect ? '#34C759' : '#FF3B30';
+
+  const html = `
+    <div class="review-card" style="background:#fff; border-radius:12px; padding:16px; margin-bottom:12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+        <span style="font-weight:600; color:#333;">#${idx + 1}. ${q.subject || ''}</span>
+        <i class="fa-solid ${iconClass}" style="color:${iconColor}; font-size:18px;"></i>
+      </div>
+
+      ${q.image_url ? `<img src="${q.image_url}" style="max-width:100%; border-radius:8px; margin-bottom:8px;">` : ''}
+
+      <p style="color:#333; margin-bottom:8px;">${q.question_text || ''}</p>
+
+      <div style="font-size:13px; color:#666;">
+        <p><b>Sizning javobingiz:</b> <span style="color:${isCorrect ? '#34C759' : '#FF3B30'}">${row.answer ?? '-'}</span></p>
+        <p><b>To'g'ri javob:</b> <span style="color:#34C759">${q.correct_answer ?? '-'}</span></p>
+      </div>
+    </div>
+  `;
+
+  container.insertAdjacentHTML('beforeend', html);
+});
+
+renderLaTeX();
 
     // FIX #3: Исправленный анти-чит - срабатывает ТОЛЬКО во время активного теста
     document.addEventListener("visibilitychange", function() {
@@ -1743,8 +1795,11 @@ function buildTourQuestions(allQuestions) {
             return;
         }
 
-        questions = buildTourQuestions(qData);
-tourQuestionsCache = questions;
+tourQuestionsAllCache = qData;              // сохраняем весь пул тура для статистики
+tourQuestionsSelected = buildTourQuestions(qData);
+
+questions = tourQuestionsSelected;          // тест идёт по 15
+
 
 console.log('[TOUR] selected 15 questions:', questions.map(q => ({
   id: q.id, subj: q.subject, diff: q.difficulty
@@ -2239,3 +2294,4 @@ window.addEventListener('beforeunload', () => {
 });
 
 }); // <-- закрытие document.addEventListener('DOMContentLoaded', ...)
+
