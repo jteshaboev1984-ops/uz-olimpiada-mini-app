@@ -1451,7 +1451,7 @@ const { data: tourData, error: tourErr } = await supabaseClient
         const end = currentTourEndDate ? new Date(currentTourEndDate) : null;
         
         if (end && now < end) {
-            const modal = document.getElementById('lock-review-modal');
+            const modal = document.getElementById('review-lock-modal');
             if (modal) modal.classList.remove('hidden');
         } else {
             showScreen('review-screen');
@@ -1460,7 +1460,7 @@ const { data: tourData, error: tourErr } = await supabaseClient
     });
 
     safeAddListener('close-lock-review-modal', 'click', () => {
-        const modal = document.getElementById('lock-review-modal');
+        const modal = document.getElementById('review-lock-modal');
         if (modal) modal.classList.add('hidden');
     });
 
@@ -2151,6 +2151,7 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
         isTestActive = false;
     });
 });
+
 
 
 
