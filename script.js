@@ -137,7 +137,7 @@ startApp();
             el.textContent += args.map(a => typeof a === 'string' ? a : JSON.stringify(a, null, 2)).join(' ') + "\n";
         }
     } 
-    console.log('App Started: v92.js');
+    console.log('App Started: v100.js');
   
    // === ПЕРЕМЕННЫЕ ТЕСТА И АНТИ-ЧИТА ===
     let questions = [];
@@ -2255,6 +2255,7 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
         isTestActive = false;
     });
 });
+
 
 
 
