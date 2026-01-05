@@ -1,5 +1,3 @@
-console.log('SCRIPT VERSION = v100');
-
 document.body.insertAdjacentHTML('beforeend','<div style="padding:20px;font:16px system-ui;color:#111">EXTERNAL JS RUN ✅</div>');
 
 (function(){
@@ -2253,6 +2251,7 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
         isTestActive = false;
     });
 });
+
 
 
 
