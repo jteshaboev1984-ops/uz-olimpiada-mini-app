@@ -296,13 +296,6 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
             lang_locked_reason: "Adolatli raqobat uchun tilni o'zgartirish imkoniyati o'chirilgan.",
             cheat_title: "DIQQAT! QOIDABUZARLIK!",
             cheat_msg: "Ilovadan chiqish yoki oynani almashtirish taqiqlanadi. Yana takrorlansa, test avtomatik ravishda yakunlanadi!"
-            cert_header: "FANLARARO OLIMPIADA",
-            cert_main_title: "Sertifikat",
-            cert_awarded_to: "TAQDIRLANADI",
-            cert_total_participants: "Jami ishtirokchilar",
-            cert_issue_date: "Berilgan sana",
-            cert_commission: "KOMISSIYA RAISI",
-            cert_score_label: "BALL",
         },
         ru: {
             reg_title: "Регистрация",
@@ -429,13 +422,6 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
             lang_locked_reason: "Смена языка отключена для обеспечения честной конкуренции.",
             cheat_title: "НАРУШЕНИЕ!",
             cheat_msg: "Покидать приложение во время теста запрещено! При повторном нарушении тест будет завершен принудительно."
-            cert_header: "МЕЖПРЕДМЕТНАЯ ОЛИМПИАДА",
-            cert_main_title: "Сертификат",
-            cert_awarded_to: "НАГРАЖДАЕТСЯ",
-            cert_total_participants: "Всего участников",
-            cert_issue_date: "Дата выдачи",
-            cert_commission: "ПРЕДСЕДАТЕЛЬ КОМИССИИ",
-            cert_score_label: "БАЛЛА",
         },
         en: {
             reg_title: "Registration",
@@ -562,13 +548,6 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
             lang_locked_reason: "Language changing is disabled to ensure fair competition.",
             cheat_title: "VIOLATION!",
             cheat_msg: "Leaving the app is prohibited! Next time the test will be terminated automatically."
-            cert_header: "INTERDISCIPLINARY OLYMPIAD",
-            cert_main_title: "Certificate",
-            cert_awarded_to: "AWARDED TO",
-            cert_total_participants: "Total participants",
-            cert_issue_date: "Issue date",
-            cert_commission: "CHAIRPERSON",
-            cert_score_label: "POINTS",
         }
     };
 
@@ -2151,100 +2130,17 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
 
     function showCertsModal() {
         const container = document.getElementById('certs-list-container');
-        if (!container) return;
-
-        // Если тест не пройден, показываем "Пусто", если пройден - карточку
-        if (!tourCompleted) {
-            container.innerHTML = `<p style="text-align:center; color:#8E8E93; padding:20px;">${t('no_data')}</p>`;
-        } else {
+        if (container) {
             container.innerHTML = `
-                <div class="cert-card" onclick="generateAndDownloadCert()" style="display:flex; align-items:center; gap:12px; padding:12px; border:1px solid #eee; border-radius:12px; cursor:pointer;">
-                    <div class="cert-icon" style="background:#E8F5E9; color:#34C759; width:40px; height:40px; display:flex; align-items:center; justify-content:center; border-radius:10px;">
-                        <i class="fa-solid fa-award"></i>
-                    </div>
-                    <div class="cert-info" style="flex:1;">
-                        <h4 style="margin:0; font-size:14px;">${currentTourTitle || t('cert_title')}</h4>
-                        <p style="margin:0; font-size:11px; color:#999;">${new Date().toLocaleDateString()}</p>
-                    </div>
-                    <div class="cert-action"><i class="fa-solid fa-download" style="color:#007AFF"></i></div>
+                <div class="cert-card">
+                    <div class="cert-icon"><i class="fa-solid fa-file-pdf"></i></div>
+                    <div class="cert-info"><h4>${t('cert_title')}</h4><p>${new Date().toLocaleDateString()}</p></div>
+                    <div class="cert-action"><span class="badge-soon">Soon</span></div>
                 </div>`;
         }
         const modal = document.getElementById('certs-modal');
         if (modal) modal.classList.remove('hidden');
     }
-
-    // Функция рисования (дизайн как на скрине)
-    window.generateAndDownloadCert = function() {
-        const canvas = document.getElementById('certCanvas');
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-
-        canvas.width = 800;
-        canvas.height = 1150;
-
-        // Белый фон и рамка
-        ctx.fillStyle = '#F2F3F5';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#FFFFFF';
-        ctx.beginPath();
-        ctx.roundRect(40, 40, 720, 1070, 30);
-        ctx.fill();
-
-        // Синяя иконка шапки
-        ctx.fillStyle = '#1A337E'; 
-        ctx.beginPath(); ctx.arc(400, 140, 50, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#FFFFFF'; ctx.font = '50px serif'; ctx.textAlign = 'center';
-        ctx.fillText('🎓', 400, 160);
-
-        // Текст
-        ctx.fillStyle = '#1A337E'; ctx.font = 'bold 20px sans-serif';
-        ctx.fillText(t('cert_header'), 400, 230);
-        ctx.fillStyle = '#000000'; ctx.font = 'bold 60px serif';
-        ctx.fillText(t('cert_main_title'), 400, 300);
-        ctx.fillStyle = '#8E8E93'; ctx.font = 'italic 24px serif';
-        ctx.fillText(`${currentTourTitle || 'Smart Olympiad'} • 2026`, 400, 345);
-
-        ctx.fillStyle = '#8E8E93'; ctx.font = '22px sans-serif';
-        ctx.fillText(t('cert_awarded_to'), 400, 420);
-
-        ctx.fillStyle = '#000000'; ctx.font = 'bold 45px sans-serif';
-        const uName = currentUserData?.full_name || 'Participant';
-        ctx.fillText(uName, 400, 480);
-
-        ctx.fillStyle = '#444444'; ctx.font = '22px sans-serif';
-        const schInfo = `${currentUserData?.class || '--'} cl • №${currentUserData?.school || '--'}, ${currentUserData?.region || ''}`;
-        ctx.fillText(schInfo, 400, 530);
-
-        // Круг с баллами
-        ctx.strokeStyle = '#FFD700'; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.arc(260, 710, 80, 0, Math.PI * 2); ctx.stroke();
-        ctx.fillStyle = '#000000'; ctx.font = 'bold 55px sans-serif';
-        ctx.fillText(correctCount || '0', 260, 715);
-        ctx.font = 'bold 16px sans-serif'; ctx.fillStyle = '#FFD700';
-        ctx.fillText(t('cert_score_label'), 260, 745);
-
-        // Статистика справа
-        ctx.textAlign = 'left'; ctx.fillStyle = '#8E8E93'; ctx.font = '22px sans-serif';
-        ctx.fillText(t('lb_rank'), 380, 680);
-        ctx.fillText(t('cert_total_participants'), 380, 730);
-        ctx.fillText(t('cert_issue_date'), 380, 780);
-
-        ctx.textAlign = 'right'; ctx.fillStyle = '#000000'; ctx.font = 'bold 22px sans-serif';
-        ctx.fillText(document.getElementById('cab-rank')?.textContent || '--', 700, 680);
-        ctx.fillText('1 240', 700, 730);
-        ctx.fillText(new Date().toLocaleDateString(), 700, 780);
-
-        // Подпись
-        ctx.textAlign = 'center'; ctx.fillStyle = '#8E8E93'; ctx.font = '14px sans-serif';
-        ctx.fillText(t('cert_commission'), 220, 1050);
-        ctx.font = 'italic 30px cursive'; ctx.fillStyle = '#222';
-        ctx.fillText('Smart Team', 220, 1000);
-
-        const link = document.createElement('a');
-        link.download = `Cert_${uName}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-    };
 
     // Cleanup on page unload
     window.addEventListener('beforeunload', () => {
@@ -2255,6 +2151,24 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
         isTestActive = false;
     });
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
