@@ -296,6 +296,13 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
             lang_locked_reason: "Adolatli raqobat uchun tilni o'zgartirish imkoniyati o'chirilgan.",
             cheat_title: "DIQQAT! QOIDABUZARLIK!",
             cheat_msg: "Ilovadan chiqish yoki oynani almashtirish taqiqlanadi. Yana takrorlansa, test avtomatik ravishda yakunlanadi!"
+            cert_header: "FANLARARO OLIMPIADA",
+            cert_main_title: "Sertifikat",
+            cert_awarded_to: "TAQDIRLANADI",
+            cert_total_participants: "Jami ishtirokchilar",
+            cert_issue_date: "Berilgan sana",
+            cert_commission: "KOMISSIYA RAISI",
+            cert_score_label: "BALL"
         },
         ru: {
             reg_title: "Регистрация",
@@ -422,6 +429,13 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
             lang_locked_reason: "Смена языка отключена для обеспечения честной конкуренции.",
             cheat_title: "НАРУШЕНИЕ!",
             cheat_msg: "Покидать приложение во время теста запрещено! При повторном нарушении тест будет завершен принудительно."
+            cert_header: "МЕЖПРЕДМЕТНАЯ ОЛИМПИАДА",
+            cert_main_title: "Сертификат",
+            cert_awarded_to: "НАГРАЖДАЕТСЯ",
+            cert_total_participants: "Всего участников",
+            cert_issue_date: "Дата выдачи",
+            cert_commission: "ПРЕДСЕДАТЕЛЬ КОМИССИИ",
+            cert_score_label: "БАЛЛА"
         },
         en: {
             reg_title: "Registration",
@@ -548,6 +562,13 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
             lang_locked_reason: "Language changing is disabled to ensure fair competition.",
             cheat_title: "VIOLATION!",
             cheat_msg: "Leaving the app is prohibited! Next time the test will be terminated automatically."
+            cert_header: "INTERDISCIPLINARY OLYMPIAD",
+            cert_main_title: "Certificate",
+            cert_awarded_to: "AWARDED TO",
+            cert_total_participants: "Total participants",
+            cert_issue_date: "Issue date",
+            cert_commission: "CHAIRPERSON",
+            cert_score_label: "POINTS"
         }
     };
 
@@ -2151,6 +2172,7 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
         isTestActive = false;
     });
 });
+
 
 
 
