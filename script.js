@@ -954,64 +954,53 @@ console.log('[TOUR] picked tourData:', tourData);
             currentTourId = tourData.id;
             currentTourTitle = tourData.title;
             currentTourEndDate = tourData.end_date;
-// Если тур уже закончился по времени — включаем режим тренировки (даже если он не активен)
+
 const nowTour = new Date();
 const end = currentTourEndDate ? new Date(currentTourEndDate) : null;
 
-console.log('[TOUR] now/end/is_active:', now.toISOString(), end ? end.toISOString() : null, tourData.is_active);
+console.log(
+  '[TOUR] now/end/is_active:',
+  nowTour.toISOString(),
+  end ? end.toISOString() : null,
+  tourData.is_active
+);
 
-if (end && now >= end && tourData.is_active !== true) {
+// Если тур глобально завершён и он не активен — режим "completed" (и тренировка по клику)
+if (end && nowTour >= end && tourData.is_active !== true) {
   tourCompleted = true;
   updateMainButton('completed');
   isInitialized = true;
-  return;
+  return; // ВАЖНО: выходим, чтобы ниже не перетёрло кнопку
 }
 
-          
-        // Если это НЕ активный тур (или активного нет вообще), но он уже завершён,
-// то мы показываем режим тренировки (без “нет активных туров”)
-
-if (end && now >= end && tourData.is_active !== true) {
-  // Тур завершён глобально → даём тренировку
-  tourCompleted = true;                 // чтобы кнопка встала в режим completed
-  updateMainButton('completed');        // а там у вас уже startPracticeMode() после end_date
-  isInitialized = true;
-  return;                               // ВАЖНО: выходим, чтобы ниже не перетёрло
-}
-  
 const unlockEl = document.getElementById('review-unlock-date');
 if (unlockEl && currentTourEndDate) {
   const d = new Date(currentTourEndDate);
   unlockEl.textContent = d.toLocaleString();
 }
 
+// дальше — обычная логика: загрузка вопросов, проверка tour_progress и выставление кнопки
+const { data: qData } = await supabaseClient
+  .from('questions')
+  .select('id, subject, topic, question_text, options_text, type, tour_id, time_limit_seconds, language, difficulty, image_url')
+  .eq('tour_id', currentTourId)
+  .order('id', { ascending: true });
 
-            // FIX #5: Получаем статистику по всем языкам (убираем фильтр по языку)
-            const { data: qData } = await supabaseClient
-               .from('questions')
-               .select('id, subject, topic, question_text, options_text, type, tour_id, time_limit_seconds, language, difficulty, image_url')
-               .eq('tour_id', currentTourId)
-               .order('id', { ascending: true });
+if (qData) tourQuestionsCache = qData;
 
-            if (qData) tourQuestionsCache = qData;
+const { data: pData } = await supabaseClient
+  .from('tour_progress')
+  .select('score')
+  .eq('user_id', internalDbId)
+  .eq('tour_id', currentTourId)
+  .maybeSingle();
 
-            const { data: pData } = await supabaseClient
-                .from('tour_progress')
-                .select('id, subject, topic, question_text, options_text, type, tour_id, time_limit_seconds, language, difficulty, image_url')
-                .eq('user_id', internalDbId)
-                .eq('tour_id', currentTourId)
-                .maybeSingle();
-
-            if (pData && pData.score !== null) {
-                tourCompleted = true;
-                updateMainButton('completed');
-            } else {
-                updateMainButton('start', tourData.title);
-            }
-        } else {
-            updateMainButton('inactive');
-        }
-        
+if (pData && pData.score !== null) {
+  tourCompleted = true;
+  updateMainButton('completed');
+} else {
+  updateMainButton('start', tourData.title);
+}             
         // FIX #2: Помечаем что инициализация завершена
         isInitialized = true;
     }
@@ -1794,13 +1783,12 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
             newBtn.style.color = "#fff";
             if (certCard) certCard.classList.remove('hidden'); 
             
-            // FIX: Показываем сообщение что тур уже пройден - повторный доступ запрещён
             newBtn.addEventListener('click', () => {
   const nowTour = new Date();
   const end = currentTourEndDate ? new Date(currentTourEndDate) : null;
 
   // До конца тура — тренировки нет
-  if (end && now < end) {
+  if (end && nowTour < end) {
     const modal = document.getElementById('tour-info-modal');
     if (modal) modal.classList.remove('hidden');
     return;
@@ -1809,6 +1797,7 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
   // После конца тура — тренировка
   startPracticeMode();
 });
+
 
         } else {
             const displayTitle = formatTourTitle(title || t('start_tour_btn'));
@@ -2251,6 +2240,7 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
         isTestActive = false;
     });
 });
+
 
 
 
