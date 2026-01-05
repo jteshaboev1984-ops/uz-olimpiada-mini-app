@@ -925,7 +925,7 @@ if (cabName) cabName.textContent = uiName;
 // FIX: Если активного тура нет — берём последний тур по end_date
 let { data: tourData, error: tourErr } = await supabaseClient
   .from('tours')
-  .select('*')
+  .select('id, title, start_date, end_date, is_active')
   .eq('is_active', true)
   .order('start_date', { ascending: false })
   .limit(1)
@@ -937,7 +937,7 @@ if (tourErr) console.error("Tour fetch error:", tourErr);
 if (!tourData) {
   const lastRes = await supabaseClient
     .from('tours')
-    .select('*')
+    .select('id, title, start_date, end_date, is_active')
     .order('end_date', { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -2253,6 +2253,7 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
         isTestActive = false;
     });
 });
+
 
 
 
