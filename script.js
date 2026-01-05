@@ -972,8 +972,6 @@ if (end && now >= end && tourData.is_active !== true) {
           
         // Если это НЕ активный тур (или активного нет вообще), но он уже завершён,
 // то мы показываем режим тренировки (без “нет активных туров”)
-const nowTour = new Date();
-const end = currentTourEndDate ? new Date(currentTourEndDate) : null;
 
 if (end && now >= end && tourData.is_active !== true) {
   // Тур завершён глобально → даём тренировку
@@ -2255,6 +2253,7 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
         isTestActive = false;
     });
 });
+
 
 
 
