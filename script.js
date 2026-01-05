@@ -2235,4 +2235,4 @@ window.addEventListener('beforeunload', () => {
   }
   isTestActive = false;
 });
-}); // <-- это закрывает document.addEventListener('DOMContentLoaded', ...)
+
