@@ -2235,4 +2235,6 @@ window.addEventListener('beforeunload', () => {
   }
   isTestActive = false;
 });
+});
+
 
