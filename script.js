@@ -922,20 +922,48 @@ if (cabName) cabName.textContent = uiName;
         }
 
         // FIX #4: Исправленный запрос активного тура (в tours нет created_at)
-const { data: tourData, error: tourErr } = await supabaseClient
+// 1) Сначала пытаемся взять активный тур
+let { data: tourData, error: tourErr } = await supabaseClient
+  .from('tours')
+  .select('id, subject, topic, question_text, options_text, type, tour_id, time_limit_seconds, language, difficulty, image_url')
+  .eq('is_active', true)
+  .order('start_date', { ascending: false })
+  .limit(1)
+  .maybeSingle();
+
+if (tourErr) console.error("Tour fetch error:", tourErr);
+
+// 2) Если активного тура нет — берём последний по end_date (завершённый/последний)
+if (!tourData) {
+  const res = await supabaseClient
     .from('tours')
-    .select('*')
-    .eq('is_active', true)
-    .order('start_date', { ascending: false })   // ✅ ВМЕСТО created_at
+    .select('id, subject, topic, question_text, options_text, type, tour_id, time_limit_seconds, language, difficulty, image_url')
+    .order('end_date', { ascending: false })
     .limit(1)
     .maybeSingle();
 
+  tourData = res.data;
+  if (res.error) console.error("Last tour fetch error:", res.error);
+}
         if (tourErr) console.error("Tour fetch error:", tourErr);
 
         if (tourData) {
             currentTourId = tourData.id;
             currentTourTitle = tourData.title;
             currentTourEndDate = tourData.end_date;
+        // Если это НЕ активный тур (или активного нет вообще), но он уже завершён,
+// то мы показываем режим тренировки (без “нет активных туров”)
+const now = new Date();
+const end = currentTourEndDate ? new Date(currentTourEndDate) : null;
+
+if (end && now >= end && tourData.is_active !== true) {
+  // Тур завершён глобально → даём тренировку
+  tourCompleted = true;                 // чтобы кнопка встала в режим completed
+  updateMainButton('completed');        // а там у вас уже startPracticeMode() после end_date
+  isInitialized = true;
+  return;                               // ВАЖНО: выходим, чтобы ниже не перетёрло
+}
+  
 const unlockEl = document.getElementById('review-unlock-date');
 if (unlockEl && currentTourEndDate) {
   const d = new Date(currentTourEndDate);
@@ -946,7 +974,7 @@ if (unlockEl && currentTourEndDate) {
             // FIX #5: Получаем статистику по всем языкам (убираем фильтр по языку)
             const { data: qData } = await supabaseClient
                .from('questions')
-               .select('*')
+               .select('id, subject, topic, question_text, options_text, type, tour_id, time_limit_seconds, language, difficulty, image_url')
                .eq('tour_id', currentTourId)
                .order('id', { ascending: true });
 
@@ -954,7 +982,7 @@ if (unlockEl && currentTourEndDate) {
 
             const { data: pData } = await supabaseClient
                 .from('tour_progress')
-                .select('*')
+                .select('id, subject, topic, question_text, options_text, type, tour_id, time_limit_seconds, language, difficulty, image_url')
                 .eq('user_id', internalDbId)
                 .eq('tour_id', currentTourId)
                 .maybeSingle();
@@ -1695,7 +1723,7 @@ function buildTourQuestions(allQuestions) {
         // Получаем вопросы на текущем языке пользователя
         const { data: qData, error: qErr } = await supabaseClient
             .from('questions')
-            .select('*')
+            .select('id, subject, topic, question_text, options_text, type, tour_id, time_limit_seconds, language, difficulty, image_url')
             .eq('tour_id', currentTourId)
             .eq('language', currentLang)
             .order('id', { ascending: true })
@@ -2057,7 +2085,10 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
   isTestActive = false;
 
   // 3) Берём вопросы текущего тура (которые уже загружены в кэш)
-  let qs = (tourQuestionsCache || []).filter(q => q.tour_id === currentTourId);
+  let qs = (tourQuestionsCache || []).filter(q =>
+  q.tour_id === currentTourId && (!q.language || q.language === currentLang)
+);
+
 
   // Если по какой-то причине кэш пуст — лучше показать сообщение, чем падать
   if (!qs.length) {
@@ -2201,6 +2232,7 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
         isTestActive = false;
     });
 });
+
 
 
 
