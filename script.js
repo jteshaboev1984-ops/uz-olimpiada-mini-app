@@ -1,3 +1,5 @@
+console.log('SCRIPT VERSION = v100');
+
 document.body.insertAdjacentHTML('beforeend','<div style="padding:20px;font:16px system-ui;color:#111">EXTERNAL JS RUN ✅</div>');
 
 (function(){
@@ -955,7 +957,7 @@ console.log('[TOUR] picked tourData:', tourData);
             currentTourTitle = tourData.title;
             currentTourEndDate = tourData.end_date;
 // Если тур уже закончился по времени — включаем режим тренировки (даже если он не активен)
-const now = new Date();
+const nowTour = new Date();
 const end = currentTourEndDate ? new Date(currentTourEndDate) : null;
 
 console.log('[TOUR] now/end/is_active:', now.toISOString(), end ? end.toISOString() : null, tourData.is_active);
@@ -970,7 +972,7 @@ if (end && now >= end && tourData.is_active !== true) {
           
         // Если это НЕ активный тур (или активного нет вообще), но он уже завершён,
 // то мы показываем режим тренировки (без “нет активных туров”)
-const now = new Date();
+const nowTour = new Date();
 const end = currentTourEndDate ? new Date(currentTourEndDate) : null;
 
 if (end && now >= end && tourData.is_active !== true) {
@@ -1798,7 +1800,7 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
             
             // FIX: Показываем сообщение что тур уже пройден - повторный доступ запрещён
             newBtn.addEventListener('click', () => {
-  const now = new Date();
+  const nowTour = new Date();
   const end = currentTourEndDate ? new Date(currentTourEndDate) : null;
 
   // До конца тура — тренировки нет
@@ -2253,6 +2255,7 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
         isTestActive = false;
     });
 });
+
 
 
 
