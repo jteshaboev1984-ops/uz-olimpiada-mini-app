@@ -936,6 +936,12 @@ const { data: tourData, error: tourErr } = await supabaseClient
             currentTourId = tourData.id;
             currentTourTitle = tourData.title;
             currentTourEndDate = tourData.end_date;
+const unlockEl = document.getElementById('review-unlock-date');
+if (unlockEl && currentTourEndDate) {
+  const d = new Date(currentTourEndDate);
+  unlockEl.textContent = d.toLocaleString();
+}
+
 
             // FIX #5: Получаем статистику по всем языкам (убираем фильтр по языку)
             const { data: qData } = await supabaseClient
@@ -1049,7 +1055,7 @@ const { data: tourData, error: tourErr } = await supabaseClient
         // Получаем вопросы только текущего тура на языке пользователя
         const { data: qData } = await supabaseClient
             .from('questions')
-            .select('*')
+            .select('id, subject, topic, question_text, options_text, type, tour_id, time_limit_seconds, language, difficulty, image_url')
             .eq('tour_id', currentTourId)
             .eq('language', currentLang);
         
@@ -1743,11 +1749,20 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
             
             // FIX: Показываем сообщение что тур уже пройден - повторный доступ запрещён
             newBtn.addEventListener('click', () => {
-                const modal = document.getElementById('tour-info-modal');
-                if (modal) {
-                    modal.classList.remove('hidden');
-                }
-            });
+  const now = new Date();
+  const end = currentTourEndDate ? new Date(currentTourEndDate) : null;
+
+  // До конца тура — тренировки нет
+  if (end && now < end) {
+    const modal = document.getElementById('tour-info-modal');
+    if (modal) modal.classList.remove('hidden');
+    return;
+  }
+
+  // После конца тура — тренировка
+  startPracticeMode();
+});
+
         } else {
             const displayTitle = formatTourTitle(title || t('start_tour_btn'));
             newBtn.innerHTML = `<i class="fa-solid fa-play"></i> ${displayTitle}`;
@@ -2033,6 +2048,41 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
         fetchStatsData(); 
     }
 
+  function startPracticeMode() {
+  // 1) Сброс индексов (чтобы начать с 1-го вопроса)
+  currentQuestionIndex = 0;
+  correctCount = 0;
+
+  // 2) В тренировке античит не нужен
+  isTestActive = false;
+
+  // 3) Берём вопросы текущего тура (которые уже загружены в кэш)
+  let qs = (tourQuestionsCache || []).filter(q => q.tour_id === currentTourId);
+
+  // Если по какой-то причине кэш пуст — лучше показать сообщение, чем падать
+  if (!qs.length) {
+    showMessage("Practice questions not loaded. Please reload the page.");
+    return;
+  }
+
+  // 4) Перемешаем порядок
+  qs = qs.sort(() => Math.random() - 0.5);
+
+  // 5) Подменяем рабочий массив вопросов
+  questions = qs;
+
+  // 6) Переходим на экран теста
+  showScreen('quiz-screen');
+
+  // 7) В тренировке делаем таймер “мягким”: просто пишем Practice
+  const timerEl = document.getElementById('timer');
+  if (timerEl) timerEl.textContent = 'Practice';
+
+  // 8) Показываем первый вопрос
+  showQuestion();
+}
+
+
     function showScreen(screenId) {
     // Находим наш индикатор загрузки и скрываем его
     const loader = document.getElementById('app-loader');
@@ -2151,6 +2201,7 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
         isTestActive = false;
     });
 });
+
 
 
 
