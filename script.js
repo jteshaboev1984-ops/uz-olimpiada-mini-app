@@ -124,10 +124,7 @@ async function startApp() {
         `;
     }
 }
-
-// Запускаем нашу безопасную функцию
-startApp();
-   
+ 
         function dbg(...args) {
         console.log(...args);
         const el = document.getElementById('debug-box');
@@ -2281,7 +2278,10 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
         }
         isTestActive = false;
     });
+// Запускаем нашу безопасную функцию
+startApp();
 });
+
 
 
 
