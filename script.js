@@ -302,7 +302,7 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
             cert_total_participants: "Jami ishtirokchilar",
             cert_issue_date: "Berilgan sana",
             cert_commission: "KOMISSIYA RAISI",
-            cert_score_label: "BALL"
+            cert_score_label: "BALL",
         },
         ru: {
             reg_title: "Регистрация",
@@ -435,7 +435,7 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
             cert_total_participants: "Всего участников",
             cert_issue_date: "Дата выдачи",
             cert_commission: "ПРЕДСЕДАТЕЛЬ КОМИССИИ",
-            cert_score_label: "БАЛЛА"
+            cert_score_label: "БАЛЛА",
         },
         en: {
             reg_title: "Registration",
@@ -568,7 +568,7 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
             cert_total_participants: "Total participants",
             cert_issue_date: "Issue date",
             cert_commission: "CHAIRPERSON",
-            cert_score_label: "POINTS"
+            cert_score_label: "POINTS",
         }
     };
 
@@ -2255,5 +2255,6 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
         isTestActive = false;
     });
 });
+
 
 
