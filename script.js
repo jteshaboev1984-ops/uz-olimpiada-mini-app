@@ -1001,32 +1001,34 @@ if (pData && pData.score !== null) {
 } else {
   updateMainButton('start', tourData.title);
 }             
-        // FIX #2: Помечаем что инициализация завершена
+             // FIX #2: Помечаем что инициализация завершена
         isInitialized = true;
-    }
+    } // <-- закрыли if (tourData)
 
-    function fillProfileForm(data) {
-        const fullNameInput = document.getElementById('full-name-input');
-        const classSelectEl = document.getElementById('class-select');
-        const regionSelectEl = document.getElementById('region-select');
-        const districtSelectEl = document.getElementById('district-select');
-        const schoolInput = document.getElementById('school-input');
+} // <-- ✅ ЗАКРЫЛИ async function checkProfileAndTour()
 
-        if (fullNameInput) fullNameInput.value = data.full_name || '';
-        if (classSelectEl) classSelectEl.value = data.class || '';
-        
-        if (regionSelectEl && data.region) {
-            regionSelectEl.value = data.region;
-            regionSelectEl.dispatchEvent(new Event('change'));
-            
-            setTimeout(() => {
-                if (districtSelectEl && data.district) {
-                    districtSelectEl.value = data.district;
-                }
-            }, 50);
-        }
-        if (schoolInput) schoolInput.value = data.school || '';
+function fillProfileForm(data) {
+    const fullNameInput = document.getElementById('full-name-input');
+    const classSelectEl = document.getElementById('class-select');
+    const regionSelectEl = document.getElementById('region-select');
+    const districtSelectEl = document.getElementById('district-select');
+    const schoolInput = document.getElementById('school-input');
+
+    if (fullNameInput) fullNameInput.value = data.full_name || '';
+    if (classSelectEl) classSelectEl.value = data.class || '';
+
+    if (regionSelectEl && data.region) {
+        regionSelectEl.value = data.region;
+        regionSelectEl.dispatchEvent(new Event('change'));
+
+        setTimeout(() => {
+            if (districtSelectEl && data.district) {
+                districtSelectEl.value = data.district;
+            }
+        }, 50);
     }
+    if (schoolInput) schoolInput.value = data.school || '';
+}
     
     function lockProfileForm(showMessage = false) {
         const inputs = ['full-name-input', 'class-select', 'region-select', 'district-select', 'school-input', 'research-consent'];
@@ -2235,3 +2237,5 @@ window.addEventListener('beforeunload', () => {
   }
   isTestActive = false;
 });
+
+}); // <-- закрытие document.addEventListener('DOMContentLoaded', ...)
