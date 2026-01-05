@@ -135,7 +135,7 @@ startApp();
             el.textContent += args.map(a => typeof a === 'string' ? a : JSON.stringify(a, null, 2)).join(' ') + "\n";
         }
     } 
-    console.log('App Started: v91.js');
+    console.log('App Started: v92.js');
   
    // === ПЕРЕМЕННЫЕ ТЕСТА И АНТИ-ЧИТА ===
     let questions = [];
@@ -921,11 +921,11 @@ if (cabName) cabName.textContent = uiName;
             await fetchStatsData(); 
         }
 
-        // FIX #4: Исправленный запрос активного тура (в tours нет created_at)
 // 1) Сначала пытаемся взять активный тур
+// FIX: Если активного тура нет — берём последний тур по end_date
 let { data: tourData, error: tourErr } = await supabaseClient
   .from('tours')
-  .select('id, subject, topic, question_text, options_text, type, tour_id, time_limit_seconds, language, difficulty, image_url')
+  .select('*')
   .eq('is_active', true)
   .order('start_date', { ascending: false })
   .limit(1)
@@ -933,24 +933,41 @@ let { data: tourData, error: tourErr } = await supabaseClient
 
 if (tourErr) console.error("Tour fetch error:", tourErr);
 
-// 2) Если активного тура нет — берём последний по end_date (завершённый/последний)
+// fallback: последний тур (даже если is_active=false)
 if (!tourData) {
-  const res = await supabaseClient
+  const lastRes = await supabaseClient
     .from('tours')
-    .select('id, subject, topic, question_text, options_text, type, tour_id, time_limit_seconds, language, difficulty, image_url')
+    .select('*')
     .order('end_date', { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  tourData = res.data;
-  if (res.error) console.error("Last tour fetch error:", res.error);
+  tourData = lastRes.data;
+  if (lastRes.error) console.error("Last tour fetch error:", lastRes.error);
 }
+
+console.log('[TOUR] picked tourData:', tourData);
+
         if (tourErr) console.error("Tour fetch error:", tourErr);
 
         if (tourData) {
             currentTourId = tourData.id;
             currentTourTitle = tourData.title;
             currentTourEndDate = tourData.end_date;
+// Если тур уже закончился по времени — включаем режим тренировки (даже если он не активен)
+const now = new Date();
+const end = currentTourEndDate ? new Date(currentTourEndDate) : null;
+
+console.log('[TOUR] now/end/is_active:', now.toISOString(), end ? end.toISOString() : null, tourData.is_active);
+
+if (end && now >= end && tourData.is_active !== true) {
+  tourCompleted = true;
+  updateMainButton('completed');
+  isInitialized = true;
+  return;
+}
+
+          
         // Если это НЕ активный тур (или активного нет вообще), но он уже завершён,
 // то мы показываем режим тренировки (без “нет активных туров”)
 const now = new Date();
@@ -1157,7 +1174,11 @@ if (unlockEl && currentTourEndDate) {
         if (listEl) listEl.innerHTML = '';
 
         if (!currentUserData && internalDbId) {
-            const { data } = await supabaseClient.from('users').select('*').eq('id', internalDbId).single();
+            const { data } = await supabaseClient
+  .from('users')
+  .select('id, name, full_name, class, avatar_url, region, district, school, fixed_language')
+  .eq('id', internalDbId)
+  .single();
             currentUserData = data;
         }
 
@@ -2232,6 +2253,7 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
         isTestActive = false;
     });
 });
+
 
 
 
