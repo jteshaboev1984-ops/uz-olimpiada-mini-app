@@ -2117,158 +2117,122 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
   const timerEl = document.getElementById('timer');
   if (timerEl) timerEl.textContent = 'Practice';
 
-  // 8) Показываем первый вопрос
+    // 8) Показываем первый вопрос 
   showQuestion();
 }
 
+function showScreen(screenId) {
+  // Находим наш индикатор загрузки и скрываем его
+  const loader = document.getElementById('app-loader');
+  if (loader) loader.style.display = 'none';
 
-    function showScreen(screenId) {
-    // Находим наш индикатор загрузки и скрываем его
-    const loader = document.getElementById('app-loader');
-    if (loader) {
-        loader.style.display = 'none';
-    }
+  // Остальной код переключения экранов
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  const screen = document.getElementById(screenId);
+  if (screen) screen.classList.remove('hidden');
 
-    // Остальной код переключения экранов
-    document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-    const screen = document.getElementById(screenId);
-    if (screen) {
-        screen.classList.remove('hidden');
-    }
-    window.scrollTo(0, 0);
+  window.scrollTo(0, 0);
 }
 
-    window.openExternalLink = function(url) {
-        if (window.Telegram && Telegram.WebApp) {
-            Telegram.WebApp.openLink(url);
-        } else {
-            window.open(url, '_blank');
-        }
-    };
+window.openExternalLink = function(url) {
+  if (window.Telegram && Telegram.WebApp) {
+    Telegram.WebApp.openLink(url);
+  } else {
+    window.open(url, '_blank');
+  }
+};
 
-    function safeAddListener(id, event, handler) {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener(event, handler);
-    }
+function safeAddListener(id, event, handler) {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener(event, handler);
+}
 
-    safeAddListener('open-cabinet-btn', 'click', () => { 
-        showScreen('cabinet-screen'); 
-        loadLeaderboard(); 
-    });
-    
-    safeAddListener('close-cabinet', 'click', () => showScreen('home-screen'));
-    
-    safeAddListener('btn-edit-profile', 'click', () => {
-        showScreen('reg-screen');
-        if (isProfileLocked) {
-            lockProfileForm(true); 
-        } else {
-            unlockProfileForm();
-        }
-        const backBtn = document.getElementById('reg-back-btn');
-        if (backBtn) backBtn.classList.remove('hidden'); 
-    });
-    
-    safeAddListener('reg-back-btn', 'click', () => showScreen('cabinet-screen'));
-
-    safeAddListener('leaderboard-btn', 'click', () => {
-        showScreen('leaderboard-screen');
-        setLeaderboardFilter('republic');
-    });
-    
-    safeAddListener('lb-back', 'click', () => showScreen('home-screen'));
-    safeAddListener('about-btn', 'click', () => {
-        const modal = document.getElementById('about-modal');
-        if (modal) modal.classList.remove('hidden');
-    });
-    
-    safeAddListener('close-about', 'click', () => {
-        const modal = document.getElementById('about-modal');
-        if (modal) modal.classList.add('hidden');
-    });
-    
-    safeAddListener('exit-app-btn', 'click', () => {
-        // FIX: Очищаем таймер перед выходом
-        if (timerInterval) {
-            clearInterval(timerInterval);
-            timerInterval = null;
-        }
-        
-        // FIX: Деактивируем анти-чит при выходе
-        isTestActive = false;
-        
-        if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) {
-            Telegram.WebApp.close();
-        } else {
-            try {
-                localStorage.clear();
-            } catch (e) { console.warn(e); }
-            location.reload();
-        }
-    });
-
-    safeAddListener('home-cert-btn', 'click', () => showCertsModal());
-    safeAddListener('download-certificate-res-btn', 'click', () => showCertsModal());
-    safeAddListener('btn-open-certs-cab', 'click', () => showCertsModal()); 
-    safeAddListener('cancel-start', 'click', () => {
-        const modal = document.getElementById('warning-modal');
-        if (modal) modal.classList.add('hidden');
-    });
-    safeAddListener('back-home', 'click', () => showScreen('home-screen'));
-    safeAddListener('back-home-x', 'click', () => showScreen('home-screen'));
-
-    function showCertsModal() {
-        const container = document.getElementById('certs-list-container');
-        if (container) {
-            container.innerHTML = `
-                <div class="cert-card">
-                    <div class="cert-icon"><i class="fa-solid fa-file-pdf"></i></div>
-                    <div class="cert-info"><h4>${t('cert_title')}</h4><p>${new Date().toLocaleDateString()}</p></div>
-                    <div class="cert-action"><span class="badge-soon">Soon</span></div>
-                </div>`;
-        }
-        const modal = document.getElementById('certs-modal');
-        if (modal) modal.classList.remove('hidden');
-    }
-
-    // Cleanup on page unload
-    window.addEventListener('beforeunload', () => {
-        if (timerInterval) {
-            clearInterval(timerInterval);
-            timerInterval = null;
-        }
-        isTestActive = false;
-    });
+safeAddListener('open-cabinet-btn', 'click', () => { 
+  showScreen('cabinet-screen'); 
+  loadLeaderboard(); 
 });
 
+safeAddListener('close-cabinet', 'click', () => showScreen('home-screen'));
 
+safeAddListener('btn-edit-profile', 'click', () => {
+  showScreen('reg-screen');
+  if (isProfileLocked) lockProfileForm(true);
+  else unlockProfileForm();
 
+  const backBtn = document.getElementById('reg-back-btn');
+  if (backBtn) backBtn.classList.remove('hidden');
+});
 
+safeAddListener('reg-back-btn', 'click', () => showScreen('cabinet-screen'));
 
+safeAddListener('leaderboard-btn', 'click', () => {
+  showScreen('leaderboard-screen');
+  setLeaderboardFilter('republic');
+});
 
+safeAddListener('lb-back', 'click', () => showScreen('home-screen'));
 
+safeAddListener('about-btn', 'click', () => {
+  const modal = document.getElementById('about-modal');
+  if (modal) modal.classList.remove('hidden');
+});
 
+safeAddListener('close-about', 'click', () => {
+  const modal = document.getElementById('about-modal');
+  if (modal) modal.classList.add('hidden');
+});
 
+safeAddListener('exit-app-btn', 'click', () => {
+  // FIX: Очищаем таймер перед выходом
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
 
+  // FIX: Деактивируем анти-чит при выходе
+  isTestActive = false;
 
+  if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) {
+    Telegram.WebApp.close();
+  } else {
+    try { localStorage.clear(); } catch (e) { console.warn(e); }
+    location.reload();
+  }
+});
 
+safeAddListener('home-cert-btn', 'click', () => showCertsModal());
+safeAddListener('download-certificate-res-btn', 'click', () => showCertsModal());
+safeAddListener('btn-open-certs-cab', 'click', () => showCertsModal());
 
+safeAddListener('cancel-start', 'click', () => {
+  const modal = document.getElementById('warning-modal');
+  if (modal) modal.classList.add('hidden');
+});
 
+safeAddListener('back-home', 'click', () => showScreen('home-screen'));
+safeAddListener('back-home-x', 'click', () => showScreen('home-screen'));
 
+function showCertsModal() {
+  const container = document.getElementById('certs-list-container');
+  if (container) {
+    container.innerHTML = `
+      <div class="cert-card">
+        <div class="cert-icon"><i class="fa-solid fa-file-pdf"></i></div>
+        <div class="cert-info"><h4>${t('cert_title')}</h4><p>${new Date().toLocaleDateString()}</p></div>
+        <div class="cert-action"><span class="badge-soon">Soon</span></div>
+      </div>`;
+  }
 
+  const modal = document.getElementById('certs-modal');
+  if (modal) modal.classList.remove('hidden');
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  isTestActive = false;
+});
+}); // <-- это закрывает document.addEventListener('DOMContentLoaded', ...)
