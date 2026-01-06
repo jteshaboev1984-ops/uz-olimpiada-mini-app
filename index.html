@@ -299,10 +299,15 @@
     </div>
 
     <div class="screen hidden" id="quiz-screen">
-        <div class="quiz-top-bar">
-            <div class="timer-badge"><i class="fa-regular fa-clock"></i> <span id="timer">00:00</span></div>
-            <div class="q-counter"><span id="question-number">1</span> / <span id="total-q-count">15</span></div>
-        </div>
+       <div class="quiz-top-bar">
+  <div class="timer-badge"><i class="fa-regular fa-clock"></i> <span id="timer">00:00</span></div>
+  <div class="q-counter"><span id="question-number">1</span> / <span id="total-q-count">15</span></div>
+
+  <div id="practice-exit-btn" class="practice-exit-btn hidden" title="Exit">
+    <i class="fa-solid fa-xmark"></i>
+  </div>
+</div>
+
         <div class="quiz-progress"><div class="fill" id="quiz-progress-fill" style="width: 0%;"></div></div>
         
         <div class="container quiz-container pb-large">
@@ -319,9 +324,16 @@
             <h2 id="question-text" class="question-title">...</h2>
             <div id="options-container" class="options-list"></div>
         </div>
-        <div class="bottom-fixed">
-            <button id="next-button" class="btn-primary" disabled data-i18n="btn_next">Keyingi</button>
-        </div>
+       <div class="bottom-fixed">
+  <div class="quiz-actions">
+    <button id="prev-button" class="btn-secondary hidden">
+      <i class="fa-solid fa-arrow-left"></i> <span data-i18n="btn_prev">Orqaga</span>
+    </button>
+
+    <button id="next-button" class="btn-primary" disabled data-i18n="btn_next">Keyingi</button>
+  </div>
+</div>
+
     </div>
 
     <div class="screen hidden" id="result-screen">
@@ -525,8 +537,18 @@
 
     <script src="./script.js?v=21" defer></script>
     <pre id="debug-box" style="white-space:pre-wrap;padding:10px;font-size:12px;color:#111;background:#fff;border-top:1px solid #ddd;max-height:40vh;overflow:auto;"></pre>
+<div class="bottom-fixed">
+  <div class="quiz-actions">
+    <button id="prev-button" class="btn-secondary hidden">
+      <i class="fa-solid fa-arrow-left"></i> <span data-i18n="btn_prev">Orqaga</span>
+    </button>
+
+    <button id="next-button" class="btn-primary" disabled data-i18n="btn_next">Keyingi</button>
+  </div>
+</div>
 </body>
 </html>
+
 
 
 
