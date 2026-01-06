@@ -1,4 +1,9 @@
-document.body.insertAdjacentHTML('beforeend','<div style="padding:20px;font:16px system-ui;color:#111">EXTERNAL JS RUN ✅</div>');
+document.addEventListener('DOMContentLoaded', () => {
+  document.body.insertAdjacentHTML(
+    'beforeend',
+    '<div style="padding:20px;font:16px system-ui;color:#111">EXTERNAL JS RUN ✅</div>'
+  );
+});
 
 (function(){
   function showErr(title, err){
@@ -788,7 +793,7 @@ if (!isInitialized) {
         return isComplete;
     }
    
-    async function checkProfileAndTour() {
+   async function checkProfileAndTour() {
   console.log('[checkProfileAndTour] tgInitData len:', tgInitData ? tgInitData.length : 0);
   console.log('[checkProfileAndTour] tgInitData head:', (tgInitData || '').slice(0, 120));
 
@@ -805,7 +810,7 @@ if (!isInitialized) {
     return;
   }
 
-  // (не обязательно) debug
+  // debug (опционально)
   try {
     const { data: dbgData, error: dbgError } = await supabaseClient
       .rpc('telegram_login_debug', { p_init_data: tgInitData });
@@ -823,199 +828,180 @@ if (!isInitialized) {
 
   dbg('[telegram_login] data:', authData);
   dbg('[telegram_login] error:', authError);
-  dbg('[telegram_login_debug] data:', authData);
-  dbg('[telegram_login_debug] keys:', authData ? Object.keys(authData) : null);
-  dbg('[telegram_login_debug] json:', JSON.stringify(authData, null, 2));
-  dbg('[telegram_login_debug] error:', authError);
 
+  if (authError || !authData || authData.id == null) {
+    console.error("Auth error detail:", authError);
+    const msg = authError ? authError.message : "Identifikatsiya xatosi (ID null)";
+    throw new Error(msg);
+  }
 
-    // Если база данных вернула ошибку или данные пусты
-    if (authError || !authData || authData.id == null) {
-        console.error("Auth error detail:", authError);
-        // Выбрасываем ошибку, чтобы наш "Аварийный выход" из Шага 3 
-        // поймал её, убрал заставку и написал текст на экране.
-        let msg = authError ? authError.message : "Identifikatsiya xatosi (ID null)";
-        throw new Error(msg);
+  internalDbId = String(authData.id);
+  currentUserData = authData;
+
+  // telegramUserId fallback
+  if (!telegramUserId && authData.telegram_id) {
+    telegramUserId = String(authData.telegram_id);
+  }
+
+  // UI name
+  const uiName = (() => {
+    const tgName = [telegramData.firstName, telegramData.lastName].filter(Boolean).join(' ').trim();
+    if (tgName) return tgName;
+
+    const dbName = (authData.full_name || authData.name || '').trim();
+    if (dbName) return dbName;
+
+    return t('participant_label');
+  })();
+
+  const homeName = document.getElementById('home-user-name');
+  if (homeName) homeName.textContent = uiName;
+
+  const regName = document.getElementById('reg-user-name');
+  if (regName) regName.textContent = uiName;
+
+  const cabName = document.getElementById('cab-name');
+  if (cabName) cabName.textContent = uiName;
+
+  const elID = document.getElementById('cab-id');
+  if (elID) elID.textContent = String(telegramUserId || '').slice(-6);
+
+  // язык: приоритет БД
+  if (authData.fixed_language && translations[authData.fixed_language]) {
+    isLangLocked = true;
+    initializeLanguage(authData.fixed_language);
+    try { localStorage.setItem('user_lang', authData.fixed_language); } catch (e) { console.warn(e); }
+
+    const cabLang = document.getElementById('lang-switcher-cab');
+    if (cabLang) {
+      cabLang.disabled = true;
+      cabLang.style.opacity = '0.5';
+      cabLang.style.cursor = 'not-allowed';
+    }
+  } else {
+    initializeLanguage(null);
+  }
+
+  // профиль
+  const isComplete = isProfileComplete(authData);
+  if (!isComplete) {
+    showScreen('reg-screen');
+    unlockProfileForm();
+    const backBtn = document.getElementById('reg-back-btn');
+    if (backBtn) backBtn.classList.add('hidden');
+  } else {
+    isProfileLocked = true;
+    isLangLocked = true;
+
+    const cabLang = document.getElementById('lang-switcher-cab');
+    if (cabLang) {
+      cabLang.disabled = true;
+      cabLang.style.opacity = '0.5';
+      cabLang.style.cursor = 'not-allowed';
     }
 
-        internalDbId = String(authData.id);
-        currentUserData = authData;
-      
-      // ✅ гарантируем telegramUserId: приоритет Telegram -> потом БД
-if (!telegramUserId && authData.telegram_id) {
-  telegramUserId = String(authData.telegram_id);
-}
+    const regLang = document.getElementById('reg-lang-select');
+    if (regLang) {
+      regLang.disabled = true;
+      regLang.style.opacity = '0.5';
+    }
 
-      // ✅ UI имя: сначала Telegram, потом БД, потом "Ishtirokchi"
-const uiName = (() => {
-  const tgName = [telegramData.firstName, telegramData.lastName].filter(Boolean).join(' ').trim();
-  if (tgName) return tgName;
+    fillProfileForm(authData);
+    showScreen('home-screen');
+    await fetchStatsData();
+  }
 
-  const dbName = (authData.full_name || authData.name || '').trim();
-  if (dbName) return dbName;
-
-  return t('participant_label'); // Ishtirokchi / Участник
-})();
-
-// ✅ обновляем имя во всех местах интерфейса
-const homeName = document.getElementById('home-user-name');
-if (homeName) homeName.textContent = uiName;
-
-const regName = document.getElementById('reg-user-name');
-if (regName) regName.textContent = uiName;
-
-const cabName = document.getElementById('cab-name');
-if (cabName) cabName.textContent = uiName;
-      
-        const elID = document.getElementById('cab-id'); 
-        if (elID) elID.textContent = String(telegramUserId).slice(-6);
-
-        // FIX #2: Устанавливаем язык из БД ПЕРВЫМ (приоритет над localStorage)
-        // Только здесь, единожды, после получения данных из БД
-        if (authData.fixed_language && translations[authData.fixed_language]) {
-            isLangLocked = true;
-            initializeLanguage(authData.fixed_language);
-            
-            // Обновляем localStorage чтобы соответствовал БД
-            try {
-                localStorage.setItem('user_lang', authData.fixed_language);
-            } catch (e) { console.warn(e); }
-            
-            const cabLang = document.getElementById('lang-switcher-cab');
-            if (cabLang) {
-                cabLang.disabled = true;
-                cabLang.style.opacity = '0.5';
-                cabLang.style.cursor = 'not-allowed';
-            }
-        } else {
-            // Если язык не зафиксирован - инициализируем из localStorage/Telegram
-            initializeLanguage(null);
-        }
-
-        // FIX #1: Используем улучшенную проверку профиля
-        const isComplete = isProfileComplete(authData);
-        
-        if (!isComplete) {
-            showScreen('reg-screen');
-            unlockProfileForm();
-            const backBtn = document.getElementById('reg-back-btn'); 
-            if (backBtn) backBtn.classList.add('hidden');
-        } else {
-            isProfileLocked = true;
-            isLangLocked = true;
-            
-            // FIX: Блокируем переключатели языка в кабинете после регистрации
-            const cabLang = document.getElementById('lang-switcher-cab');
-            if (cabLang) {
-                cabLang.disabled = true;
-                cabLang.style.opacity = '0.5';
-                cabLang.style.cursor = 'not-allowed';
-            }
-            
-            const regLang = document.getElementById('reg-lang-select');
-            if (regLang) {
-                regLang.disabled = true;
-                regLang.style.opacity = '0.5';
-            }
-
-            fillProfileForm(authData);
-            showScreen('home-screen');
-            await fetchStatsData(); 
-        }
-
-// 1) Сначала пытаемся взять активный тур
-// FIX: Если активного тура нет — берём последний тур по end_date
-let { data: tourData, error: tourErr } = await supabaseClient
-  .from('tours')
-  .select('id, title, start_date, end_date, is_active')
-  .eq('is_active', true)
-  .order('start_date', { ascending: false })
-  .limit(1)
-  .maybeSingle();
-
-if (tourErr) console.error("Tour fetch error:", tourErr);
-
-// fallback: последний тур (даже если is_active=false)
-if (!tourData) {
-  const lastRes = await supabaseClient
+  // 1) берём активный тур, иначе последний
+  let { data: tourData, error: tourErr } = await supabaseClient
     .from('tours')
     .select('id, title, start_date, end_date, is_active')
-    .order('end_date', { ascending: false })
+    .eq('is_active', true)
+    .order('start_date', { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  tourData = lastRes.data;
-  if (lastRes.error) console.error("Last tour fetch error:", lastRes.error);
-}
+  if (tourErr) console.error("Tour fetch error:", tourErr);
 
-console.log('[TOUR] picked tourData:', tourData);
+  if (!tourData) {
+    const lastRes = await supabaseClient
+      .from('tours')
+      .select('id, title, start_date, end_date, is_active')
+      .order('end_date', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-        if (tourErr) console.error("Tour fetch error:", tourErr);
+    tourData = lastRes.data;
+    if (lastRes.error) console.error("Last tour fetch error:", lastRes.error);
+  }
 
-        if (tourData) {
-            currentTourId = tourData.id;
-            currentTourTitle = tourData.title;
-            currentTourEndDate = tourData.end_date;
+  console.log('[TOUR] picked tourData:', tourData);
 
-const nowTour = new Date();
-const end = currentTourEndDate ? new Date(currentTourEndDate) : null;
+  // если туров нет вообще
+  if (!tourData) {
+    currentTourId = null;
+    currentTourTitle = "";
+    currentTourEndDate = null;
+    tourCompleted = false;
+    updateMainButton('inactive');
+    isInitialized = true;
+    return;
+  }
 
-console.log(
-  '[TOUR] now/end/is_active:',
-  nowTour.toISOString(),
-  end ? end.toISOString() : null,
-  tourData.is_active
-);
+  currentTourId = tourData.id;
+  currentTourTitle = tourData.title;
+  currentTourEndDate = tourData.end_date;
 
-// Если тур глобально завершён и он не активен — режим "completed" (и тренировка по клику)
-if (end && nowTour >= end && tourData.is_active !== true) {
-  tourCompleted = true;
-  updateMainButton('completed');
+  const nowTour = new Date();
+  const end = currentTourEndDate ? new Date(currentTourEndDate) : null;
+
+  const isTourEnded = !!(end && nowTour >= end && tourData.is_active !== true);
+
+  console.log('[TOUR] now/end/is_active/ended:',
+    nowTour.toISOString(),
+    end ? end.toISOString() : null,
+    tourData.is_active,
+    isTourEnded
+  );
+
+  const unlockEl = document.getElementById('review-unlock-date');
+  if (unlockEl && currentTourEndDate) {
+    unlockEl.textContent = new Date(currentTourEndDate).toLocaleString();
+  }
+
+  // 2) грузим вопросы ВСЕГДА (даже если тур завершён) — нужно для practice
+  const { data: qData, error: qErr } = await supabaseClient
+    .from('questions')
+    .select('id, subject, topic, question_text, options_text, type, tour_id, time_limit_seconds, language, difficulty, image_url')
+    .eq('tour_id', currentTourId)
+    .eq('language', currentLang)
+    .order('id', { ascending: true });
+
+  if (qErr) {
+    console.error('[TOUR] questions fetch error:', qErr);
+    tourQuestionsCache = [];
+  } else {
+    tourQuestionsCache = qData || [];
+  }
+
+  // 3) проверяем прогресс
+  const { data: pData, error: pErr } = await supabaseClient
+    .from('tour_progress')
+    .select('score')
+    .eq('user_id', internalDbId)
+    .eq('tour_id', currentTourId)
+    .maybeSingle();
+
+  if (pErr) console.error('[TOUR] progress fetch error:', pErr);
+
+  const doneByProgress = !!(pData && pData.score !== null);
+  tourCompleted = isTourEnded || doneByProgress;
+
+  // 4) выставляем кнопку один раз, в конце
+  if (tourCompleted) updateMainButton('completed');
+  else updateMainButton('start', tourData.title);
+
   isInitialized = true;
-  return; // ВАЖНО: выходим, чтобы ниже не перетёрло кнопку
 }
-
-const unlockEl = document.getElementById('review-unlock-date');
-if (unlockEl && currentTourEndDate) {
-  const d = new Date(currentTourEndDate);
-  unlockEl.textContent = d.toLocaleString();
-}
-
-// дальше — обычная логика: загрузка вопросов, проверка tour_progress и выставление кнопки
-const { data: qData, error: qErr } = await supabaseClient
-  .from('questions')
-  .select('id, subject, topic, question_text, options_text, type, tour_id, time_limit_seconds, language, difficulty, image_url')
-  .eq('tour_id', currentTourId)
-  .eq('language', currentLang)
-  .order('id', { ascending: true });
-
-tourQuestionsCache = (!qErr && qData) ? qData : [];
-if (qErr) console.error('[TOUR] questions fetch error:', qErr);
-
-  // можно показать кнопку неактивной/сообщение, но хотя бы не падаем
-  tourQuestionsCache = [];
-} else {
-  tourQuestionsCache = qData || [];
-}
-
-const { data: pData } = await supabaseClient
-  .from('tour_progress')
-  .select('score')
-  .eq('user_id', internalDbId)
-  .eq('tour_id', currentTourId)
-  .maybeSingle();
-
-if (pData && pData.score !== null) {
-  tourCompleted = true;
-  updateMainButton('completed');
-} else {
-  updateMainButton('start', tourData.title);
-}             
-             // FIX #2: Помечаем что инициализация завершена
-        isInitialized = true;
-    } // <-- закрыли if (tourData)
-
-} // <-- ✅ ЗАКРЫЛИ async function checkProfileAndTour()
 
 function fillProfileForm(data) {
     const fullNameInput = document.getElementById('full-name-input');
@@ -2288,6 +2274,7 @@ window.addEventListener('beforeunload', () => {
 });
 
 }); // <-- закрытие document.addEventListener('DOMContentLoaded', ...)
+
 
 
 
