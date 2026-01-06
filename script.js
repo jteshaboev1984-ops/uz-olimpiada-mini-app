@@ -2451,7 +2451,13 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
         }
 
         const percent = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
-        
+
+// ✅ Сброс подсказки Practice (в обычном туре она не должна показываться)
+const resHint = document.getElementById('res-hint');
+if (resHint) {
+  resHint.classList.add('hidden');
+  resHint.textContent = '';
+}     
         showScreen('result-screen');
         
         const resTourTitle = document.getElementById('res-tour-title');
@@ -2658,6 +2664,7 @@ window.addEventListener('beforeunload', () => {
 });
 
 }); // <-- закрытие document.addEventListener('DOMContentLoaded', ...)
+
 
 
 
