@@ -150,20 +150,7 @@ startApp();
     let correctCount = 0;
     let timerInterval = null;
     let selectedAnswer = null;
-  // === analytics timers ===
-let totalTimerInterval = null;
-let questionTimerInterval = null;
-
-let totalTimeSec = 0;
-let questionTimeSec = 0;
-
-let perQuestionTimes = [];              // seconds per question
-let tabSwitchCountTotal = 0;
-let tabSwitchCountPerQuestion = [];     // per question
-
-let visibilityLog = [];                 // optional: raw log
-let tabSwitchThisQuestion = 0;          // helper
-
+  
     // =====================
 // PRACTICE MODE STATE
 // =====================
@@ -2775,6 +2762,7 @@ window.addEventListener('beforeunload', () => {
 });
 
 }); // <-- закрытие document.addEventListener('DOMContentLoaded', ...)
+
 
 
 
