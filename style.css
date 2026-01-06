@@ -353,3 +353,51 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
     font-size: 10px;
     margin-right: 2px;
 }
+
+/* PRACTICE UI */
+.quiz-actions{
+  display:flex;
+  gap:10px;
+  width:100%;
+}
+.quiz-actions .btn-primary{ flex:1; }
+.quiz-actions .btn-secondary{
+  flex:1;
+  border:2px solid var(--border);
+  background:#fff;
+  border-radius:14px;
+  padding:14px;
+  font-weight:700;
+}
+.quiz-actions .btn-secondary:disabled{ opacity:0.5; }
+
+.practice-exit-btn{
+  width:34px;
+  height:34px;
+  border-radius:10px;
+  background:#F2F2F7;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#8E8E93;
+  cursor:pointer;
+}
+.practice-exit-btn:active{ transform:scale(0.98); }
+
+.muted{ color:#666; font-size:14px; margin: 6px 0 0; }
+
+.chips-wrap{ display:flex; flex-wrap:wrap; gap:8px; }
+.chip{
+  border:2px solid var(--border);
+  border-radius:999px;
+  padding:8px 10px;
+  font-weight:700;
+  font-size:13px;
+  background:#fff;
+  cursor:pointer;
+  user-select:none;
+}
+.chip.active{
+  border-color:var(--primary);
+  background:#F0F8FF;
+}
