@@ -159,6 +159,39 @@ let practiceFilters = { subjects: [], difficulty: 'ALL', count: 20 };
 
 let practiceElapsedSec = 0;
 let practiceStopwatchInterval = null;
+  // === TIMERS & BEHAVIOR METRICS ===
+
+// total test timer
+let totalTimerInterval = null;
+let totalTimeSec = 0;
+
+// per-question timer
+let questionTimerInterval = null;
+let questionTimeSec = 0;
+let perQuestionTimes = []; // seconds per question
+
+// behavior tracking
+let tabSwitchCountTotal = 0;
+let tabSwitchCountPerQuestion = [];
+let visibilityLog = []; // { type: 'hidden'|'visible', t: timestamp, q: index }
+
+  document.addEventListener('visibilitychange', () => {
+  if (!isTestActive) return;
+
+  const type = document.visibilityState === 'hidden' ? 'hidden' : 'visible';
+
+  visibilityLog.push({
+    type,
+    t: Date.now(),
+    q: currentQuestionIndex
+  });
+
+  if (type === 'hidden') {
+    tabSwitchCountTotal++;
+    tabSwitchCountPerQuestion[currentQuestionIndex] =
+      (tabSwitchCountPerQuestion[currentQuestionIndex] || 0) + 1;
+  }
+});
 
 function practiceStorageKey() {
   return `practice_v1:${internalDbId}:${currentTourId}:${currentLang}`;
@@ -2123,7 +2156,18 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
         
         // FIX #3: Активируем анти-чит только когда тест начинается
         isTestActive = true;
-        
+// === START TOTAL TIMER ===
+totalTimeSec = 0;
+perQuestionTimes = [];
+tabSwitchCountTotal = 0;
+tabSwitchCountPerQuestion = [];
+visibilityLog = [];
+
+if (totalTimerInterval) clearInterval(totalTimerInterval);
+totalTimerInterval = setInterval(() => {
+  totalTimeSec++;
+}, 1000);
+      
         showScreen('quiz-screen');
         
         const totalSeconds = questions.reduce((acc, q) => acc + (q.time_limit_seconds || 60), 0);
@@ -2161,7 +2205,15 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
     }
 
     function showQuestion() {
-        const q = questions[currentQuestionIndex];
+      // reset question timer
+if (questionTimerInterval) clearInterval(questionTimerInterval);
+
+questionTimeSec = 0;
+questionTimerInterval = setInterval(() => {
+  questionTimeSec++;
+}, 1000);
+  
+      const q = questions[currentQuestionIndex];
         if (!q) return;
         
         const questionNumber = document.getElementById('question-number');
@@ -2321,6 +2373,14 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
     savePracticeSession();
 
     // шаг вперёд
+    // save time spent on current question
+perQuestionTimes[currentQuestionIndex] = questionTimeSec;
+
+if (questionTimerInterval) {
+  clearInterval(questionTimerInterval);
+  questionTimerInterval = null;
+}
+
     currentQuestionIndex++;
 
     if (currentQuestionIndex < questions.length) {
@@ -2419,7 +2479,18 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
 });
 
     async function finishTour() {
-        // FIX: Очищаем таймер чтобы предотвратить утечку памяти
+      // stop all timers
+if (totalTimerInterval) {
+  clearInterval(totalTimerInterval);
+  totalTimerInterval = null;
+}
+
+if (questionTimerInterval) {
+  clearInterval(questionTimerInterval);
+  questionTimerInterval = null;
+}
+  
+      // FIX: Очищаем таймер чтобы предотвратить утечку памяти
         if (timerInterval) {
             clearInterval(timerInterval);
             timerInterval = null;
@@ -2659,6 +2730,7 @@ window.addEventListener('beforeunload', () => {
 });
 
 }); // <-- закрытие document.addEventListener('DOMContentLoaded', ...)
+
 
 
 
