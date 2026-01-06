@@ -142,7 +142,7 @@ startApp();
             el.textContent += args.map(a => typeof a === 'string' ? a : JSON.stringify(a, null, 2)).join(' ') + "\n";
         }
     } 
-    console.log('App Started: v25.js');
+    console.log('App Started: v26.js');
   
    // === ПЕРЕМЕННЫЕ ТЕСТА И АНТИ-ЧИТА ===
     let questions = [];
@@ -150,6 +150,20 @@ startApp();
     let correctCount = 0;
     let timerInterval = null;
     let selectedAnswer = null;
+  // === analytics timers ===
+let totalTimerInterval = null;
+let questionTimerInterval = null;
+
+let totalTimeSec = 0;
+let questionTimeSec = 0;
+
+let perQuestionTimes = [];              // seconds per question
+let tabSwitchCountTotal = 0;
+let tabSwitchCountPerQuestion = [];     // per question
+
+let visibilityLog = [];                 // optional: raw log
+let tabSwitchThisQuestion = 0;          // helper
+
     // =====================
 // PRACTICE MODE STATE
 // =====================
@@ -1898,6 +1912,14 @@ renderLaTeX();
 document.addEventListener("visibilitychange", function() {
   if (!isTestActive) return;
   if (document.visibilityState === "hidden") {
+    tabSwitchCountTotal++;
+tabSwitchThisQuestion++;
+
+visibilityLog.push({
+  ts: Date.now(),
+  qIndex: currentQuestionIndex,
+  state: "hidden"
+});
     cheatWarningCount++;
     if (cheatWarningCount >= 2) finishTour();
     else document.getElementById('cheat-warning-modal')?.classList.remove('hidden');
@@ -2153,7 +2175,8 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
         currentQuestionIndex = 0;
         correctCount = 0;
         cheatWarningCount = 0; // Reset cheat counter
-        
+        tabSwitchThisQuestion = 0;
+      
         // FIX #3: Активируем анти-чит только когда тест начинается
         isTestActive = true;
 // === START TOTAL TIMER ===
@@ -2205,14 +2228,23 @@ totalTimerInterval = setInterval(() => {
     }
 
     function showQuestion() {
-      // reset question timer
+     // === QUESTION TIMER START ===
 if (questionTimerInterval) clearInterval(questionTimerInterval);
 
 questionTimeSec = 0;
+tabSwitchThisQuestion = 0;
+
+const qTimerEl = document.getElementById('q-timer');
+if (qTimerEl) qTimerEl.textContent = `00:00`;
+
 questionTimerInterval = setInterval(() => {
   questionTimeSec++;
+
+  const mm = Math.floor(questionTimeSec / 60);
+  const ss = questionTimeSec % 60;
+  if (qTimerEl) qTimerEl.textContent = `${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
 }, 1000);
-  
+
       const q = questions[currentQuestionIndex];
         if (!q) return;
         
@@ -2463,6 +2495,10 @@ if (questionTimerInterval) {
 
     if (error) throw error;
 
+    // === SAVE PER-QUESTION METRICS ===
+perQuestionTimes[currentQuestionIndex] = questionTimeSec;
+tabSwitchCountPerQuestion[currentQuestionIndex] = tabSwitchThisQuestion;
+    
     currentQuestionIndex++;
     if (currentQuestionIndex < questions.length) {
       nextBtn.disabled = false;
@@ -2489,7 +2525,16 @@ if (questionTimerInterval) {
   clearInterval(questionTimerInterval);
   questionTimerInterval = null;
 }
-  
+
+      if (totalTimerInterval) {
+  clearInterval(totalTimerInterval);
+  totalTimerInterval = null;
+}
+if (questionTimerInterval) {
+  clearInterval(questionTimerInterval);
+  questionTimerInterval = null;
+}
+     
       // FIX: Очищаем таймер чтобы предотвратить утечку памяти
         if (timerInterval) {
             clearInterval(timerInterval);
@@ -2730,6 +2775,7 @@ window.addEventListener('beforeunload', () => {
 });
 
 }); // <-- закрытие document.addEventListener('DOMContentLoaded', ...)
+
 
 
 
