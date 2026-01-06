@@ -142,7 +142,7 @@ startApp();
             el.textContent += args.map(a => typeof a === 'string' ? a : JSON.stringify(a, null, 2)).join(' ') + "\n";
         }
     } 
-    console.log('App Started: v20.js');
+    console.log('App Started: v21.js');
   
    // === ПЕРЕМЕННЫЕ ТЕСТА И АНТИ-ЧИТА ===
     let questions = [];
@@ -150,7 +150,98 @@ startApp();
     let correctCount = 0;
     let timerInterval = null;
     let selectedAnswer = null;
-    let cheatWarningCount = 0; 
+    // =====================
+// PRACTICE MODE STATE
+// =====================
+let practiceMode = false;
+let practiceAnswers = {}; // { [questionId]: answerString }
+let practiceFilters = { subjects: [], difficulty: 'ALL', count: 20 };
+
+let practiceElapsedSec = 0;
+let practiceStopwatchInterval = null;
+
+function practiceStorageKey() {
+  return `practice_v1:${internalDbId}:${currentTourId}:${currentLang}`;
+}
+
+function formatMMSS(sec) {
+  const s = Math.max(0, Math.floor(sec || 0));
+  const mm = String(Math.floor(s / 60)).padStart(2, '0');
+  const ss = String(s % 60).padStart(2, '0');
+  return `${mm}:${ss}`;
+}
+
+function stopPracticeStopwatch() {
+  if (practiceStopwatchInterval) clearInterval(practiceStopwatchInterval);
+  practiceStopwatchInterval = null;
+}
+
+function startPracticeStopwatch() {
+  stopPracticeStopwatch();
+  const timerEl = document.getElementById('timer');
+  if (timerEl) timerEl.textContent = formatMMSS(practiceElapsedSec);
+
+  practiceStopwatchInterval = setInterval(() => {
+    practiceElapsedSec += 1;
+    const el = document.getElementById('timer');
+    if (el) el.textContent = formatMMSS(practiceElapsedSec);
+  }, 1000);
+}
+
+function loadPracticeSession() {
+  try {
+    const raw = localStorage.getItem(practiceStorageKey());
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    if (!obj || obj.v !== 1) return null;
+    if (obj.tourId !== currentTourId || obj.lang !== currentLang) return null;
+    return obj;
+  } catch (e) {
+    console.warn('[practice] load failed', e);
+    return null;
+  }
+}
+
+function savePracticeSession() {
+  try {
+    const payload = {
+      v: 1,
+      tourId: currentTourId,
+      lang: currentLang,
+      orderIds: (questions || []).map(q => Number(q.id)),
+      index: currentQuestionIndex,
+      answers: practiceAnswers,
+      filters: practiceFilters,
+      elapsedSec: practiceElapsedSec,
+      savedAt: Date.now()
+    };
+    localStorage.setItem(practiceStorageKey(), JSON.stringify(payload));
+  } catch (e) {
+    console.warn('[practice] save failed', e);
+  }
+}
+
+function clearPracticeSession() {
+  try { localStorage.removeItem(practiceStorageKey()); } catch (e) {}
+}
+
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function getSubjectsFromCache() {
+  const set = new Set();
+  (tourQuestionsCache || []).forEach(q => {
+    const s = (q.subject || '').trim();
+    if (s) set.add(s);
+  });
+  return Array.from(set).sort((a,b) => a.localeCompare(b));
+}
+  let cheatWarningCount = 0; 
     
     // FIX #3: Флаг для отслеживания активного теста (для анти-чита)
     let isTestActive = false;
@@ -2302,6 +2393,7 @@ window.addEventListener('beforeunload', () => {
 });
 
 }); // <-- закрытие document.addEventListener('DOMContentLoaded', ...)
+
 
 
 
