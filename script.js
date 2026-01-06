@@ -142,7 +142,7 @@ startApp();
             el.textContent += args.map(a => typeof a === 'string' ? a : JSON.stringify(a, null, 2)).join(' ') + "\n";
         }
     } 
-    console.log('App Started: v21.js');
+    console.log('App Started: v22.js');
   
    // === ПЕРЕМЕННЫЕ ТЕСТА И АНТИ-ЧИТА ===
     let questions = [];
@@ -2484,24 +2484,20 @@ if (resHint) {
     }
 
   function startPracticeMode() {
-  practiceMode = true;
-  isTestActive = false;          // чтобы анти-выход из приложения не мешал practice
-  stopTimer();                   // если был тур-таймер
-  stopPracticeStopwatch();       // если был старый секундомер
+  currentQuestionIndex = 0;
+  correctCount = 0;
 
-  // UI: показать кнопки practice
-  const exitBtn = document.getElementById('practice-exit-btn');
-  if (exitBtn) exitBtn.classList.remove('hidden');
+  // В тренировке античит не нужен
+  isTestActive = false;
 
-  const prevBtn = document.getElementById('prev-button');
-  if (prevBtn) prevBtn.classList.remove('hidden');
+  const tourId = String(currentTourId ?? '');
+  const lang = String(currentLang ?? '').toLowerCase();
 
-  // Если есть сохранённая сессия этого тура — покажем кнопку "Продолжить"
-  const saved = loadPracticeSession();
-  const canContinue = saved && String(saved.tourId) === String(currentTourId);
-
-  openPracticeConfigModal({ canContinue });
-}
+  let qs = (tourQuestionsCache || []).filter(q => {
+    const qTourId = String(q.tour_id ?? '');
+    const qLang = String(q.language ?? '').toLowerCase();
+    return qTourId === tourId && (!qLang || qLang === lang);
+  });
 
   if (!qs.length) {
     alert("Practice questions not loaded. Please reload the page.");
@@ -2510,13 +2506,12 @@ if (resHint) {
   }
 
   qs = qs.slice().sort(() => Math.random() - 0.5);
-
   questions = qs;
 
   showScreen('quiz-screen');
 
   const timerEl = document.getElementById('timer');
-  if (timerEl) timerEl.textContent = 'Practice';
+  if (timerEl) timerEl.textContent = 'Practice ⏱';
 
   showQuestion();
 }
@@ -2664,6 +2659,7 @@ window.addEventListener('beforeunload', () => {
 });
 
 }); // <-- закрытие document.addEventListener('DOMContentLoaded', ...)
+
 
 
 
