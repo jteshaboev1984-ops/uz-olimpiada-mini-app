@@ -261,6 +261,142 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
         }
     } 
 
+function openPracticeConfigModal({ canContinue }) {
+  const modal = document.getElementById('practice-config-modal');
+  if (!modal) {
+    // на крайний случай — если модалки нет, стартуем с дефолтом
+    beginPracticeNew({ subject: 'all', difficulty: 'all', count: 20 });
+    return;
+  }
+
+  // собрать предметы из кеша вопросов
+  const subjects = getSubjectsFromCache(); // уже есть у тебя
+  const chipsWrap = document.getElementById('practice-subject-chips');
+  if (chipsWrap) {
+    chipsWrap.innerHTML = '';
+
+    // chip: All
+    chipsWrap.appendChild(makeChip('All', 'all', true));
+
+    subjects.forEach(s => chipsWrap.appendChild(makeChip(s, s, false)));
+  }
+
+  const contBtn = document.getElementById('practice-continue-btn');
+  if (contBtn) {
+    contBtn.classList.toggle('hidden', !canContinue);
+  }
+
+  modal.classList.remove('hidden');
+}
+
+function closePracticeConfigModal() {
+  const modal = document.getElementById('practice-config-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function makeChip(label, value, selected) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'chip' + (selected ? ' active' : '');
+  btn.textContent = label;
+  btn.dataset.value = value;
+
+  btn.addEventListener('click', () => {
+    const wrap = btn.parentElement;
+    if (!wrap) return;
+    [...wrap.querySelectorAll('.chip')].forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+  });
+
+  return btn;
+}
+
+function getPracticeConfigFromUI() {
+  const chipsWrap = document.getElementById('practice-subject-chips');
+  const activeChip = chipsWrap ? chipsWrap.querySelector('.chip.active') : null;
+  const subject = activeChip ? activeChip.dataset.value : 'all';
+
+  const diffEl = document.getElementById('practice-difficulty');
+  const difficulty = diffEl ? (diffEl.value || 'all') : 'all';
+
+  const countEl = document.getElementById('practice-count');
+  let count = countEl ? parseInt(countEl.value, 10) : 20;
+  if (!Number.isFinite(count) || count <= 0) count = 20;
+
+  return { subject, difficulty, count };
+}
+
+function beginPracticeNew(filters) {
+  practiceFilters = { ...filters };
+  practiceAnswers = {};
+  practiceElapsedSec = 0;
+
+  // фильтруем вопросы
+  let pool = [...(tourQuestionsCache || [])];
+
+  if (filters.subject && filters.subject !== 'all') {
+    pool = pool.filter(q => String(q.subject) === String(filters.subject));
+  }
+
+  if (filters.difficulty && filters.difficulty !== 'all') {
+    const want = String(filters.difficulty).toLowerCase();
+    pool = pool.filter(q => String(q.difficulty || '').toLowerCase() === want);
+  }
+
+  shuffleArray(pool);
+
+  const limited = pool.slice(0, Math.min(filters.count || 20, pool.length));
+  practiceQuestionOrder = limited.map(q => q.id);
+
+  questions = limited;
+  currentQuestionIndex = 0;
+  correctCount = 0;
+  selectedAnswer = null;
+
+  showScreen('quiz-screen');
+  startPracticeStopwatch();
+  showQuestion();
+
+  savePracticeSession();
+}
+
+function beginPracticeContinue() {
+  const saved = loadPracticeSession();
+  if (!saved) return;
+
+  // восстановление
+  practiceFilters = saved.filters || { subject: 'all', difficulty: 'all', count: 20 };
+  practiceQuestionOrder = Array.isArray(saved.questionOrder) ? saved.questionOrder : [];
+  practiceElapsedSec = Number.isFinite(saved.elapsedSec) ? saved.elapsedSec : 0;
+
+  // answers: поддержим старый формат (строка) и новый (объект)
+  practiceAnswers = {};
+  const raw = saved.answers || {};
+  for (const [qid, v] of Object.entries(raw)) {
+    if (v && typeof v === 'object' && 'answer' in v) {
+      practiceAnswers[qid] = { answer: String(v.answer), isCorrect: v.isCorrect === true };
+    } else {
+      practiceAnswers[qid] = { answer: String(v), isCorrect: null };
+    }
+  }
+
+  // собрать questions в сохранённом порядке
+  const map = new Map((tourQuestionsCache || []).map(q => [q.id, q]));
+  const ordered = practiceQuestionOrder.map(id => map.get(id)).filter(Boolean);
+
+  questions = ordered.length ? ordered : [...(tourQuestionsCache || [])];
+  currentQuestionIndex = Math.min(Math.max(0, saved.currentIndex || 0), Math.max(0, questions.length - 1));
+
+  correctCount = Object.values(practiceAnswers).filter(x => x && x.isCorrect === true).length;
+  selectedAnswer = null;
+
+  showScreen('quiz-screen');
+  startPracticeStopwatch(practiceElapsedSec);
+  showQuestion();
+
+  savePracticeSession();
+}
+  
     // === ФУНКЦИЯ ПЕРЕВОДА НАЗВАНИЯ ТУРА ===
     function formatTourTitle(raw) {
         if (!raw) return t('start_tour_btn');
@@ -2128,63 +2264,159 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
         renderLaTeX();
     }
     
-    safeAddListener('next-button', 'click', async () => {
-        const nextBtn = document.getElementById('next-button');
-        if (!nextBtn) return;
-        
-        nextBtn.disabled = true;
-        nextBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('saving_ans')}`;
-        
-        if (!internalDbId || internalDbId === "null" || internalDbId === "undefined") {
+   safeAddListener('next-button', 'click', async () => {
+  const nextBtn = document.getElementById('next-button');
+  if (!nextBtn) return;
+
+  // защита от клика без выбора
+  if (selectedAnswer === null || selectedAnswer === undefined || String(selectedAnswer).trim() === '') {
+    return;
+  }
+
+  nextBtn.disabled = true;
+  nextBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('saving_ans')}`;
+
+  const q = questions[currentQuestionIndex];
+  if (!q) {
+    nextBtn.disabled = false;
+    nextBtn.innerHTML = t('btn_next') + ' <i class="fa-solid fa-arrow-right"></i>';
+    return;
+  }
+
+  // =========================
+  // ✅ PRACTICE MODE (без БД)
+  // =========================
+  if (practiceMode) {
+    let finalIsCorrect = false;
+
+    try {
+      const { data: rpcData, error: rpcError } = await supabaseClient.rpc('check_user_answer', {
+        p_question_id: Number(q.id),
+        p_user_answer: selectedAnswer
+      });
+
+      if (rpcError) {
+        console.error("[PRACTICE] RPC Error:", rpcError);
+        // если RPC упал — просто сохраняем ответ без isCorrect
+        finalIsCorrect = false;
+      } else {
+        // у тебя раньше было: isCorrect === true
+        finalIsCorrect = (rpcData === true);
+      }
+    } catch (e) {
+      console.error("[PRACTICE] RPC Exception:", e);
+      finalIsCorrect = false;
+    }
+
+    // сохраняем ответ в localStorage (без влияния на рейтинг)
+    practiceAnswers[String(q.id)] = {
+      answer: String(selectedAnswer),
+      isCorrect: finalIsCorrect
+    };
+
+    // пересчёт correctCount по practiceAnswers
+    correctCount = Object.values(practiceAnswers).filter(x => x && x.isCorrect === true).length;
+
+    // сохранить сессию
+    savePracticeSession();
+
+    // шаг вперёд
+    currentQuestionIndex++;
+
+    if (currentQuestionIndex < questions.length) {
+      nextBtn.disabled = false;
+      nextBtn.innerHTML = `${t('btn_next')} <i class="fa-solid fa-arrow-right"></i>`;
+      showQuestion();
+      return;
+    }
+
+    // конец practice: показываем result-screen (НЕ пишем tour_progress)
+    stopPracticeStopwatch?.();
+    nextBtn.disabled = false;
+    nextBtn.innerHTML = `${t('btn_next')} <i class="fa-solid fa-arrow-right"></i>`;
+
+    // UI результата
+    const total = questions.length;
+    const corr = correctCount;
+    const pct = total ? Math.round((corr / total) * 100) : 0;
+
+    const resTourTitle = document.getElementById('res-tour-title');
+    if (resTourTitle) resTourTitle.textContent = 'Practice';
+
+    const resTotal = document.getElementById('res-total');
+    if (resTotal) resTotal.textContent = total;
+
+    const resCorrect = document.getElementById('res-correct');
+    if (resCorrect) resCorrect.textContent = corr;
+
+    const resultPercent = document.getElementById('result-percent');
+    if (resultPercent) resultPercent.textContent = `${pct}%`;
+
+    const circle = document.getElementById('result-circle');
+    if (circle) circle.style.background = `conic-gradient(var(--primary) 0% ${pct}%, #E5E5EA ${pct}% 100%)`;
+
+    // поясняющий текст (по твоему требованию: "берём максимум и объясняем")
+    const resHint = document.getElementById('res-hint');
+    if (resHint) {
+      resHint.textContent = 'Тренировка. Прогресс сохранён. Баллы в рейтинге за завершённый тур не учитываются.';
+      resHint.classList.remove('hidden');
+    }
+
+    showScreen('result-screen');
+    return;
+  }
+
+  // =========================
+  // ✅ TOUR MODE (как было)
+  // =========================
+  if (!internalDbId || internalDbId === "null" || internalDbId === "undefined") {
     console.error("Critical error: internalDbId is invalid", internalDbId);
     alert("Xatolik: Seans muddati tugadi yoki ID topilmadi. Iltimos, botni qayta ishga tushiring.");
     nextBtn.disabled = false;
     nextBtn.innerHTML = t('repeat');
     return;
-}
-        
-        const q = questions[currentQuestionIndex];
-        if (!q) return;
+  }
 
-        const { data: isCorrect, error: rpcError } = await supabaseClient.rpc('check_user_answer', {
-            p_question_id: Number(q.id),
-            p_user_answer: selectedAnswer
-        });
+  const { data: isCorrect, error: rpcError } = await supabaseClient.rpc('check_user_answer', {
+    p_question_id: Number(q.id),
+    p_user_answer: selectedAnswer
+  });
 
-        if (rpcError) {
-            console.error("RPC Error:", rpcError);
-            alert("Aloqa xatosi. Javob saqlanmadi. Qayta urinib ko'ring.");
-            nextBtn.disabled = false;
-            nextBtn.innerHTML = t('repeat');
-            return;
-        }
-        
-        const finalIsCorrect = (isCorrect === true);
-        if (finalIsCorrect) correctCount++;
-        
-        try {
-            // FIX: Правильный синтаксис onConflict (без пробела)
-            const { error } = await supabaseClient.from('user_answers').upsert({
-                user_id: internalDbId, 
-                question_id: q.id, 
-                answer: selectedAnswer, 
-                is_correct: finalIsCorrect
-            }, { onConflict: 'user_id,question_id' });
-            
-            if (error) throw error;
-            
-            currentQuestionIndex++;
-            if (currentQuestionIndex < questions.length) {
-                showQuestion();
-            } else {
-                finishTour();
-            }
-        } catch (e) {
-            alert('Error: ' + e.message);
-            nextBtn.disabled = false;
-            nextBtn.innerHTML = t('repeat');
-        }
-    });
+  if (rpcError) {
+    console.error("RPC Error:", rpcError);
+    alert("Aloqa xatosi. Javob saqlanmadi. Qayta urinib ko'ring.");
+    nextBtn.disabled = false;
+    nextBtn.innerHTML = t('repeat');
+    return;
+  }
+
+  const finalIsCorrect = (isCorrect === true);
+  if (finalIsCorrect) correctCount++;
+
+  try {
+    const { error } = await supabaseClient.from('user_answers').upsert({
+      user_id: internalDbId,
+      question_id: q.id,
+      answer: selectedAnswer,
+      is_correct: finalIsCorrect
+    }, { onConflict: 'user_id,question_id' });
+
+    if (error) throw error;
+
+    currentQuestionIndex++;
+    if (currentQuestionIndex < questions.length) {
+      nextBtn.disabled = false;
+      nextBtn.innerHTML = `${t('btn_next')} <i class="fa-solid fa-arrow-right"></i>`;
+      showQuestion();
+    } else {
+      finishTour();
+    }
+  } catch (e) {
+    alert('Error: ' + e.message);
+    nextBtn.disabled = false;
+    nextBtn.innerHTML = t('repeat');
+  }
+});
 
     async function finishTour() {
         // FIX: Очищаем таймер чтобы предотвратить утечку памяти
@@ -2246,18 +2478,24 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
     }
 
   function startPracticeMode() {
-  currentQuestionIndex = 0;
-  correctCount = 0;
-  isTestActive = false;
+  practiceMode = true;
+  isTestActive = false;          // чтобы анти-выход из приложения не мешал practice
+  stopTimer();                   // если был тур-таймер
+  stopPracticeStopwatch();       // если был старый секундомер
 
-  const tourId = String(currentTourId);
-  const lang = String(currentLang || '').toLowerCase();
+  // UI: показать кнопки practice
+  const exitBtn = document.getElementById('practice-exit-btn');
+  if (exitBtn) exitBtn.classList.remove('hidden');
 
-  let qs = (tourQuestionsCache || []).filter(q => {
-    const qTourId = String(q.tour_id);
-    const qLang = String(q.language || '').toLowerCase();
-    return qTourId === tourId && (!qLang || qLang === lang);
-  });
+  const prevBtn = document.getElementById('prev-button');
+  if (prevBtn) prevBtn.classList.remove('hidden');
+
+  // Если есть сохранённая сессия этого тура — покажем кнопку "Продолжить"
+  const saved = loadPracticeSession();
+  const canContinue = saved && String(saved.tourId) === String(currentTourId);
+
+  openPracticeConfigModal({ canContinue });
+}
 
   if (!qs.length) {
     alert("Practice questions not loaded. Please reload the page.");
@@ -2368,6 +2606,33 @@ safeAddListener('cancel-start', 'click', () => {
 safeAddListener('back-home', 'click', () => showScreen('home-screen'));
 safeAddListener('back-home-x', 'click', () => showScreen('home-screen'));
 
+safeAddListener('practice-start-btn', 'click', () => {
+  closePracticeConfigModal();
+  const cfg = getPracticeConfigFromUI();
+  clearPracticeSession();     // новый запуск = чистим старый прогресс
+  beginPracticeNew(cfg);
+});
+
+safeAddListener('practice-continue-btn', 'click', () => {
+  closePracticeConfigModal();
+  beginPracticeContinue();
+});
+
+safeAddListener('practice-exit-btn', 'click', () => {
+  // Сохраняем прогресс и выходим домой
+  savePracticeSession();
+  stopPracticeStopwatch();
+  practiceMode = false;
+
+  // вернуть UI
+  const exitBtn = document.getElementById('practice-exit-btn');
+  if (exitBtn) exitBtn.classList.add('hidden');
+  const prevBtn = document.getElementById('prev-button');
+  if (prevBtn) prevBtn.classList.add('hidden');
+
+  showScreen('home-screen');
+});
+
 function showCertsModal() {
   const container = document.getElementById('certs-list-container');
   if (container) {
@@ -2393,6 +2658,7 @@ window.addEventListener('beforeunload', () => {
 });
 
 }); // <-- закрытие document.addEventListener('DOMContentLoaded', ...)
+
 
 
 
