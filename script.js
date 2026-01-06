@@ -56,6 +56,7 @@ document.addEventListener('DOMContentLoaded', function () {
   let currentUserData = null;
   let tourQuestionsAllCache = [];     // ВСЕ вопросы тура (для статистики/ошибок)
   let tourQuestionsSelected = [];     // 15 выбранных на тест (для прохождения)
+  let tourQuestionsCache = qData || [];
   let userAnswersCache = [];          // ответы ТОЛЬКО текущего тура + текущего языка
   let currentLbFilter = 'republic';
   let currentLang = 'uz';
@@ -1621,29 +1622,19 @@ answers.forEach((row, idx) => {
 });
 
 renderLaTeX();
+} // ✅ закрыли loadMistakesReview
 
-    // FIX #3: Исправленный анти-чит - срабатывает ТОЛЬКО во время активного теста
-    document.addEventListener("visibilitychange", function() {
-        // FIX: Проверяем только если тест действительно активен
-        if (!isTestActive) return;
-        
-        if (document.visibilityState === "hidden") {
-            cheatWarningCount++;
-            
-            if (cheatWarningCount >= 2) {
-                // Второе нарушение - завершаем тест принудительно
-                finishTour();
-            } else {
-                // Первое предупреждение
-                const cheatModal = document.getElementById('cheat-warning-modal');
-                if (cheatModal) {
-                    cheatModal.classList.remove('hidden');
-                }
-            }
-        }
-    });
+// ✅ анти-чит — ВНЕ loadMistakesReview, один раз
+document.addEventListener("visibilitychange", function() {
+  if (!isTestActive) return;
+  if (document.visibilityState === "hidden") {
+    cheatWarningCount++;
+    if (cheatWarningCount >= 2) finishTour();
+    else document.getElementById('cheat-warning-modal')?.classList.remove('hidden');
+  }
+});
 
-    safeAddListener('close-cheat-modal', 'click', () => {
+  safeAddListener('close-cheat-modal', 'click', () => {
         const modal = document.getElementById('cheat-warning-modal');
         if (modal) modal.classList.add('hidden');
     });
@@ -2157,7 +2148,7 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
 
   // Если по какой-то причине кэш пуст — лучше показать сообщение, чем падать
   if (!qs.length) {
-    showMessage("Practice questions not loaded. Please reload the page.");
+   alert("Practice questions not loaded. Please reload the page.");
     return;
   }
 
@@ -2294,4 +2285,5 @@ window.addEventListener('beforeunload', () => {
 });
 
 }); // <-- закрытие document.addEventListener('DOMContentLoaded', ...)
+
 
