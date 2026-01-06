@@ -52,8 +52,6 @@ document.addEventListener('DOMContentLoaded', function () {
   let telegramUserId = null;
   let telegramData = { firstName: null, lastName: null, photoUrl: null, languageCode: null };
   let tgInitData = "";
-
-  // остальное тоже лучше сюда (хотя бы то, что используется рано)
   let internalDbId = null;
   let currentTourId = null;
   let currentTourTitle = "";
@@ -69,6 +67,8 @@ document.addEventListener('DOMContentLoaded', function () {
   let isLangLocked = false;
   let isProfileLocked = false;
   let isInitialized = false;
+  let tourEnded = false;
+  let tourTaken = false;
 
   function initTelegram() {
     const tg = window.Telegram?.WebApp;
@@ -269,6 +269,7 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
             no_active_tour: "Faol turlar yo'q",
             tour_completed_btn: "Tur yakunlangan",
             start_tour_btn: "Turni boshlash",
+            practice_btn: "Mashq",
             minutes: "daqiqa",
             questions: "savol",
             correct_txt: "to'g'ri",
@@ -395,6 +396,7 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
             no_active_tour: "Нет активных туров",
             tour_completed_btn: "Текущий тур пройден",
             start_tour_btn: "Начать тур",
+            practice_btn: "Тренировка",
             minutes: "минут",
             questions: "вопросов",
             correct_txt: "верно",
@@ -521,6 +523,7 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
             no_active_tour: "No Active Tours",
             tour_completed_btn: "Tour Completed",
             start_tour_btn: "Start Tour",
+            practice_btn: "Practice",
             minutes: "minutes",
             questions: "questions",
             correct_txt: "correct",
@@ -954,7 +957,7 @@ if (!isInitialized) {
   const nowTour = new Date();
   const end = currentTourEndDate ? new Date(currentTourEndDate) : null;
 
-  const isTourEnded = !!(end && nowTour >= end && tourData.is_active !== true);
+  const isTourEnded = !!(end && nowTour >= end); // конец тура = только end_date
 
   console.log('[TOUR] now/end/is_active/ended:',
     nowTour.toISOString(),
@@ -994,11 +997,24 @@ if (!isInitialized) {
   if (pErr) console.error('[TOUR] progress fetch error:', pErr);
 
   const doneByProgress = !!(pData && pData.score !== null);
-  tourCompleted = isTourEnded || doneByProgress;
 
-  // 4) выставляем кнопку один раз, в конце
-  if (tourCompleted) updateMainButton('completed');
-  else updateMainButton('start', tourData.title);
+// tourCompleted = "пользователь сдавал и результат есть"
+tourCompleted = doneByProgress;
+
+// Состояние тура:
+if (isTourEnded) {
+  // ENDED_TAKEN / ENDED_NOT_TAKEN
+  if (doneByProgress) updateMainButton('completed', tourData.title);         // сдавал → completed (Practice по клику)
+  else updateMainButton('ended_not_taken', tourData.title);                   // не сдавал → сразу Practice
+} else {
+  // ACTIVE
+  if (tourData.is_active === true) {
+    if (doneByProgress) updateMainButton('completed', tourData.title);        // ACTIVE_TAKEN (Practice закрыт до end_date)
+    else updateMainButton('start', tourData.title);                           // ACTIVE_AVAILABLE
+  } else {
+    updateMainButton('inactive');                                             // не активен и не завершён
+  }
+}
 
   isInitialized = true;
 }
@@ -1840,6 +1856,18 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
   startPracticeMode();
 });
 
+} else if (state === 'ended_not_taken') {
+  const displayTitle = formatTourTitle(title || "");
+  newBtn.innerHTML = `<i class="fa-solid fa-dumbbell"></i> ${t('practice_btn')}${displayTitle ? ` • ${displayTitle}` : ''}`;
+  newBtn.className = 'btn-primary';
+  newBtn.disabled = false;
+  newBtn.style.background = "";
+
+  if (certCard) certCard.classList.add('hidden');
+
+  newBtn.addEventListener('click', () => {
+    startPracticeMode();
+  });
 
         } else {
             const displayTitle = formatTourTitle(title || t('start_tour_btn'));
@@ -2274,6 +2302,7 @@ window.addEventListener('beforeunload', () => {
 });
 
 }); // <-- закрытие document.addEventListener('DOMContentLoaded', ...)
+
 
 
 
