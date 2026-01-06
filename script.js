@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function () {
   let currentUserData = null;
   let tourQuestionsAllCache = [];     // ВСЕ вопросы тура (для статистики/ошибок)
   let tourQuestionsSelected = [];     // 15 выбранных на тест (для прохождения)
-  let tourQuestionsCache = qData || [];
+  let tourQuestionsCache = [];   // кэш вопросов тура
   let userAnswersCache = [];          // ответы ТОЛЬКО текущего тура + текущего языка
   let currentLbFilter = 'republic';
   let currentLang = 'uz';
@@ -982,13 +982,21 @@ if (unlockEl && currentTourEndDate) {
 }
 
 // дальше — обычная логика: загрузка вопросов, проверка tour_progress и выставление кнопки
-const { data: qData } = await supabaseClient
+const { data: qData, error: qErr } = await supabaseClient
   .from('questions')
   .select('id, subject, topic, question_text, options_text, type, tour_id, time_limit_seconds, language, difficulty, image_url')
   .eq('tour_id', currentTourId)
+  .eq('language', currentLang)
   .order('id', { ascending: true });
 
-if (qData) tourQuestionsCache = qData;
+tourQuestionsCache = (!qErr && qData) ? qData : [];
+if (qErr) console.error('[TOUR] questions fetch error:', qErr);
+
+  // можно показать кнопку неактивной/сообщение, но хотя бы не падаем
+  tourQuestionsCache = [];
+} else {
+  tourQuestionsCache = qData || [];
+}
 
 const { data: pData } = await supabaseClient
   .from('tour_progress')
@@ -2133,39 +2141,34 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
     }
 
   function startPracticeMode() {
-  // 1) Сброс индексов (чтобы начать с 1-го вопроса)
   currentQuestionIndex = 0;
   correctCount = 0;
-
-  // 2) В тренировке античит не нужен
   isTestActive = false;
 
-  // 3) Берём вопросы текущего тура (которые уже загружены в кэш)
-  let qs = (tourQuestionsCache || []).filter(q =>
-  q.tour_id === currentTourId && (!q.language || q.language === currentLang)
-);
+  const tourId = String(currentTourId);
+  const lang = String(currentLang || '').toLowerCase();
 
+  let qs = (tourQuestionsCache || []).filter(q => {
+    const qTourId = String(q.tour_id);
+    const qLang = String(q.language || '').toLowerCase();
+    return qTourId === tourId && (!qLang || qLang === lang);
+  });
 
-  // Если по какой-то причине кэш пуст — лучше показать сообщение, чем падать
   if (!qs.length) {
-   alert("Practice questions not loaded. Please reload the page.");
+    alert("Practice questions not loaded. Please reload the page.");
+    console.warn('[Practice] cache size:', (tourQuestionsCache || []).length, 'tourId:', tourId, 'lang:', lang);
     return;
   }
 
-  // 4) Перемешаем порядок
-  qs = qs.sort(() => Math.random() - 0.5);
+  qs = qs.slice().sort(() => Math.random() - 0.5);
 
-  // 5) Подменяем рабочий массив вопросов
   questions = qs;
 
-  // 6) Переходим на экран теста
   showScreen('quiz-screen');
 
-  // 7) В тренировке делаем таймер “мягким”: просто пишем Practice
   const timerEl = document.getElementById('timer');
   if (timerEl) timerEl.textContent = 'Practice';
 
-    // 8) Показываем первый вопрос 
   showQuestion();
 }
 
@@ -2285,5 +2288,6 @@ window.addEventListener('beforeunload', () => {
 });
 
 }); // <-- закрытие document.addEventListener('DOMContentLoaded', ...)
+
 
 
