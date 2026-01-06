@@ -497,6 +497,41 @@
         </div>
     </div>
 
+    <!-- PRACTICE CONFIG MODAL -->
+<div class="modal hidden" id="practice-config-modal">
+  <div class="modal-card">
+    <h3 style="margin:0 0 8px 0;">Practice</h3>
+    <p style="margin:0 0 14px 0; opacity:.75;">
+      Выберите предмет, сложность и количество вопросов.
+    </p>
+
+    <div style="margin-bottom:12px;">
+      <div style="font-size:12px; opacity:.75; margin-bottom:6px;">Предмет</div>
+      <div id="practice-subject-chips" class="chips-wrap"></div>
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <div style="font-size:12px; opacity:.75; margin-bottom:6px;">Сложность</div>
+      <select id="practice-difficulty" class="input" style="width:100%;">
+        <option value="all">Все</option>
+        <option value="easy">Easy</option>
+        <option value="medium">Medium</option>
+        <option value="hard">Hard</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <div style="font-size:12px; opacity:.75; margin-bottom:6px;">Количество</div>
+      <input id="practice-count" class="input" type="number" min="5" max="200" step="1" value="20" style="width:100%;" />
+    </div>
+
+    <div class="modal-actions" style="display:flex; gap:10px; justify-content:flex-end;">
+      <button class="btn secondary hidden" id="practice-continue-btn">Продолжить</button>
+      <button class="btn" id="practice-start-btn">Начать</button>
+    </div>
+  </div>
+</div>
+    
     <div class="modal hidden" id="about-modal">
         <div class="modal-card full-height" style="padding: 0; overflow: hidden; display:flex; flex-direction:column;">
             <div class="about-hero">
@@ -548,6 +583,7 @@
 </div>
 </body>
 </html>
+
 
 
 
