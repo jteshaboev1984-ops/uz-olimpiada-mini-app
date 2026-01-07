@@ -291,12 +291,18 @@
         </div> 
 
         <div class="bottom-fixed column">
-            <div id="main-btn-container" style="width: 100%;">
-                <button id="main-action-btn" class="btn-primary" data-i18n="loading">Yuklanmoqda...</button>
-            </div>
-            <button id="exit-app-btn" class="btn-danger-box" data-i18n="btn_exit">Chiqish</button>
-        </div>
-    </div>
+  <div id="main-btn-container" style="width: 100%;">
+    <button id="main-action-btn" class="btn-primary" data-i18n="loading">Yuklanmoqda...</button>
+  </div>
+
+  <!-- NEW: small hint under the main button -->
+  <div id="main-action-hint" class="main-action-hint hidden" data-i18n="main_action_hint">
+    Praktika va xatolar tahlili shaxsiy kabinetda.
+  </div>
+
+  <button id="exit-app-btn" class="btn-danger-box" data-i18n="btn_exit">Chiqish</button>
+ </div>
+</div>
 
     <div class="screen hidden" id="quiz-screen">
        <div class="quiz-top-bar">
@@ -577,10 +583,11 @@
         </div>
     </div>
 
-    <script src="./script.js?v=30" defer></script>
+    <script src="./script.js?v=31" defer></script>
     <pre id="debug-box" style="white-space:pre-wrap;padding:10px;font-size:12px;color:#111;background:#fff;border-top:1px solid #ddd;max-height:40vh;overflow:auto;"></pre>
 </body>
 </html>
+
 
 
 
