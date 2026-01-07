@@ -142,7 +142,7 @@ startApp();
             el.textContent += args.map(a => typeof a === 'string' ? a : JSON.stringify(a, null, 2)).join(' ') + "\n";
         }
     } 
-    console.log('App Started: v26.js');
+    console.log('App Started: v27.js');
   
    // === ПЕРЕМЕННЫЕ ТЕСТА И АНТИ-ЧИТА ===
     let questions = [];
@@ -361,6 +361,8 @@ function getPracticeConfigFromUI() {
 }
 
 function beginPracticeNew(filters) {
+  practiceMode = true;
+
   practiceFilters = { ...filters };
   practiceAnswers = {};
   practiceElapsedSec = 0;
@@ -388,6 +390,14 @@ function beginPracticeNew(filters) {
   selectedAnswer = null;
 
   showScreen('quiz-screen');
+
+  // UI для Practice
+  const exitBtn = document.getElementById('practice-exit-btn');
+  if (exitBtn) exitBtn.classList.remove('hidden');
+
+  const prevBtn = document.getElementById('prev-button');
+  if (prevBtn) prevBtn.classList.remove('hidden');
+
   startPracticeStopwatch();
   showQuestion();
 
@@ -425,6 +435,14 @@ function beginPracticeContinue() {
   selectedAnswer = null;
 
   showScreen('quiz-screen');
+ 
+  //_pct UI для Practice
+  const exitBtn = document.getElementById('practice-exit-btn');
+  if (exitBtn) exitBtn.classList.remove('hidden');
+
+  const prevBtn = document.getElementById('prev-button');
+  if (prevBtn) prevBtn.classList.remove('hidden');
+
   startPracticeStopwatch(practiceElapsedSec);
   showQuestion();
 
@@ -2586,37 +2604,15 @@ if (resHint) {
         fetchStatsData(); 
     }
 
-  function startPracticeMode() {
-  currentQuestionIndex = 0;
-  correctCount = 0;
-
+ function startPracticeMode() {
   // В тренировке античит не нужен
   isTestActive = false;
 
-  const tourId = String(currentTourId ?? '');
-  const lang = String(currentLang ?? '').toLowerCase();
+  // можно ли продолжить?
+  const saved = loadPracticeSession();
+  const canContinue = !!(saved && String(saved.tourId || '') === String(currentTourId || ''));
 
-  let qs = (tourQuestionsCache || []).filter(q => {
-    const qTourId = String(q.tour_id ?? '');
-    const qLang = String(q.language ?? '').toLowerCase();
-    return qTourId === tourId && (!qLang || qLang === lang);
-  });
-
-  if (!qs.length) {
-    alert("Practice questions not loaded. Please reload the page.");
-    console.warn('[Practice] cache size:', (tourQuestionsCache || []).length, 'tourId:', tourId, 'lang:', lang);
-    return;
-  }
-
-  qs = qs.slice().sort(() => Math.random() - 0.5);
-  questions = qs;
-
-  showScreen('quiz-screen');
-
-  const timerEl = document.getElementById('timer');
-  if (timerEl) timerEl.textContent = 'Practice ⏱';
-
-  showQuestion();
+  openPracticeConfigModal({ canContinue });
 }
 
 function showScreen(screenId) {
@@ -2762,6 +2758,7 @@ window.addEventListener('beforeunload', () => {
 });
 
 }); // <-- закрытие document.addEventListener('DOMContentLoaded', ...)
+
 
 
 
