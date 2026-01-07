@@ -142,7 +142,7 @@ startApp();
             el.textContent += args.map(a => typeof a === 'string' ? a : JSON.stringify(a, null, 2)).join(' ') + "\n";
         }
     } 
-    console.log('App Started: v27.js');
+    console.log('App Started: v28.js');
   
    // === ПЕРЕМЕННЫЕ ТЕСТА И АНТИ-ЧИТА ===
     let questions = [];
@@ -271,18 +271,30 @@ function normalizeSubjectKey(raw) {
   const s = String(raw || '').trim();
   if (!s) return '';
 
-  // убираем приставки SAT/IELTS и т.п., приводим к базовому предмету
-  // примеры входа: "SAT (Biology)", "IELTS (Mathematics)", "Biologiya (Enzymes)", "Biology"
-  let x = s;
+  // 1) Если это SAT/IELTS — считаем отдельным предметом (не распаковываем скобки)
+  if (/^SAT\s*\(/i.test(s)) return 'sat';
+  if (/^IELTS\s*\(/i.test(s)) return 'ielts';
 
-  // если формат "SAT (Biology)" -> возьмём то, что в скобках
-  const m = x.match(/^(SAT|IELTS)\s*\((.+)\)$/i);
-  if (m && m[2]) x = m[2];
+  // 2) Берём базовую часть до скобок: "Biologiya (Enzymes)" -> "Biologiya"
+  const base = s.split('(')[0].trim().toLowerCase();
 
-  // если формат "Biologiya (Cell Structure)" -> берём часть до скобки
-  x = x.split('(')[0].trim();
+  // 3) Маппинг вариантов написания в единые ключи
+  const map = {
+    math: ['matematika', 'математика', 'math', 'mathematics'],
+    chem: ['kimyo', 'химия', 'chem', 'chemistry'],
+    bio:  ['biologiya', 'биология', 'bio', 'biology'],
+    it:   ['informatika', 'информатика', 'it', 'computer science', 'cs'],
+    eco:  ['iqtisodiyot', 'экономика', 'eco', 'economics'],
+    sat:  ['sat'],
+    ielts:['ielts']
+  };
 
-  return x.toLowerCase();
+  for (const [key, arr] of Object.entries(map)) {
+    if (arr.includes(base)) return key;
+  }
+
+  // fallback
+  return base;
 }
 
 function subjectDisplayName(key) {
@@ -2825,22 +2837,3 @@ window.addEventListener('beforeunload', () => {
   }
   isTestActive = false;
 });
-
-}); // <-- закрытие document.addEventListener('DOMContentLoaded', ...)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
