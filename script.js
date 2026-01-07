@@ -2217,16 +2217,36 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
         const activeBtn = document.getElementById('main-action-btn');
         const certCard = document.getElementById('home-cert-btn');
         if (!activeBtn) return;
+const hintEl = document.getElementById('main-action-hint');
+const setHint = (text) => {
+  if (!hintEl) return;
+  if (text) {
+    hintEl.textContent = text;
+    hintEl.classList.remove('hidden');
+  } else {
+    hintEl.textContent = '';
+    hintEl.classList.add('hidden');
+  }
+};
+
+// t() может вернуть ключ, если перевода нет — тогда используем fallback
+const tSafe = (key, fallback) => {
+  const v = typeof t === 'function' ? t(key) : '';
+  return (v && v !== key) ? v : fallback;
+};
 
         // Удаляем все слушатели событий
         const newBtn = activeBtn.cloneNode(true);
         activeBtn.parentNode.replaceChild(newBtn, activeBtn);
 
         if (state === 'inactive') {
-            newBtn.innerHTML = `<i class="fa-solid fa-clock"></i> ${t('no_active_tour')}`;
-            newBtn.className = 'btn-inactive';
-            newBtn.disabled = true;
-            if (certCard) certCard.classList.add('hidden');
+  newBtn.innerHTML = `<i class="fa-solid fa-clock"></i> ${t('no_active_tour')}`;
+  newBtn.className = 'btn-inactive';
+  newBtn.disabled = true;
+  if (certCard) certCard.classList.add('hidden');
+
+  setHint(''); // подсказка не нужна
+
         } else if (state === 'completed') {
             newBtn.innerHTML = `<i class="fa-solid fa-check"></i> ${t('tour_completed_btn')}`;
             newBtn.className = 'btn-success-clickable';
@@ -2234,13 +2254,21 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
             newBtn.style.background = "linear-gradient(135deg, #34C759 0%, #30D158 100%)"; 
             newBtn.style.color = "#fff";
             if (certCard) certCard.classList.remove('hidden'); 
-            
+
+          const nowTour = new Date();
+          const end = currentTourEndDate ? new Date(currentTourEndDate) : null;
+          const practiceAllowed = tourCompleted && (!end || nowTour >= end);
+
+setHint(
+  practiceAllowed
+    ? tSafe('main_btn_completed_hint', 'Практика и разбор ошибок — в профиле')
+    : tSafe('main_btn_completed_hint_locked', 'Практика откроется после завершения тура')
+);
+
 newBtn.addEventListener('click', () => {
-  const nowTour = new Date();
-  const end = currentTourEndDate ? new Date(currentTourEndDate) : null;
-  const practiceAllowed = tourCompleted && (!end || nowTour >= end);
-openTourInfoModal({ practiceAllowed });
-});           
+  openTourInfoModal({ practiceAllowed });
+});
+           
 
 } else if (state === 'ended_not_taken') {
   const displayTitle = formatTourTitle(title || "");
@@ -2251,6 +2279,8 @@ openTourInfoModal({ practiceAllowed });
 
   if (certCard) certCard.classList.add('hidden');
 
+setHint(tSafe('main_btn_practice_hint', 'Практика доступна после завершения тура'));
+          
   newBtn.addEventListener('click', () => {
     startPracticeMode();
   });
@@ -2263,6 +2293,8 @@ openTourInfoModal({ practiceAllowed });
             newBtn.style.background = "";
             if (certCard) certCard.classList.add('hidden'); 
             newBtn.addEventListener('click', handleStartClick);
+
+          setHint(tSafe('main_btn_start_hint', 'Нажмите, чтобы начать текущий тур'));
         }
     }
 
@@ -2877,6 +2909,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
