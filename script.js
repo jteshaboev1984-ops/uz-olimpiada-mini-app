@@ -389,7 +389,59 @@ function closePracticeConfigModal() {
   if (modal) modal.classList.add('hidden');
 }
 
-function openTourInfoModal({ practiceAllowed }) {
+function openTourInfoModal({ practiceAllowed }) {␊
+  const modal = document.getElementById('tour-info-modal');␊
+  if (!modal) return;␊
+
+  const titleEl = modal.querySelector('h2');
+  const messageEl = modal.querySelector('p');
+  const iconWrap = modal.querySelector('.modal-icon-big');
+  const iconEl = iconWrap ? iconWrap.querySelector('i') : null;
+  const primaryBtn = modal.querySelector('.btn-primary');
+  const secondaryBtn = modal.querySelector('.btn-text-simple');
+
+  if (practiceAllowed) {
+    if (titleEl) titleEl.textContent = t('tour_info_practice_title');
+    if (messageEl) messageEl.textContent = t('tour_info_practice_msg');
+    if (iconWrap) {
+      iconWrap.style.background = "#e8f8ec";
+      iconWrap.style.color = "var(--success)";
+    }
+    if (iconEl) iconEl.className = "fa-solid fa-calendar-check";
+    if (primaryBtn) {
+      primaryBtn.removeAttribute('onclick');
+      primaryBtn.textContent = t('btn_open_profile');
+      primaryBtn.onclick = () => {
+        showScreen('cabinet-screen');
+        modal.classList.add('hidden');
+      };
+    }
+    if (secondaryBtn) {
+      secondaryBtn.removeAttribute('onclick');
+      secondaryBtn.textContent = t('btn_understood');
+      secondaryBtn.onclick = () => modal.classList.add('hidden');
+      secondaryBtn.classList.remove('hidden');
+    }
+  } else {
+    if (titleEl) titleEl.textContent = t('tour_info_practice_locked_title');
+    if (messageEl) messageEl.textContent = t('tour_info_practice_locked_msg');
+    if (iconWrap) {
+      iconWrap.style.background = "#FFF2F2";
+      iconWrap.style.color = "var(--danger)";
+    }
+    if (iconEl) iconEl.className = "fa-solid fa-lock";
+    if (primaryBtn) {
+      primaryBtn.removeAttribute('onclick');
+      primaryBtn.textContent = t('btn_understood');
+      primaryBtn.onclick = () => modal.classList.add('hidden');
+    }
+    if (secondaryBtn) secondaryBtn.classList.add('hidden');
+  }
+
+  modal.classList.remove('hidden');
+}
+
+function showAccessLockModal() {
   const modal = document.getElementById('tour-info-modal');
   if (!modal) return;
 
@@ -400,40 +452,19 @@ function openTourInfoModal({ practiceAllowed }) {
   const primaryBtn = modal.querySelector('.btn-primary');
   const secondaryBtn = modal.querySelector('.btn-text-simple');
 
-  if (practiceAllowed) {
-    if (titleEl) titleEl.textContent = "Тур завершён";
-    if (messageEl) messageEl.textContent = "Практика и работа над ошибками доступны в личном кабинете.";
-    if (iconWrap) {
-      iconWrap.style.background = "#e8f8ec";
-      iconWrap.style.color = "var(--success)";
-    }
-    if (iconEl) iconEl.className = "fa-solid fa-calendar-check";
-    if (primaryBtn) {
-      primaryBtn.textContent = "Перейти в профиль";
-      primaryBtn.onclick = () => {
-        showScreen('cabinet-screen');
-        modal.classList.add('hidden');
-      };
-    }
-    if (secondaryBtn) {
-      secondaryBtn.textContent = "Понятно";
-      secondaryBtn.onclick = () => modal.classList.add('hidden');
-      secondaryBtn.classList.remove('hidden');
-    }
-  } else {
-    if (titleEl) titleEl.textContent = "Практика недоступна";
-    if (messageEl) messageEl.textContent = "Практика станет доступна после завершения тура.";
-    if (iconWrap) {
-      iconWrap.style.background = "#FFF2F2";
-      iconWrap.style.color = "var(--danger)";
-    }
-    if (iconEl) iconEl.className = "fa-solid fa-lock";
-    if (primaryBtn) {
-      primaryBtn.textContent = "Понятно";
-      primaryBtn.onclick = () => modal.classList.add('hidden');
-    }
-    if (secondaryBtn) secondaryBtn.classList.add('hidden');
+  if (titleEl) titleEl.textContent = t('access_locked_title');
+  if (messageEl) messageEl.textContent = t('access_locked_msg');
+  if (iconWrap) {
+    iconWrap.style.background = "#FFF2F2";
+    iconWrap.style.color = "var(--danger)";
   }
+  if (iconEl) iconEl.className = "fa-solid fa-lock";
+  if (primaryBtn) {
+    primaryBtn.removeAttribute('onclick');
+    primaryBtn.textContent = t('btn_understood');
+    primaryBtn.onclick = () => modal.classList.add('hidden');
+  }
+  if (secondaryBtn) secondaryBtn.classList.add('hidden');
 
   modal.classList.remove('hidden');
 }
@@ -655,6 +686,10 @@ function beginPracticeContinue() {
             no_active_tour: "Faol turlar yo'q",
             tour_completed_btn: "Tur yakunlangan",
             start_tour_btn: "Turni boshlash",
+            main_btn_completed_hint: "Mashq va xatolar tahlili — profil bo'limida",
+            main_btn_completed_hint_locked: "Mashq tur yakunlangach profil bo'limida ochiladi",
+            main_btn_practice_hint: "Mashq yakunlangan turlar uchun mavjud",
+            main_btn_start_hint: "Boshlash uchun bosing",
             practice_btn: "Mashq",
             minutes: "daqiqa",
             questions: "savol",
@@ -684,8 +719,17 @@ function beginPracticeContinue() {
             btn_back: "Orqaga",
             menu_mistakes: "Xatolar tahlili",
             menu_mistakes_desc: "Javoblarni ko'rish",
+            menu_practice: "Mashq",
+            menu_practice_desc: "Mashq rejimi",
             lock_review_title: "Tahlil yopiq",
             lock_review_msg: "Adolatli raqobat uchun xatolar tahlili olimpiada yakunlangandan so'ng ochiladi.",
+            access_locked_title: "Kirish yopiq",
+            access_locked_msg: "Mashq va xatolar tahlili faqat kamida 1 ta tur yakunlangandan so'ng ochiladi.",
+            tour_info_practice_title: "Tur yakunlangan",
+            tour_info_practice_msg: "Mashq va xatolar tahlili shaxsiy kabinetda mavjud.",
+            tour_info_practice_locked_title: "Mashq yopiq",
+            tour_info_practice_locked_msg: "Mashq tur yakunlangach ochiladi.",
+            btn_open_profile: "Profilga o'tish",
             lang_warning_reg: "Diqqat: Til va ma'lumotlar saqlangandan so'ng o'zgartirib bo'lmaydi!",
             lang_locked_reason: "Adolatli raqobat uchun tilni o'zgartirish imkoniyati o'chirilgan.",
             cheat_title: "DIQQAT! QOIDABUZARLIK!",
@@ -779,9 +823,13 @@ function beginPracticeContinue() {
             class_s: "класс",
             save_saving: "Сохранение...",
             alert_fill: "Заполните все поля!",
-            no_active_tour: "Нет активных туров",
+             no_active_tour: "Нет активных туров",
             tour_completed_btn: "Текущий тур пройден",
             start_tour_btn: "Начать тур",
+            main_btn_completed_hint: "Практика и разбор ошибок — в профиле",
+            main_btn_completed_hint_locked: "Практика в профиле откроется после завершения тура",
+            main_btn_practice_hint: "Практика доступна после завершения тура",
+            main_btn_start_hint: "Нажмите, чтобы начать текущий тур",
             practice_btn: "Тренировка",
             minutes: "минут",
             questions: "вопросов",
@@ -811,11 +859,20 @@ function beginPracticeContinue() {
             btn_back: "Назад",
             menu_mistakes: "Работа над ошибками",
             menu_mistakes_desc: "Посмотреть ответы",
+            menu_practice: "Тренировка",
+            menu_practice_desc: "Режим практики",
             lock_review_title: "Разбор закрыт",
             lock_review_msg: "В целях честной игры разбор ошибок станет доступен после окончания олимпиады.",
+            access_locked_title: "Доступ закрыт",
+            access_locked_msg: "Практика и разбор ошибок доступны после завершения хотя бы одного тура.",
+            tour_info_practice_title: "Тур завершён",
+            tour_info_practice_msg: "Практика и разбор ошибок доступны в личном кабинете.",
+            tour_info_practice_locked_title: "Практика недоступна",
+            tour_info_practice_locked_msg: "Практика откроется после завершения тура.",
+            btn_open_profile: "В профиль",
             lang_warning_reg: "Внимание: Язык и данные профиля нельзя будет изменить после сохранения!",
             lang_locked_reason: "Смена языка отключена для обеспечения честной конкуренции.",
-            cheat_title: "НАРУШЕНИЕ!",
+            cheat_title: "НАРУШЕНИЕ!"
             cheat_msg: "Покидать приложение во время теста запрещено! При повторном нарушении тест будет завершен принудительно."
         },
         en: {
@@ -906,9 +963,13 @@ function beginPracticeContinue() {
             class_s: "grade",
             save_saving: "Saving...",
             alert_fill: "Fill in all fields!",
-            no_active_tour: "No Active Tours",
+             no_active_tour: "No Active Tours",
             tour_completed_btn: "Tour Completed",
             start_tour_btn: "Start Tour",
+            main_btn_completed_hint: "Practice and mistake review are in your profile",
+            main_btn_completed_hint_locked: "Practice opens in your profile after the tour ends",
+            main_btn_practice_hint: "Practice is available after the tour ends",
+            main_btn_start_hint: "Tap to start the current tour",
             practice_btn: "Practice",
             minutes: "minutes",
             questions: "questions",
@@ -938,8 +999,17 @@ function beginPracticeContinue() {
             btn_back: "Back",
             menu_mistakes: "Mistake Review",
             menu_mistakes_desc: "Check answers",
+            menu_practice: "Practice",
+            menu_practice_desc: "Practice mode",
             lock_review_title: "Review Locked",
             lock_review_msg: "To ensure fair play, mistake review will be available after the Olympiad ends.",
+            access_locked_title: "Access locked",
+            access_locked_msg: "Practice and mistake review unlock after completing at least one tour.",
+            tour_info_practice_title: "Tour completed",
+            tour_info_practice_msg: "Practice and mistake review are available in your profile.",
+            tour_info_practice_locked_title: "Practice unavailable",
+            tour_info_practice_locked_msg: "Practice opens after the tour ends.",
+            btn_open_profile: "Open profile",
             lang_warning_reg: "Attention: Language and profile data cannot be changed after saving!",
             lang_locked_reason: "Language changing is disabled to ensure fair competition.",
             cheat_title: "VIOLATION!",
@@ -1521,10 +1591,11 @@ function fillProfileForm(data) {
       .select('question_id, is_correct')
       .eq('user_id', internalDbId);
 
-    if (rawErr) console.error('[fetchStatsData] fallback answers error:', rawErr);
+     if (rawErr) console.error('[fetchStatsData] fallback answers error:', rawErr);
 
     const allowedIds = new Set(tourQuestionsAllCache.map(q => q.id));
     userAnswersCache = (rawAns || []).filter(a => allowedIds.has(a.question_id));
+    refreshCabinetAccessUI();
     return;
   }
 
@@ -1532,6 +1603,7 @@ function fillProfileForm(data) {
     question_id: a.question_id,
     is_correct: a.is_correct
   }));
+  refreshCabinetAccessUI();
 }
 
     function calculateSubjectStats(prefix) {
@@ -1896,9 +1968,9 @@ function fillProfileForm(data) {
         }
     });
 
-    safeAddListener('confirm-delete-btn', 'click', async () => {
-        const btn = document.getElementById('confirm-delete-btn');
-        if (!btn) return;
+    safeAddListener('confirm-delete-btn', 'click', async () => {␊
+        const btn = document.getElementById('confirm-delete-btn');␊
+        if (!btn) return;␊
         
         btn.disabled = true;
         btn.innerHTML = '...';
@@ -1917,10 +1989,39 @@ function fillProfileForm(data) {
             btn.disabled = false;
             btn.innerHTML = t('btn_delete_confirm');
         }
-    });
+   });
+
+    function hasCompletedTourAccess() {
+        if (currentUserData) {
+            if (typeof currentUserData.completed_tours === 'number') return currentUserData.completed_tours > 0;
+            if (typeof currentUserData.tours_completed === 'number') return currentUserData.tours_completed > 0;
+            if (typeof currentUserData.completedTours === 'number') return currentUserData.completedTours > 0;
+            if (typeof currentUserData.tours_count === 'number') return currentUserData.tours_count > 0;
+        }
+
+        if (tourCompleted) return true;
+
+        const cabTours = document.getElementById('cab-tours');
+        const value = cabTours ? Number(cabTours.textContent) : 0;
+        return Number.isFinite(value) && value > 0;
+    }
+
+    function refreshCabinetAccessUI() {
+        const isLocked = !hasCompletedTourAccess();
+        const mistakeLockIcon = document.getElementById('mistake-lock-icon');
+        const practiceLockIcon = document.getElementById('practice-lock-icon');
+
+        if (mistakeLockIcon) mistakeLockIcon.style.display = isLocked ? 'inline-block' : 'none';
+        if (practiceLockIcon) practiceLockIcon.style.display = isLocked ? 'inline-block' : 'none';
+    }
 
     // === ЛОГИКА РАЗБОРА ОШИБОК ===
     safeAddListener('btn-mistakes', 'click', () => {
+        if (!hasCompletedTourAccess()) {
+            showAccessLockModal();
+            return;
+        }
+
         const now = new Date();
         const end = currentTourEndDate ? new Date(currentTourEndDate) : null;
         
@@ -1929,9 +2030,18 @@ function fillProfileForm(data) {
             if (modal) modal.classList.remove('hidden');
         } else {
             showScreen('review-screen');
-            loadMistakesReview();
+       loadMistakesReview();
         }
     });
+
+    safeAddListener('btn-practice', 'click', () => {
+        if (!hasCompletedTourAccess()) {
+            showAccessLockModal();
+            return;
+        }
+
+        startPracticeMode();
+    });     
 
     safeAddListener('close-lock-review-modal', 'click', () => {
         const modal = document.getElementById('review-lock-modal');
@@ -2753,15 +2863,19 @@ if (resHint) {
   openPracticeConfigModal({ canContinue });
 }
 
-function showScreen(screenId) {
-  // Находим наш индикатор загрузки и скрываем его
-  const loader = document.getElementById('app-loader');
-  if (loader) loader.style.display = 'none';
+function showScreen(screenId) {␊
+  // Находим наш индикатор загрузки и скрываем его␊
+  const loader = document.getElementById('app-loader');␊
+  if (loader) loader.style.display = 'none';␊
 
   // Остальной код переключения экранов
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-  const screen = document.getElementById(screenId);
+   const screen = document.getElementById(screenId);
   if (screen) screen.classList.remove('hidden');
+
+  if (screenId === 'cabinet-screen') {
+    refreshCabinetAccessUI();
+  }
 
   window.scrollTo(0, 0);
 }
@@ -2909,6 +3023,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
