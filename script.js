@@ -2262,7 +2262,7 @@ const tSafe = (key, fallback) => {
 setHint(
   practiceAllowed
     ? tSafe('main_btn_completed_hint', 'Практика и разбор ошибок — в профиле')
-    : tSafe('main_btn_completed_hint_locked', 'Практика откроется после завершения тура')
+    : tSafe('main_btn_completed_hint_locked', 'Практика станет доступной в профиле после завершения тура')
 );
 
 newBtn.addEventListener('click', () => {
@@ -2909,6 +2909,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
