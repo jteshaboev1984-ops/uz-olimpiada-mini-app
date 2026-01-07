@@ -520,40 +520,39 @@
         </div>
     </div>
 
-    <!-- PRACTICE CONFIG MODAL -->
+   <!-- PRACTICE CONFIG MODAL -->
 <div class="modal hidden" id="practice-config-modal">
-  <div class="modal-card">
-    <h3 style="margin:0 0 8px 0;">Practice</h3>
-    <p style="margin:0 0 14px 0; opacity:.75;">
-      Выберите предмет, сложность и количество вопросов.
-    </p>
+  <div class="modal-card practice-config-card">
+    <h2 data-i18n="practice_title">Practice</h2>
+    <p data-i18n="practice_subtitle">Choose subject, difficulty, and question count.</p>
 
-    <div style="margin-bottom:12px;">
-      <div style="font-size:12px; opacity:.75; margin-bottom:6px;">Предмет</div>
+    <div class="practice-field">
+      <div class="practice-label" data-i18n="practice_filter_subject">Subject</div>
       <div id="practice-subject-chips" class="chips-wrap"></div>
     </div>
 
-    <div style="margin-bottom:12px;">
-      <div style="font-size:12px; opacity:.75; margin-bottom:6px;">Сложность</div>
-      <select id="practice-difficulty" class="input" style="width:100%;">
-        <option value="all">Все</option>
+    <div class="practice-field">
+      <div class="practice-label" data-i18n="practice_filter_difficulty">Difficulty</div>
+      <select id="practice-difficulty" class="input">
+        <option value="all" data-i18n="practice_filter_all">All</option>
         <option value="easy">Easy</option>
         <option value="medium">Medium</option>
         <option value="hard">Hard</option>
       </select>
     </div>
 
-    <div style="margin-bottom:14px;">
-      <div style="font-size:12px; opacity:.75; margin-bottom:6px;">Количество</div>
-      <input id="practice-count" class="input" type="number" min="5" max="200" step="1" value="20" style="width:100%;" />
+    <div class="practice-field">
+      <div class="practice-label" data-i18n="practice_filter_count">Question count</div>
+      <input id="practice-count" class="input" type="number" min="5" max="200" step="1" value="20" />
     </div>
 
-    <div class="modal-actions" style="display:flex; gap:10px; justify-content:flex-end;">
-      <button class="btn secondary hidden" id="practice-continue-btn">Продолжить</button>
-      <button class="btn" id="practice-start-btn">Начать</button>
+    <div class="modal-actions practice-modal-actions">
+      <button class="btn-secondary" id="practice-back-btn" data-i18n="btn_back">Back</button>
+      <button class="btn-secondary hidden" id="practice-continue-btn" data-i18n="btn_continue_practice">Continue practice</button>
+      <button class="btn-primary" id="practice-start-btn" data-i18n="btn_start_practice">Start practice</button>
     </div>
   </div>
-</div>
+</div> 
     
     <div class="modal hidden" id="about-modal">
         <div class="modal-card full-height" style="padding: 0; overflow: hidden; display:flex; flex-direction:column;">
@@ -597,6 +596,7 @@
     <pre id="debug-box" style="white-space:pre-wrap;padding:10px;font-size:12px;color:#111;background:#fff;border-top:1px solid #ddd;max-height:40vh;overflow:auto;"></pre>
 </body>
 </html>
+
 
 
 
