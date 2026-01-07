@@ -153,8 +153,7 @@ async function startApp() {
 // =====================
 let practiceMode = false;
 let practiceAnswers = {}; // { [questionId]: answerString }
-let practiceFilters = { subject: 'all', difficulty: 'all', count: 20 };
-
+let practiceFilters = normalizePracticeFilters({ subject: 'all', difficulty: 'all', count: 20 });
 let practiceElapsedSec = 0;
 let practiceStopwatchInterval = null;
   // === TIMERS & BEHAVIOR METRICS ===
@@ -202,11 +201,20 @@ function formatMMSS(sec) {
   return `${mm}:${ss}`;
 }
 
+function normalizePracticeFilters(raw) {
+  const f = raw || {};
+  const subject = typeof f.subject === 'string' ? f.subject : 'all';
+  const difficulty = typeof f.difficulty === 'string' ? f.difficulty : 'all';
+  let count = Number(f.count);
+  if (!Number.isFinite(count) || count <= 0) count = 20;
+  count = Math.max(5, Math.min(200, Math.floor(count)));
+  return { subject, difficulty, count };
+}
+
 function stopPracticeStopwatch() {
   if (practiceStopwatchInterval) clearInterval(practiceStopwatchInterval);
   practiceStopwatchInterval = null;
 }
-
 function startPracticeStopwatch() {
   stopPracticeStopwatch();
   const timerEl = document.getElementById('timer');
@@ -235,6 +243,8 @@ function loadPracticeSession() {
 
 function savePracticeSession() {
   try {
+    const normalized = normalizePracticeFilters(practiceFilters);
+    practiceFilters = normalized;
     const payload = {
       v: 1,
       tourId: currentTourId,
@@ -242,11 +252,12 @@ function savePracticeSession() {
       orderIds: (questions || []).map(q => Number(q.id)),
       index: currentQuestionIndex,
       answers: practiceAnswers,
-      filters: practiceFilters,
+      filters: normalized,
       elapsedSec: practiceElapsedSec,
       savedAt: Date.now()
     };
-    localStorage.setItem(practiceStorageKey(), JSON.stringify(payload));
+    
+  localStorage.setItem(practiceStorageKey(), JSON.stringify(payload));
   } catch (e) {
     console.warn('[practice] save failed', e);
   }
@@ -297,24 +308,17 @@ function normalizeSubjectKey(raw) {
 function subjectDisplayName(key) {
   // key уже lower-case
   const k = String(key || '').toLowerCase();
-  // можно расширять маппинг позже
   const map = {
-    'biologiya': 'Biologiya',
-    'biology': 'Biology',
-    'kimyo': 'Kimyo',
-    'chemistry': 'Chemistry',
-    'matematika': 'Matematika',
-    'mathematics': 'Mathematics',
-    'informatika': 'Informatika',
-    'computer science': 'Computer Science',
-    'iqtisodiyot': 'Economics',
-    'economics': 'Economics',
-    'ielts': 'IELTS',
-    'sat': 'SAT',
+    math: t('subj_math'),
+    chem: t('subj_chem'),
+    bio: t('subj_bio'),
+    it: t('subj_it'),
+    eco: t('subj_eco'),
+    sat: 'SAT',
+    ielts: 'IELTS'
   };
   return map[k] || (k ? (k[0].toUpperCase() + k.slice(1)) : '');
-}
-  
+}  
 function getSubjectsFromCache() {
   const set = new Set();
 
@@ -353,6 +357,8 @@ function openPracticeConfigModal({ canContinue }) {
     return;
   }
 
+  practiceFilters = normalizePracticeFilters(practiceFilters);
+
   // собрать предметы из кеша вопросов
   const subjects = getSubjectsFromCache(); // уже есть у тебя
   const allowedSubjects = ['math', 'chem', 'bio', 'it', 'eco', 'sat', 'ielts'];
@@ -364,7 +370,7 @@ function openPracticeConfigModal({ canContinue }) {
     chipsWrap.innerHTML = '';
 
     // chip: All
-    const current = (practiceFilters && practiceFilters.subject) ? practiceFilters.subject : 'all';
+   const current = practiceFilters.subject || 'all';
     chipsWrap.appendChild(makeChip(t('practice_filter_all'), 'all', current === 'all'));
 
     subjectList.forEach(key => {
@@ -374,7 +380,11 @@ function openPracticeConfigModal({ canContinue }) {
 
   }
 
+  const diffEl = document.getElementById('practice-difficulty');
+  if (diffEl) diffEl.value = practiceFilters.difficulty || 'all';
 
+  const countEl = document.getElementById('practice-count');
+  if (countEl) countEl.value = String(practiceFilters.count || 20);
 
   const contBtn = document.getElementById('practice-continue-btn');
   if (contBtn) {
@@ -490,42 +500,40 @@ function getPracticeConfigFromUI() {
   const chipsWrap = document.getElementById('practice-subject-chips');
   const activeChip = chipsWrap ? chipsWrap.querySelector('.chip.active') : null;
   const subject = activeChip ? activeChip.dataset.value : 'all';
-
   const diffEl = document.getElementById('practice-difficulty');
   const difficulty = diffEl ? (diffEl.value || 'all') : 'all';
-
   const countEl = document.getElementById('practice-count');
   let count = countEl ? parseInt(countEl.value, 10) : 20;
   if (!Number.isFinite(count) || count <= 0) count = 20;
 
-  return { subject, difficulty, count };
+  return normalizePracticeFilters({ subject, difficulty, count });
 }
 
 function beginPracticeNew(filters) {
   practiceMode = true;
+  isTestActive = false;
 
-  practiceFilters = { ...filters };
+  practiceFilters = normalizePracticeFilters(filters);
   practiceAnswers = {};
   practiceElapsedSec = 0;
-
   // фильтруем вопросы
   let pool = [...(tourQuestionsCache || [])];
 
-  if (filters.subject && filters.subject !== 'all') {
-  const want = normalizeSubjectKey(filters.subject);
-  pool = pool.filter(q => normalizeSubjectKey(q.subject) === want);
-}
+  if (practiceFilters.subject && practiceFilters.subject !== 'all') {
+    const want = normalizeSubjectKey(practiceFilters.subject);
+    pool = pool.filter(q => normalizeSubjectKey(q.subject) === want);
+  }
 
-  if (filters.difficulty && filters.difficulty !== 'all') {
-    const want = String(filters.difficulty).toLowerCase();
+  if (practiceFilters.difficulty && practiceFilters.difficulty !== 'all') {
+    const want = String(practiceFilters.difficulty).toLowerCase();
     pool = pool.filter(q => String(q.difficulty || '').toLowerCase() === want);
   }
 
   shuffleArray(pool);
 
-  const limited = pool.slice(0, Math.min(filters.count || 20, pool.length));
+  const limited = pool.slice(0, Math.min(practiceFilters.count || 20, pool.length));
   practiceQuestionOrder = limited.map(q => q.id);
-
+  
   questions = limited;
   currentQuestionIndex = 0;
   correctCount = 0;
@@ -554,10 +562,9 @@ function beginPracticeContinue() {
   isTestActive = false;
 
   // восстановим фильтры/ответы/индекс/время
-  practiceFilters = saved.filters || { subjects: ['all'], difficulty: 'all', count: 20 };
+  practiceFilters = normalizePracticeFilters((saved && saved.filters) || { subject: 'all', difficulty: 'all', count: 20 });
   practiceAnswers = saved.answers || {};
   currentQuestionIndex = Number(saved.index || 0);
-
   // восстановим порядок вопросов по orderIds
   const orderIds = Array.isArray(saved.orderIds) ? saved.orderIds : [];
   const byId = new Map((tourQuestionsCache || []).map(q => [String(q.id), q]));
@@ -2965,6 +2972,10 @@ safeAddListener('practice-start-btn', 'click', () => {
   beginPracticeNew(cfg);
 });
 
+safeAddListener('practice-back-btn', 'click', () => {
+  closePracticeConfigModal();
+});
+
 safeAddListener('practice-continue-btn', 'click', () => {
   closePracticeConfigModal();
   beginPracticeContinue();
@@ -2975,6 +2986,7 @@ safeAddListener('practice-exit-btn', 'click', () => {
   savePracticeSession();
   stopPracticeStopwatch();
   practiceMode = false;
+  isTestActive = false;
 
   // вернуть UI
   const exitBtn = document.getElementById('practice-exit-btn');
@@ -2982,9 +2994,8 @@ safeAddListener('practice-exit-btn', 'click', () => {
   const prevBtn = document.getElementById('prev-button');
   if (prevBtn) prevBtn.classList.add('hidden');
 
-  showScreen('home-screen');
+  showScreen('cabinet-screen');
 });
-
 safeAddListener('prev-button', 'click', () => {
   // Назад разрешаем только в Practice
   if (!practiceMode) return;
@@ -3023,6 +3034,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
