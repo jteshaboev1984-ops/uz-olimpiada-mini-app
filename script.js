@@ -365,20 +365,16 @@ function openPracticeConfigModal({ canContinue }) {
     // chip: All
     chipsWrap.appendChild(makeChip('All', 'all', true));
 
-    subjects.forEach(key => {
-  const text = subjectDisplayName(key);
-  chipsWrap.appendChild(makeChip(text, selected.includes(key), () => {
-    if (key === 'all') {
-      practiceFilters.subjects = ['all'];
-    } else {
-      const s = new Set(practiceFilters.subjects || []);
-      s.delete('all');
-      if (s.has(key)) s.delete(key); else s.add(key);
-      practiceFilters.subjects = s.size ? Array.from(s) : ['all'];
-    }
-    openPracticeConfigModal({ canContinue });
-  }));
+    const current = (practiceFilters && practiceFilters.subject) ? practiceFilters.subject : 'all';
+
+// chip: All
+chipsWrap.appendChild(makeChip('All', 'all', current === 'all'));
+
+subjects.forEach(s => {
+  const label = s; // можно потом сделать красивое имя, если надо
+  chipsWrap.appendChild(makeChip(label, s, normalizeSubjectKey(s) === normalizeSubjectKey(current)));
 });
+
 
 
   const contBtn = document.getElementById('practice-continue-btn');
@@ -2837,5 +2833,10 @@ window.addEventListener('beforeunload', () => {
   }
   isTestActive = false;
 });
+  
+}
+});
+
+
 
 
