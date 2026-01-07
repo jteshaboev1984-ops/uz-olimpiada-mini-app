@@ -2863,10 +2863,10 @@ if (resHint) {
   openPracticeConfigModal({ canContinue });
 }
 
-function showScreen(screenId) {␊
-  // Находим наш индикатор загрузки и скрываем его␊
-  const loader = document.getElementById('app-loader');␊
-  if (loader) loader.style.display = 'none';␊
+function showScreen(screenId) {
+  // Находим наш индикатор загрузки и скрываем его
+  const loader = document.getElementById('app-loader');
+  if (loader) loader.style.display = 'none';
 
   // Остальной код переключения экранов
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
@@ -3023,6 +3023,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
