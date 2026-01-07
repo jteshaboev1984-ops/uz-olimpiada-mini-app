@@ -389,6 +389,55 @@ function closePracticeConfigModal() {
   if (modal) modal.classList.add('hidden');
 }
 
+function openTourInfoModal({ practiceAllowed }) {
+  const modal = document.getElementById('tour-info-modal');
+  if (!modal) return;
+
+  const titleEl = modal.querySelector('h2');
+  const messageEl = modal.querySelector('p');
+  const iconWrap = modal.querySelector('.modal-icon-big');
+  const iconEl = iconWrap ? iconWrap.querySelector('i') : null;
+  const primaryBtn = modal.querySelector('.btn-primary');
+  const secondaryBtn = modal.querySelector('.btn-text-simple');
+
+  if (practiceAllowed) {
+    if (titleEl) titleEl.textContent = "Тур завершён";
+    if (messageEl) messageEl.textContent = "Практика и работа над ошибками доступны в личном кабинете.";
+    if (iconWrap) {
+      iconWrap.style.background = "#e8f8ec";
+      iconWrap.style.color = "var(--success)";
+    }
+    if (iconEl) iconEl.className = "fa-solid fa-calendar-check";
+    if (primaryBtn) {
+      primaryBtn.textContent = "Перейти в профиль";
+      primaryBtn.onclick = () => {
+        showScreen('cabinet-screen');
+        modal.classList.add('hidden');
+      };
+    }
+    if (secondaryBtn) {
+      secondaryBtn.textContent = "Понятно";
+      secondaryBtn.onclick = () => modal.classList.add('hidden');
+      secondaryBtn.classList.remove('hidden');
+    }
+  } else {
+    if (titleEl) titleEl.textContent = "Практика недоступна";
+    if (messageEl) messageEl.textContent = "Практика станет доступна после завершения тура.";
+    if (iconWrap) {
+      iconWrap.style.background = "#FFF2F2";
+      iconWrap.style.color = "var(--danger)";
+    }
+    if (iconEl) iconEl.className = "fa-solid fa-lock";
+    if (primaryBtn) {
+      primaryBtn.textContent = "Понятно";
+      primaryBtn.onclick = () => modal.classList.add('hidden');
+    }
+    if (secondaryBtn) secondaryBtn.classList.add('hidden');
+  }
+
+  modal.classList.remove('hidden');
+}
+
 function makeChip(label, value, selected) {
   const btn = document.createElement('button');
   btn.type = 'button';
@@ -2186,20 +2235,12 @@ console.log('[TOUR] selected 15 questions:', questions.map(q => ({
             newBtn.style.color = "#fff";
             if (certCard) certCard.classList.remove('hidden'); 
             
-            newBtn.addEventListener('click', () => {
+newBtn.addEventListener('click', () => {
   const nowTour = new Date();
   const end = currentTourEndDate ? new Date(currentTourEndDate) : null;
-
-  // До конца тура — тренировки нет
-  if (end && nowTour < end) {
-    const modal = document.getElementById('tour-info-modal');
-    if (modal) modal.classList.remove('hidden');
-    return;
-  }
-
-  // После конца тура — тренировка
-  startPracticeMode();
-});
+  const practiceAllowed = tourCompleted && (!end || nowTour >= end);
+openTourInfoModal({ practiceAllowed });
+});           
 
 } else if (state === 'ended_not_taken') {
   const displayTitle = formatTourTitle(title || "");
@@ -2836,4 +2877,5 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
