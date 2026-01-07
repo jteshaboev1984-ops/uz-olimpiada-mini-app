@@ -131,10 +131,7 @@ async function startApp() {
         `;
     }
 }
-
-// Запускаем нашу безопасную функцию
-startApp();
-   
+ 
         function dbg(...args) {
         console.log(...args);
         const el = document.getElementById('debug-box');
@@ -2833,10 +2830,8 @@ window.addEventListener('beforeunload', () => {
   }
   isTestActive = false;
 });
-  
-}
+
+// Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
+window.addEventListener('DOMContentLoaded', () => {
+  startApp();
 });
-
-
-
-
