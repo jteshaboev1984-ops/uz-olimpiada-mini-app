@@ -437,8 +437,8 @@ function beginPracticeNew(filters) {
   let pool = [...(tourQuestionsCache || [])];
 
   if (filters.subject && filters.subject !== 'all') {
-  const wantKey = String(filters.subject).toLowerCase();   // у чипов это уже key
-  pool = pool.filter(q => normalizeSubjectKey(q.subject) === wantKey);
+  const want = normalizeSubjectKey(filters.subject);
+  pool = pool.filter(q => normalizeSubjectKey(q.subject) === want);
 }
 
   if (filters.difficulty && filters.difficulty !== 'all') {
@@ -2837,3 +2837,4 @@ window.addEventListener('beforeunload', () => {
   }
   isTestActive = false;
 });
+
