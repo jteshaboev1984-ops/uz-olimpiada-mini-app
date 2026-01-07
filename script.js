@@ -153,7 +153,7 @@ async function startApp() {
 // =====================
 let practiceMode = false;
 let practiceAnswers = {}; // { [questionId]: answerString }
-let practiceFilters = { subjects: [], difficulty: 'ALL', count: 20 };
+let practiceFilters = { subject: 'all', difficulty: 'all', count: 20 };
 
 let practiceElapsedSec = 0;
 let practiceStopwatchInterval = null;
@@ -355,22 +355,22 @@ function openPracticeConfigModal({ canContinue }) {
 
   // собрать предметы из кеша вопросов
   const subjects = getSubjectsFromCache(); // уже есть у тебя
+  const allowedSubjects = ['math', 'chem', 'bio', 'it', 'eco', 'sat', 'ielts'];
+  const available = new Set(subjects.map(s => normalizeSubjectKey(s)));
+  const list = allowedSubjects.filter(key => available.has(key));
+  const subjectList = list.length ? list : allowedSubjects.slice();
   const chipsWrap = document.getElementById('practice-subject-chips');
   if (chipsWrap) {
     chipsWrap.innerHTML = '';
 
     // chip: All
-    chipsWrap.appendChild(makeChip('All', 'all', true));
-
     const current = (practiceFilters && practiceFilters.subject) ? practiceFilters.subject : 'all';
+    chipsWrap.appendChild(makeChip(t('practice_filter_all'), 'all', current === 'all'));
 
-// chip: All
-chipsWrap.appendChild(makeChip('All', 'all', current === 'all'));
-
-subjects.forEach(s => {
-  const label = s; // можно потом сделать красивое имя, если надо
-  chipsWrap.appendChild(makeChip(label, s, normalizeSubjectKey(s) === normalizeSubjectKey(current)));
-});
+    subjectList.forEach(key => {
+      const label = subjectDisplayName(key);
+      chipsWrap.appendChild(makeChip(label, key, normalizeSubjectKey(key) === normalizeSubjectKey(current)));
+    });
 
   }
 
@@ -3023,6 +3023,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
