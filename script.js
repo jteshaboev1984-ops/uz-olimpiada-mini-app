@@ -389,9 +389,9 @@ function closePracticeConfigModal() {
   if (modal) modal.classList.add('hidden');
 }
 
-function openTourInfoModal({ practiceAllowed }) {␊
-  const modal = document.getElementById('tour-info-modal');␊
-  if (!modal) return;␊
+function openTourInfoModal({ practiceAllowed }) {
+  const modal = document.getElementById('tour-info-modal');
+  if (!modal) return;
 
   const titleEl = modal.querySelector('h2');
   const messageEl = modal.querySelector('p');
@@ -1968,9 +1968,9 @@ function fillProfileForm(data) {
         }
     });
 
-    safeAddListener('confirm-delete-btn', 'click', async () => {␊
-        const btn = document.getElementById('confirm-delete-btn');␊
-        if (!btn) return;␊
+    safeAddListener('confirm-delete-btn', 'click', async () => {
+        const btn = document.getElementById('confirm-delete-btn');
+        if (!btn) return;
         
         btn.disabled = true;
         btn.innerHTML = '...';
@@ -3023,6 +3023,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
