@@ -372,6 +372,8 @@ subjects.forEach(s => {
   chipsWrap.appendChild(makeChip(label, s, normalizeSubjectKey(s) === normalizeSubjectKey(current)));
 });
 
+  }
+
 
 
   const contBtn = document.getElementById('practice-continue-btn');
@@ -2831,7 +2833,7 @@ window.addEventListener('beforeunload', () => {
   isTestActive = false;
 });
 
-// Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
-window.addEventListener('DOMContentLoaded', () => {
+ // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
