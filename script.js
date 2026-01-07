@@ -267,13 +267,54 @@ function shuffleArray(arr) {
   return arr;
 }
 
+function normalizeSubjectKey(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return '';
+
+  // убираем приставки SAT/IELTS и т.п., приводим к базовому предмету
+  // примеры входа: "SAT (Biology)", "IELTS (Mathematics)", "Biologiya (Enzymes)", "Biology"
+  let x = s;
+
+  // если формат "SAT (Biology)" -> возьмём то, что в скобках
+  const m = x.match(/^(SAT|IELTS)\s*\((.+)\)$/i);
+  if (m && m[2]) x = m[2];
+
+  // если формат "Biologiya (Cell Structure)" -> берём часть до скобки
+  x = x.split('(')[0].trim();
+
+  return x.toLowerCase();
+}
+
+function subjectDisplayName(key) {
+  // key уже lower-case
+  const k = String(key || '').toLowerCase();
+  // можно расширять маппинг позже
+  const map = {
+    'biologiya': 'Biologiya',
+    'biology': 'Biology',
+    'kimyo': 'Kimyo',
+    'chemistry': 'Chemistry',
+    'matematika': 'Matematika',
+    'mathematics': 'Mathematics',
+    'informatika': 'Informatika',
+    'computer science': 'Computer Science',
+    'iqtisodiyot': 'Economics',
+    'economics': 'Economics',
+    'ielts': 'IELTS',
+    'sat': 'SAT',
+  };
+  return map[k] || (k ? (k[0].toUpperCase() + k.slice(1)) : '');
+}
+  
 function getSubjectsFromCache() {
   const set = new Set();
+
   (tourQuestionsCache || []).forEach(q => {
-    const s = (q.subject || '').trim();
-    if (s) set.add(s);
+    const key = normalizeSubjectKey(q.subject);
+    if (key) set.add(key);
   });
-  return Array.from(set).sort((a,b) => a.localeCompare(b));
+
+  return Array.from(set).sort();
 }
   let cheatWarningCount = 0; 
     
@@ -312,8 +353,21 @@ function openPracticeConfigModal({ canContinue }) {
     // chip: All
     chipsWrap.appendChild(makeChip('All', 'all', true));
 
-    subjects.forEach(s => chipsWrap.appendChild(makeChip(s, s, false)));
-  }
+    subjects.forEach(key => {
+  const text = subjectDisplayName(key);
+  chipsWrap.appendChild(makeChip(text, selected.includes(key), () => {
+    if (key === 'all') {
+      practiceFilters.subjects = ['all'];
+    } else {
+      const s = new Set(practiceFilters.subjects || []);
+      s.delete('all');
+      if (s.has(key)) s.delete(key); else s.add(key);
+      practiceFilters.subjects = s.size ? Array.from(s) : ['all'];
+    }
+    openPracticeConfigModal({ canContinue });
+  }));
+});
+
 
   const contBtn = document.getElementById('practice-continue-btn');
   if (contBtn) {
@@ -408,45 +462,41 @@ function beginPracticeContinue() {
   const saved = loadPracticeSession();
   if (!saved) return;
 
-  // восстановление
-  practiceFilters = saved.filters || { subject: 'all', difficulty: 'all', count: 20 };
-  practiceQuestionOrder = Array.isArray(saved.questionOrder) ? saved.questionOrder : [];
-  practiceElapsedSec = Number.isFinite(saved.elapsedSec) ? saved.elapsedSec : 0;
+  practiceMode = true;
+  isTestActive = false;
 
-  // answers: поддержим старый формат (строка) и новый (объект)
-  practiceAnswers = {};
-  const raw = saved.answers || {};
-  for (const [qid, v] of Object.entries(raw)) {
-    if (v && typeof v === 'object' && 'answer' in v) {
-      practiceAnswers[qid] = { answer: String(v.answer), isCorrect: v.isCorrect === true };
-    } else {
-      practiceAnswers[qid] = { answer: String(v), isCorrect: null };
-    }
+  // восстановим фильтры/ответы/индекс/время
+  practiceFilters = saved.filters || { subjects: ['all'], difficulty: 'all', count: 20 };
+  practiceAnswers = saved.answers || {};
+  currentQuestionIndex = Number(saved.index || 0);
+
+  // восстановим порядок вопросов по orderIds
+  const orderIds = Array.isArray(saved.orderIds) ? saved.orderIds : [];
+  const byId = new Map((tourQuestionsCache || []).map(q => [String(q.id), q]));
+  const restored = orderIds.map(id => byId.get(String(id))).filter(Boolean);
+
+  if (!restored.length) {
+    // если по какой-то причине не восстановилось — начинаем заново с текущими фильтрами
+    beginPracticeNew(practiceFilters);
+    return;
   }
 
-  // собрать questions в сохранённом порядке
-  const map = new Map((tourQuestionsCache || []).map(q => [q.id, q]));
-  const ordered = practiceQuestionOrder.map(id => map.get(id)).filter(Boolean);
-
-  questions = ordered.length ? ordered : [...(tourQuestionsCache || [])];
-  currentQuestionIndex = Math.min(Math.max(0, saved.currentIndex || 0), Math.max(0, questions.length - 1));
-
-  correctCount = Object.values(practiceAnswers).filter(x => x && x.isCorrect === true).length;
-  selectedAnswer = null;
+  questions = restored;
 
   showScreen('quiz-screen');
- 
-  //_pct UI для Practice
+
+  const timerEl = document.getElementById('timer');
+  if (timerEl) timerEl.textContent = 'Practice';
+
+  // включаем UI “выход” и “назад”
   const exitBtn = document.getElementById('practice-exit-btn');
   if (exitBtn) exitBtn.classList.remove('hidden');
 
   const prevBtn = document.getElementById('prev-button');
-  if (prevBtn) prevBtn.classList.remove('hidden');
+  if (prevBtn) prevBtn.classList.toggle('hidden', currentQuestionIndex <= 0);
 
-  startPracticeStopwatch(practiceElapsedSec);
+  startPracticeStopwatch();
   showQuestion();
-
-  savePracticeSession();
 }
   
     // === ФУНКЦИЯ ПЕРЕВОДА НАЗВАНИЯ ТУРА ===
@@ -2314,7 +2364,14 @@ questionTimerInterval = setInterval(() => {
         }
         
         selectedAnswer = null;
-        
+        // PRACTICE: восстановим выбранный ответ, если уже отвечали
+if (practiceMode) {
+  const qNow = questions[currentQuestionIndex];
+  if (qNow && practiceAnswers && practiceAnswers[qNow.id]) {
+    selectedAnswer = practiceAnswers[qNow.id];
+  }
+}
+
         const optionsText = (q.options_text || '').trim();
         if (optionsText !== '') {
             const options = optionsText.split('\n');
@@ -2733,6 +2790,17 @@ safeAddListener('practice-exit-btn', 'click', () => {
   showScreen('home-screen');
 });
 
+safeAddListener('prev-button', 'click', () => {
+  // Назад разрешаем только в Practice
+  if (!practiceMode) return;
+
+  if (currentQuestionIndex > 0) {
+    currentQuestionIndex--;
+    savePracticeSession();
+    showQuestion();
+  }
+});
+  
 function showCertsModal() {
   const container = document.getElementById('certs-list-container');
   if (container) {
@@ -2758,6 +2826,7 @@ window.addEventListener('beforeunload', () => {
 });
 
 }); // <-- закрытие document.addEventListener('DOMContentLoaded', ...)
+
 
 
 
