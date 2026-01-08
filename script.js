@@ -23,6 +23,19 @@ document.addEventListener('DOMContentLoaded', function () {
   let isInitialized = false;
   let tourEnded = false;
   let tourTaken = false;
+  let reviewState = {
+    tours: [],
+    progressByTourId: {},
+    selectedTourId: null,
+    selectedTourTitle: '',
+    answers: [],
+    subjectStats: [],
+    errorsBySubject: {},
+    currentSubjectKey: '',
+    currentErrorIndex: 0,
+    totalQuestions: 0,
+    correctQuestions: 0
+  };
 
   function initTelegram() {
     const tg = window.Telegram?.WebApp;
@@ -45,9 +58,7 @@ document.addEventListener('DOMContentLoaded', function () {
       telegramData.photoUrl = user.photo_url || null;
       telegramData.languageCode = user.language_code || null;
     }
-
-    console.log("[initTelegram] initData len:", tgInitData.length);
-    console.log("[initTelegram] initData head:", tgInitData.slice(0, 120));
+    
   }
   
 // === НАСТРОЙКИ SUPABASE (для браузера) ===
@@ -73,8 +84,7 @@ async function startApp() {
         alert("Произошла ошибка запуска приложения. Попробуйте позже.");
     }
 }
-    console.log('App Started: v31.js');
-  
+      
    // === ПЕРЕМЕННЫЕ ТЕСТА И АНТИ-ЧИТА ===
     let questions = [];
     let currentQuestionIndex = 0;
@@ -105,9 +115,17 @@ let perQuestionTimes = []; // seconds per question
 let tabSwitchCountTotal = 0;
 let tabSwitchCountPerQuestion = [];
 let visibilityLog = []; // { type: 'hidden'|'visible', t: timestamp, q: index }
+let tabSwitchThisQuestion = 0;
+// ВАЖНО: объявить ДО первого возможного вызова handleVisibilityChange
+let cheatWarningCount = 0;
+let isTestActive = false;
+function isReviewScreenActive() {
+  const reviewScreen = document.getElementById('review-screen');
+  return !!(reviewScreen && !reviewScreen.classList.contains('hidden'));
+}
 
-  document.addEventListener('visibilitychange', () => {
-  if (!isTestActive) return;
+function handleVisibilityChange() {
+  if (!isTestActive || practiceMode || isReviewScreenActive()) return;
 
   const type = document.visibilityState === 'hidden' ? 'hidden' : 'visible';
 
@@ -119,10 +137,16 @@ let visibilityLog = []; // { type: 'hidden'|'visible', t: timestamp, q: index }
 
   if (type === 'hidden') {
     tabSwitchCountTotal++;
+    tabSwitchThisQuestion++;
     tabSwitchCountPerQuestion[currentQuestionIndex] =
       (tabSwitchCountPerQuestion[currentQuestionIndex] || 0) + 1;
+    cheatWarningCount++;
+    if (cheatWarningCount >= 2) finishTour();
+    else document.getElementById('cheat-warning-modal')?.classList.remove('hidden');
   }
-});
+}
+
+document.addEventListener('visibilitychange', handleVisibilityChange);
 
 function practiceStorageKey() {
   return `practice_v1:${internalDbId}:${currentTourId}:${currentLang}`;
@@ -291,8 +315,6 @@ function getSubjectsFromCache() {
     // FIX #3: Флаг для отслеживания активного теста (для анти-чита)
     let isTestActive = false;
       
-console.log('[SUPABASE] createClient OK');
-console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKey || '').length);
     // === ФУНКЦИЯ РЕНДЕРИНГА LATEX ===
     function renderLaTeX() {
         if (window.renderMathInElement) {
@@ -625,7 +647,6 @@ function beginPracticeContinue() {
 function exitPracticeToCabinet() {
   savePracticeSession();
   stopPracticeStopwatch();
-  practiceMode = false;
   isTestActive = false;
   selectedAnswer = null;
 
@@ -718,6 +739,26 @@ function exitPracticeToCabinet() {
             stat_total: "JAMI",
             stat_correct: "TO'G'RI",
             review_title: "Xatolar ustida ishlash",
+            review_pick_tour_subtitle: "Yakunlangan turni tanlang va xatolar ustida ishlang.",
+            review_results_title: "Natijalar: {n}",
+            review_results_caption: "Fanlar bo'yicha umumiy statistika",
+            review_subjects: "Fanlar",
+            review_result_label: "Natija",
+            review_completed_on: "yakunlangan",
+            review_your_answer: "Sizning javobingiz",
+            review_correct_answer: "To'g'ri javob",
+            review_explanation: "Tushuntirish",
+            review_incorrect: "Noto'g'ri",
+            review_correct: "To'g'ri",
+            review_no_data: "Ma'lumot yo'q",
+            review_errors: "Xatolar",
+            review_question: "Savol",
+            review_back_to_results: "Natijalarga qaytish",
+            review_choose_other_tour: "Boshqa turni tanlash",
+            review_to_cabinet: "Shaxsiy kabinetga",
+            review_success_title: "Ajoyib ish!",
+            review_success_text: "{subject} bo'yicha barcha xatolar ko'rib chiqildi.",
+            review_progress_complete: "100% yakunlandi",
             data_saved: "Ma'lumotlar saqlandi",
             review_desc: "Batafsil tahlil natijalar e'lon qilingandan so'ng mavjud bo'ladi.",
             btn_download_cert: "Sertifikatni yuklash",
@@ -880,10 +921,30 @@ function exitPracticeToCabinet() {
             res_screen_title: "Результат тура",
             res_finished: "Тур завершён!",
             res_saved: "Ваш результат сохранен",
-            stat_tour: "ТУР",
+             stat_tour: "ТУР",
             stat_total: "ВСЕГО",
             stat_correct: "ВЕРНО",
             review_title: "Работа над ошибками",
+            review_pick_tour_subtitle: "Выберите завершённый тур, чтобы разобрать ответы.",
+            review_results_title: "Результаты: {n}",
+            review_results_caption: "Сводная статистика по предметам",
+            review_subjects: "Предметы",
+            review_result_label: "Результат",
+            review_completed_on: "завершён",
+            review_your_answer: "Ваш ответ",
+            review_correct_answer: "Правильный ответ",
+            review_explanation: "Пояснение",
+            review_incorrect: "Неверно",
+            review_correct: "Верно",
+            review_no_data: "Нет данных",
+            review_errors: "Ошибки",
+            review_question: "Вопрос",
+            review_back_to_results: "Назад к результатам",
+            review_choose_other_tour: "Выбрать другой тур",
+            review_to_cabinet: "В личный кабинет",
+            review_success_title: "Отличная работа!",
+            review_success_text: "Все ошибки по предмету {subject} успешно просмотрены.",
+            review_progress_complete: "100% завершено",
             data_saved: "Данные сохранены",
             review_desc: "Детальный разбор будет доступен после подведения итогов.",
             btn_download_cert: "Скачать сертификат",
@@ -1050,6 +1111,26 @@ function exitPracticeToCabinet() {
             stat_total: "TOTAL",
             stat_correct: "CORRECT",
             review_title: "Mistake Review",
+            review_pick_tour_subtitle: "Choose a completed tour to review your answers.",
+            review_results_title: "Results: {n}",
+            review_results_caption: "Subject breakdown summary",
+            review_subjects: "Subjects",
+            review_result_label: "Result",
+            review_completed_on: "completed",
+            review_your_answer: "Your answer",
+            review_correct_answer: "Correct answer",
+            review_explanation: "Explanation",
+            review_incorrect: "Incorrect",
+            review_correct: "Correct",
+            review_no_data: "No data",
+            review_errors: "Errors",
+            review_question: "Question",
+            review_back_to_results: "Back to results",
+            review_choose_other_tour: "Choose another tour",
+            review_to_cabinet: "Go to profile",
+            review_success_title: "Great job!",
+            review_success_text: "All errors for {subject} have been reviewed.",
+            review_progress_complete: "100% completed",
             data_saved: "Data Saved",
             review_desc: "Detailed review will be available after results.",
             btn_download_cert: "Download Certificate",
@@ -1350,18 +1431,9 @@ if (!isInitialized) {
 
     // FIX #1: Исправленная проверка профиля - правильная валидация isComplete
     function isProfileComplete(authData) {
-        if (!authData) {
-            console.log('[isProfileComplete] authData is null/undefined');
+         if (!authData) {
             return false;
         }
-        
-        // DEBUG: Логируем данные для отладки
-        console.log('[isProfileComplete] Checking profile:', {
-            full_name: authData.full_name,
-            class: authData.class,
-            region: authData.region,
-            district: authData.district
-        });
         
         // FIX: Проверяем full_name - должно быть непустой строкой > 2 символов
         const hasFullName = authData.full_name && 
@@ -1382,22 +1454,11 @@ if (!isInitialized) {
         
         const isComplete = hasFullName && hasClass && hasRegion && hasDistrict;
         
-        console.log('[isProfileComplete] Result:', {
-            hasFullName,
-            hasClass,
-            hasRegion,
-            hasDistrict,
-            isComplete
-        });
-        
-        return isComplete;
-    }
+       return isComplete;
+    } 
    
    async function checkProfileAndTour() {
-  console.log('[checkProfileAndTour] tgInitData len:', tgInitData ? tgInitData.length : 0);
-  console.log('[checkProfileAndTour] tgInitData head:', (tgInitData || '').slice(0, 120));
-
-  if (!tgInitData) {
+    if (!tgInitData) {
     console.error('[checkProfileAndTour] INITDATA EMPTY');
     const loader = document.getElementById('app-loader');
     if (loader) loader.style.display = 'none';
@@ -1536,8 +1597,7 @@ if (!isInitialized) {
     if (lastRes.error) console.error("Last tour fetch error:", lastRes.error);
   }
 
-  console.log('[TOUR] picked tourData:', tourData);
-
+  
   // если туров нет вообще
   if (!tourData) {
     currentTourId = null;
@@ -1558,13 +1618,7 @@ if (!isInitialized) {
 
   const isTourEnded = !!(end && nowTour >= end); // конец тура = только end_date
 
-  console.log('[TOUR] now/end/is_active/ended:',
-    nowTour.toISOString(),
-    end ? end.toISOString() : null,
-    tourData.is_active,
-    isTourEnded
-  );
-
+  
   const unlockEl = document.getElementById('review-unlock-date');
   if (unlockEl && currentTourEndDate) {
     unlockEl.textContent = new Date(currentTourEndDate).toLocaleString();
@@ -2164,6 +2218,355 @@ function fillProfileForm(data) {
     }
 
     // === ЛОГИКА РАЗБОРА ОШИБОК ===
+    function resetReviewState() {
+        reviewState.selectedTourId = null;
+        reviewState.selectedTourTitle = '';
+        reviewState.answers = [];
+        reviewState.subjectStats = [];
+        reviewState.errorsBySubject = {};
+        reviewState.currentSubjectKey = '';
+        reviewState.currentErrorIndex = 0;
+        reviewState.totalQuestions = 0;
+        reviewState.correctQuestions = 0;
+    }
+
+    function formatReviewDate(dateStr) {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        if (Number.isNaN(date.getTime())) return '';
+        const localeMap = { uz: 'uz-UZ', ru: 'ru-RU', en: 'en-US' };
+        return date.toLocaleDateString(localeMap[currentLang] || 'en-US', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        });
+    }
+
+    function getReviewProgressPercent(score) {
+        if (!Number.isFinite(score)) return 0;
+        let percent = score;
+        if (percent <= 1) percent = percent * 100;
+        return Math.max(0, Math.min(100, Math.round(percent)));
+    }
+
+    function showReviewView(viewKey) {
+        const viewMap = {
+            tours: 'review-tours-view',
+            results: 'review-results-view',
+            errors: 'review-errors-view',
+            success: 'review-success-view'
+        };
+        const headerMap = {
+            tours: 'review-header-tours',
+            results: 'review-header-results',
+            errors: 'review-header-errors',
+            success: 'review-header-success'
+        };
+        const actionMap = {
+            tours: 'review-tours-actions',
+            results: 'review-results-actions',
+            errors: 'review-errors-actions',
+            success: 'review-success-actions'
+        };
+
+        Object.values(viewMap).forEach(id => document.getElementById(id)?.classList.add('hidden'));
+        Object.values(headerMap).forEach(id => document.getElementById(id)?.classList.add('hidden'));
+        Object.values(actionMap).forEach(id => document.getElementById(id)?.classList.add('hidden'));
+
+        const viewId = viewMap[viewKey];
+        const headerId = headerMap[viewKey];
+        const actionId = actionMap[viewKey];
+
+        if (viewId) document.getElementById(viewId)?.classList.remove('hidden');
+        if (headerId) document.getElementById(headerId)?.classList.remove('hidden');
+        if (actionId) document.getElementById(actionId)?.classList.remove('hidden');
+    }
+
+    function formatReviewResultsTitle(tourTitle) {
+        const displayTitle = formatTourTitle(tourTitle || '');
+        return t('review_results_title').replace('{n}', displayTitle || t('stat_tour'));
+    }
+
+    function renderReviewToursList() {
+        const listEl = document.getElementById('review-tours-list');
+        if (!listEl) return;
+
+        if (!reviewState.tours || reviewState.tours.length === 0) {
+            listEl.innerHTML = `<div class="review-empty">${t('review_no_data')}</div>`;
+            return;
+        }
+
+        const now = new Date();
+        listEl.innerHTML = '';
+
+        reviewState.tours.forEach((tour, index) => {
+            const progress = reviewState.progressByTourId[tour.id];
+            const hasProgress = progress && progress.score !== null && progress.score !== undefined;
+            const end = tour.end_date ? new Date(tour.end_date) : null;
+            const isEnded = end ? now >= end : true;
+            const isAvailable = hasProgress && isEnded;
+            const percent = getReviewProgressPercent(progress?.score);
+            const displayTitle = formatTourTitle(tour.title || `${t('stat_tour')} ${index + 1}`);
+            const dateLabel = end ? `${t('review_completed_on')} ${formatReviewDate(tour.end_date)}` : '';
+
+            const card = document.createElement('button');
+            card.type = 'button';
+            card.className = `review-tour-card${isAvailable ? '' : ' disabled'}`;
+            card.dataset.tourId = tour.id;
+            if (!isAvailable) card.disabled = true;
+
+            card.innerHTML = `
+                <div class="review-tour-title">${displayTitle}</div>
+                <div class="review-tour-meta">
+                    <span>${t('review_result_label')}: ${percent}%</span>
+                    <span>${dateLabel}</span>
+                </div>
+                <div class="review-progress">
+                    <div class="review-progress-fill" style="width:${percent}%"></div>
+                </div>
+                ${isAvailable ? '' : '<i class="fa-solid fa-lock review-tour-lock"></i>'}
+            `;
+
+            listEl.appendChild(card);
+        });
+    }
+
+    async function loadReviewTours() {
+        const listEl = document.getElementById('review-tours-list');
+        if (listEl) {
+            listEl.innerHTML = `<div class="review-empty"><i class="fa-solid fa-spinner fa-spin"></i> ${t('loading')}</div>`;
+        }
+
+        if (!internalDbId) {
+            if (listEl) listEl.innerHTML = `<div class="review-empty">${t('review_no_data')}</div>`;
+            return;
+        }
+
+        const { data: toursData, error: toursError } = await supabaseClient
+            .from('tours')
+            .select('id, title, start_date, end_date, is_active')
+            .order('start_date', { ascending: true });
+
+        if (toursError) {
+            if (listEl) listEl.innerHTML = `<div class="review-empty">${t('review_no_data')}</div>`;
+            return;
+        }
+
+        const { data: progressData } = await supabaseClient
+            .from('tour_progress')
+            .select('tour_id, score')
+            .eq('user_id', internalDbId);
+
+        const progressByTourId = {};
+        (progressData || []).forEach(row => {
+            if (row && row.tour_id != null) progressByTourId[row.tour_id] = row;
+        });
+
+        reviewState.tours = toursData || [];
+        reviewState.progressByTourId = progressByTourId;
+
+        renderReviewToursList();
+    }
+
+    function buildReviewSubjectStats(answers) {
+        const subjectMap = {};
+        const errorsBySubject = {};
+        let total = 0;
+        let correct = 0;
+
+        (answers || []).forEach(row => {
+            const q = row.questions;
+            if (!q) return;
+            const key = normalizeSubjectKey(q.subject);
+            if (!key) return;
+
+            total += 1;
+            if (row.is_correct) correct += 1;
+
+            if (!subjectMap[key]) {
+                subjectMap[key] = { key, total: 0, correct: 0 };
+            }
+            subjectMap[key].total += 1;
+            if (row.is_correct) subjectMap[key].correct += 1;
+
+            if (!row.is_correct) {
+                if (!errorsBySubject[key]) errorsBySubject[key] = [];
+                errorsBySubject[key].push({ ...row, questions: q });
+            }
+        });
+
+        const subjectStats = Object.values(subjectMap).map(stat => ({
+            ...stat,
+            percent: stat.total ? Math.round((stat.correct / stat.total) * 100) : 0
+        }));
+
+        const order = ['math', 'chem', 'bio', 'it', 'eco', 'sat', 'ielts'];
+        subjectStats.sort((a, b) => {
+            const aIndex = order.indexOf(a.key);
+            const bIndex = order.indexOf(b.key);
+            if (aIndex === -1 && bIndex === -1) return a.key.localeCompare(b.key);
+            if (aIndex === -1) return 1;
+            if (bIndex === -1) return -1;
+            return aIndex - bIndex;
+        });
+
+        return { subjectStats, errorsBySubject, total, correct };
+    }
+
+    function renderReviewResults() {
+        const titleEl = document.getElementById('review-results-title');
+        if (titleEl) titleEl.textContent = formatReviewResultsTitle(reviewState.selectedTourTitle);
+
+        const listEl = document.getElementById('review-subjects-list');
+        if (!listEl) return;
+
+        listEl.innerHTML = '';
+        if (!reviewState.subjectStats || reviewState.subjectStats.length === 0) {
+            listEl.innerHTML = `<div class="review-empty">${t('review_no_data')}</div>`;
+        }
+
+        reviewState.subjectStats.forEach(stat => {
+            const subjectName = subjectDisplayName(stat.key);
+            const card = document.createElement('button');
+            card.type = 'button';
+            card.className = 'review-subject-card';
+            card.dataset.subjectKey = stat.key;
+            card.innerHTML = `
+                <div class="review-subject-info">
+                    <div class="review-subject-name">${subjectName}</div>
+                    <div class="review-subject-progress"><span style="width:${stat.percent}%"></span></div>
+                    <div class="review-subject-meta">${stat.correct}/${stat.total} ${t('review_correct')}</div>
+                </div>
+                <div class="review-subject-score">${stat.percent}%</div>
+            `;
+            listEl.appendChild(card);
+        });
+
+        const total = reviewState.totalQuestions || 0;
+        const correct = reviewState.correctQuestions || 0;
+        const percent = total ? Math.round((correct / total) * 100) : 0;
+        const percentEl = document.getElementById('review-results-percent');
+        if (percentEl) percentEl.textContent = `${percent}%`;
+        const circle = document.getElementById('review-results-circle');
+        if (circle) circle.style.background = `conic-gradient(var(--primary) 0% ${percent}%, #E5E5EA ${percent}% 100%)`;
+        const caption = document.getElementById('review-results-caption');
+        if (caption) caption.textContent = t('review_results_caption');
+    }
+
+    async function openReviewResultsForTour(tourId) {
+        const tour = reviewState.tours.find(item => String(item.id) === String(tourId));
+        if (!tour) return;
+
+        reviewState.selectedTourId = tour.id;
+        reviewState.selectedTourTitle = tour.title || '';
+        reviewState.answers = [];
+        reviewState.subjectStats = [];
+        reviewState.errorsBySubject = {};
+        reviewState.currentSubjectKey = '';
+        reviewState.currentErrorIndex = 0;
+
+        showReviewView('results');
+        const titleEl = document.getElementById('review-results-title');
+        if (titleEl) titleEl.textContent = formatReviewResultsTitle(reviewState.selectedTourTitle);
+
+        const listEl = document.getElementById('review-subjects-list');
+        if (listEl) listEl.innerHTML = `<div class="review-empty"><i class="fa-solid fa-spinner fa-spin"></i> ${t('loading')}</div>`;
+
+        const { data: answers, error } = await supabaseClient
+            .from('user_answers')
+            .select(`
+                answer,
+                is_correct,
+                questions!inner (*)
+            `)
+            .eq('user_id', internalDbId)
+            .eq('questions.tour_id', tour.id)
+            .eq('questions.language', currentLang);
+
+        if (error || !answers || answers.length === 0) {
+            if (listEl) listEl.innerHTML = `<div class="review-empty">${t('review_no_data')}</div>`;
+            return;
+        }
+
+        const summary = buildReviewSubjectStats(answers);
+        reviewState.answers = answers;
+        reviewState.subjectStats = summary.subjectStats;
+        reviewState.errorsBySubject = summary.errorsBySubject;
+        reviewState.totalQuestions = summary.total;
+        reviewState.correctQuestions = summary.correct;
+
+        renderReviewResults();
+    }
+
+    function renderReviewErrorCard() {
+        const errors = reviewState.errorsBySubject[reviewState.currentSubjectKey] || [];
+        if (!errors || errors.length === 0) {
+            showReviewSuccess();
+            return;
+        }
+
+        const row = errors[reviewState.currentErrorIndex];
+        const q = row.questions || {};
+        const subjectTitle = `${subjectDisplayName(reviewState.currentSubjectKey)} • ${t('review_errors')}`;
+        const titleEl = document.getElementById('review-errors-title');
+        if (titleEl) titleEl.textContent = subjectTitle;
+
+        const counterEl = document.getElementById('review-errors-counter');
+        if (counterEl) counterEl.textContent = `${reviewState.currentErrorIndex + 1}/${errors.length}`;
+
+        const cardEl = document.getElementById('review-error-card');
+        if (!cardEl) return;
+
+        const answer = row.answer ?? '-';
+        const correctAnswer = q.correct_answer ?? '-';
+        const isCorrect = !!row.is_correct;
+        const badgeLabel = isCorrect ? t('review_correct') : t('review_incorrect');
+        const badgeClass = isCorrect ? 'correct' : 'incorrect';
+        const questionLabel = `${t('review_question')} ${reviewState.currentErrorIndex + 1}`;
+        const explanation = q.explanation || q.solution || q.explanation_text || q.solution_text || '';
+
+        cardEl.innerHTML = `
+            <div class="review-error-card">
+                <div class="review-question-meta">
+                    <span>${questionLabel}</span>
+                    <span class="review-status-badge ${badgeClass}">${badgeLabel}</span>
+                </div>
+                <div class="review-question-text">${q.question_text || ''}</div>
+                ${q.image_url ? `<img src="${q.image_url}" alt="Question image" style="max-width:100%; border-radius:12px;">` : ''}
+                <div class="review-answer-box incorrect">
+                    <span>${t('review_your_answer')}</span>
+                    <div>${answer}</div>
+                </div>
+                <div class="review-answer-box correct">
+                    <span>${t('review_correct_answer')}</span>
+                    <div>${correctAnswer}</div>
+                </div>
+                ${explanation ? `<div class="review-explanation"><strong>${t('review_explanation')}</strong><div>${explanation}</div></div>` : ''}
+            </div>
+        `;
+
+        const prevBtn = document.getElementById('review-prev-btn');
+        const nextBtn = document.getElementById('review-next-btn');
+        if (prevBtn) prevBtn.disabled = reviewState.currentErrorIndex === 0;
+        if (nextBtn) nextBtn.disabled = false;
+
+        renderLaTeX();
+    }
+
+    function showReviewSuccess() {
+        const subjectName = subjectDisplayName(reviewState.currentSubjectKey) || t('review_subjects');
+        const textEl = document.getElementById('review-success-text');
+        if (textEl) textEl.textContent = t('review_success_text').replace('{subject}', subjectName);
+        showReviewView('success');
+    }
+
+    function openReviewErrorsForSubject(subjectKey) {
+        reviewState.currentSubjectKey = subjectKey;
+        reviewState.currentErrorIndex = 0;
+        showReviewView('errors');
+        renderReviewErrorCard();
+    }
+
     safeAddListener('btn-mistakes', 'click', () => {
         if (!hasCompletedTourAccess()) {
             showAccessLockModal();
@@ -2172,15 +2575,19 @@ function fillProfileForm(data) {
 
         const now = new Date();
         const end = currentTourEndDate ? new Date(currentTourEndDate) : null;
-        
+
         if (end && now < end) {
             const modal = document.getElementById('review-lock-modal');
             if (modal) modal.classList.remove('hidden');
-        } else {
-            isTestActive = false;
-            showScreen('review-screen');
-       loadMistakesReview();
+            return;
         }
+
+        practiceMode = false;
+        isTestActive = false;
+        resetReviewState();
+        showScreen('review-screen');
+        showReviewView('tours');
+        loadReviewTours();
     });
 
     safeAddListener('btn-practice', 'click', () => {
@@ -2197,107 +2604,51 @@ function fillProfileForm(data) {
         if (modal) modal.classList.add('hidden');
     });
 
-    safeAddListener('review-back-btn', 'click', () => showScreen('cabinet-screen'));
+    safeAddListener('review-tours-back', 'click', () => showScreen('cabinet-screen'));
+    safeAddListener('review-tours-close', 'click', () => showScreen('cabinet-screen'));
+    safeAddListener('review-results-back', 'click', () => showReviewView('tours'));
+    safeAddListener('review-results-back-list', 'click', () => showReviewView('tours'));
+    safeAddListener('review-results-close', 'click', () => showScreen('cabinet-screen'));
+    safeAddListener('review-errors-back', 'click', () => showReviewView('results'));
+    safeAddListener('review-back-results-btn', 'click', () => showReviewView('results'));
+    safeAddListener('review-close-btn', 'click', () => showScreen('cabinet-screen'));
+    safeAddListener('review-success-back-results', 'click', () => showReviewView('results'));
+    safeAddListener('review-success-other-tour', 'click', () => showReviewView('tours'));
+    safeAddListener('review-success-to-cabinet', 'click', () => showScreen('cabinet-screen'));
 
-    async function loadMistakesReview() {
-        const container = document.getElementById('review-questions-list');
-        if (!container) return;
-        
-        container.innerHTML = `<p style="text-align:center;color:#999;"><i class="fa-solid fa-spinner fa-spin"></i> ${t('loading')}</p>`;
-        
-        if (!internalDbId || !currentTourId) {
-            container.innerHTML = `<p style="text-align:center;color:#999;">${t('no_data')}</p>`;
-            return;
+    safeAddListener('review-prev-btn', 'click', () => {
+        if (reviewState.currentErrorIndex > 0) {
+            reviewState.currentErrorIndex -= 1;
+            renderReviewErrorCard();
         }
-        
-        // ✅ Вместо двух запросов (user_answers + questions) делаем один JOIN
-const { data: answers, error } = await supabaseClient
-  .from('user_answers')
-  .select(`
-    answer,
-    is_correct,
-    questions!inner (
-      id,
-      tour_id,
-      language,
-      question_text,
-      correct_answer,
-      subject,
-      topic,
-      difficulty,
-      image_url
-    )
-  `)
-  .eq('user_id', internalDbId)
-  .eq('questions.tour_id', currentTourId)
-  .eq('questions.language', currentLang);
+    });
 
-if (error) {
-  console.error('[loadMistakesReview] error:', error);
-  container.innerHTML = `<p style="text-align:center;color:#999;">${t('error')}</p>`;
-  return;
-}
+    safeAddListener('review-next-btn', 'click', () => {
+        const errors = reviewState.errorsBySubject[reviewState.currentSubjectKey] || [];
+        if (reviewState.currentErrorIndex < errors.length - 1) {
+            reviewState.currentErrorIndex += 1;
+            renderReviewErrorCard();
+        } else {
+            showReviewSuccess();
+        }
+    });
 
-if (!answers || answers.length === 0) {
-  container.innerHTML = `<p style="text-align:center;color:#999;">${t('no_data')}</p>`;
-  return;
-}
+    safeAddListener('review-tours-list', 'click', (event) => {
+        const target = event.target.closest('.review-tour-card');
+        if (!target || target.classList.contains('disabled')) return;
+        const tourId = target.dataset.tourId;
+        if (tourId) openReviewResultsForTour(tourId);
+    });
 
-container.innerHTML = '';
+    safeAddListener('review-subjects-list', 'click', (event) => {
+        const target = event.target.closest('.review-subject-card');
+        if (!target) return;
+        const key = target.dataset.subjectKey;
+        if (key) openReviewErrorsForSubject(key);
+    });
 
-// (опционально) сортируем по id вопроса, чтобы порядок был стабильный
-answers.sort((a, b) => (a.questions?.id || 0) - (b.questions?.id || 0));
 
-answers.forEach((row, idx) => {
-  const q = row.questions;           // ✅ вопрос из JOIN
-  if (!q) return;
 
-  const isCorrect = !!row.is_correct;
-  const iconClass = isCorrect ? 'fa-check-circle' : 'fa-times-circle';
-  const iconColor = isCorrect ? '#34C759' : '#FF3B30';
-  const metaTitle = [q.subject, q.topic].filter(Boolean).join(' • ');
-
-  const html = `
-    <div class="review-card" style="background:#fff; border-radius:12px; padding:16px; margin-bottom:12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
-        <span style="font-weight:600; color:#333;">#${idx + 1}${metaTitle ? `. ${metaTitle}` : ''}</span>
-        <i class="fa-solid ${iconClass}" style="color:${iconColor}; font-size:18px;"></i>
-      </div>
-
-      ${q.image_url ? `<img src="${q.image_url}" style="max-width:100%; border-radius:8px; margin-bottom:8px;">` : ''}
-
-      <p style="color:#333; margin-bottom:8px;">${q.question_text || ''}</p>
-
-      <div style="font-size:13px; color:#666;">
-        <p><b>${t('your_answer')}:</b> <span style="color:${isCorrect ? '#34C759' : '#FF3B30'}">${row.answer ?? '-'}</span></p>
-        <p><b>${t('correct_answer')}:</b> <span style="color:#34C759">${q.correct_answer ?? '-'}</span></p>
-      </div>
-    </div>
-  `;
-
-  container.insertAdjacentHTML('beforeend', html);
-});
-
-renderLaTeX();
-} // ✅ закрыли loadMistakesReview
-
-// ✅ анти-чит — ВНЕ loadMistakesReview, один раз
-document.addEventListener("visibilitychange", function() {
-  if (!isTestActive) return;
-  if (document.visibilityState === "hidden") {
-    tabSwitchCountTotal++;
-tabSwitchThisQuestion++;
-
-visibilityLog.push({
-  ts: Date.now(),
-  qIndex: currentQuestionIndex,
-  state: "hidden"
-});
-    cheatWarningCount++;
-    if (cheatWarningCount >= 2) finishTour();
-    else document.getElementById('cheat-warning-modal')?.classList.remove('hidden');
-  }
-});
 
   safeAddListener('close-cheat-modal', 'click', () => {
         const modal = document.getElementById('cheat-warning-modal');
@@ -2456,10 +2807,6 @@ tourQuestionsSelected = buildTourQuestions(qData);
 
 questions = tourQuestionsSelected;          // тест идёт по 15
 
-
-console.log('[TOUR] selected 15 questions:', questions.map(q => ({
-  id: q.id, subj: q.subject, diff: q.difficulty
-})));
 
         const totalTime = questions.reduce((acc, q) => acc + (q.time_limit_seconds || 60), 0);
         const totalMinutes = Math.ceil(totalTime / 60);
@@ -3280,4 +3627,5 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
