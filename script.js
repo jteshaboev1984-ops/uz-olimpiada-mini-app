@@ -822,6 +822,9 @@ function exitPracticeToCabinet() {
             questions: "savol",
             correct_txt: "to'g'ri",
             no_data: "Ma'lumot yo'q",
+            your_answer: "Sizning javobingiz",
+            correct_answer: "To'g'ri javob",
+            review_available_after_end: "Tahlil tur yoki olimpiada yakunlangandan so'ng mavjud bo'ladi",
             curr_tour: "Joriy tur",
             total_q: "Jami savollar",
             school_prefix: "Maktab",
@@ -831,6 +834,7 @@ function exitPracticeToCabinet() {
             repeat: "Qayta urinish",
             error: "Xatolik",
             answer_placeholder: "Javobni kiriting...",
+            answer_required_to_continue: "Keyingi savolga o'tish uchun javobni kiriting. Zarur bo'lsa, orqaga qaytishingiz mumkin. Saqlash barcha savollar tugagach amalga oshiriladi.",
             menu_my_data: "Ma'lumotlarim",
             menu_my_data_desc: "Sinf, maktab, hudud",
             menu_lang: "Til",
@@ -970,6 +974,9 @@ function exitPracticeToCabinet() {
             questions: "вопросов",
             correct_txt: "верно",
             no_data: "Нет данных",
+            your_answer: "Ваш ответ",
+            correct_answer: "Правильный ответ",
+            review_available_after_end: "Разбор доступен после окончания тура/олимпиады",
             curr_tour: "Текущий тур",
             total_q: "Всего вопросов",
             school_prefix: "Школа",
@@ -979,6 +986,7 @@ function exitPracticeToCabinet() {
             repeat: "Повторить",
             error: "Ошибка",
             answer_placeholder: "Введите ответ...",
+            answer_required_to_continue: "Введите ответ, чтобы перейти к следующему вопросу. При необходимости можете вернуться. Сохранение будет после завершения всех вопросов.",
             menu_my_data: "Мои данные",
             menu_my_data_desc: "Класс, школа, регион",
             menu_lang: "Язык",
@@ -1116,8 +1124,11 @@ function exitPracticeToCabinet() {
             practice_btn: "Practice",
             minutes: "minutes",
             questions: "questions",
-            correct_txt: "correct",
+             correct_txt: "correct",
             no_data: "No data",
+            your_answer: "Your answer",
+            correct_answer: "Correct answer",
+            review_available_after_end: "Review is available after the tour/Olympiad ends",
             curr_tour: "Current Tour",
             total_q: "Total Questions",
             school_prefix: "School",
@@ -1127,6 +1138,7 @@ function exitPracticeToCabinet() {
             repeat: "Retry",
             error: "Error",
             answer_placeholder: "Enter answer...",
+            answer_required_to_continue: "Please enter an answer to move to the next question. You can go back if needed. Saving happens after all questions are completed.",
             menu_my_data: "My Details",
             menu_my_data_desc: "Grade, school, region",
             menu_lang: "Language",
@@ -2161,9 +2173,13 @@ function fillProfileForm(data) {
         const isLocked = !hasCompletedTourAccess();
         const mistakeLockIcon = document.getElementById('mistake-lock-icon');
         const practiceLockIcon = document.getElementById('practice-lock-icon');
+        const mistakesBtn = document.getElementById('btn-mistakes');
+        const practiceBtn = document.getElementById('btn-practice');
 
         if (mistakeLockIcon) mistakeLockIcon.style.display = isLocked ? 'inline-block' : 'none';
         if (practiceLockIcon) practiceLockIcon.style.display = isLocked ? 'inline-block' : 'none';
+        if (mistakesBtn) mistakesBtn.classList.toggle('access-locked', isLocked);
+        if (practiceBtn) practiceBtn.classList.toggle('access-locked', isLocked);
     }
 
     // === ЛОГИКА РАЗБОРА ОШИБОК ===
@@ -2180,6 +2196,7 @@ function fillProfileForm(data) {
             const modal = document.getElementById('review-lock-modal');
             if (modal) modal.classList.remove('hidden');
         } else {
+            isTestActive = false;
             showScreen('review-screen');
        loadMistakesReview();
         }
@@ -2225,6 +2242,7 @@ const { data: answers, error } = await supabaseClient
       question_text,
       correct_answer,
       subject,
+      topic,
       difficulty,
       image_url
     )
@@ -2256,11 +2274,12 @@ answers.forEach((row, idx) => {
   const isCorrect = !!row.is_correct;
   const iconClass = isCorrect ? 'fa-check-circle' : 'fa-times-circle';
   const iconColor = isCorrect ? '#34C759' : '#FF3B30';
+  const metaTitle = [q.subject, q.topic].filter(Boolean).join(' • ');
 
   const html = `
     <div class="review-card" style="background:#fff; border-radius:12px; padding:16px; margin-bottom:12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
-        <span style="font-weight:600; color:#333;">#${idx + 1}. ${q.subject || ''}</span>
+        <span style="font-weight:600; color:#333;">#${idx + 1}${metaTitle ? `. ${metaTitle}` : ''}</span>
         <i class="fa-solid ${iconClass}" style="color:${iconColor}; font-size:18px;"></i>
       </div>
 
@@ -2269,8 +2288,8 @@ answers.forEach((row, idx) => {
       <p style="color:#333; margin-bottom:8px;">${q.question_text || ''}</p>
 
       <div style="font-size:13px; color:#666;">
-        <p><b>Sizning javobingiz:</b> <span style="color:${isCorrect ? '#34C759' : '#FF3B30'}">${row.answer ?? '-'}</span></p>
-        <p><b>To'g'ri javob:</b> <span style="color:#34C759">${q.correct_answer ?? '-'}</span></p>
+        <p><b>${t('your_answer')}:</b> <span style="color:${isCorrect ? '#34C759' : '#FF3B30'}">${row.answer ?? '-'}</span></p>
+        <p><b>${t('correct_answer')}:</b> <span style="color:#34C759">${q.correct_answer ?? '-'}</span></p>
       </div>
     </div>
   `;
@@ -2624,7 +2643,30 @@ totalTimerInterval = setInterval(() => {
         }, 1000);
     }
 
-    function showQuestion() {
+let answerRequiredTimer = null;
+
+    function showAnswerRequiredToast() {
+        const toast = document.getElementById('answer-required-toast');
+        if (!toast) return;
+        toast.textContent = t('answer_required_to_continue');
+        toast.classList.remove('hidden');
+        if (answerRequiredTimer) clearTimeout(answerRequiredTimer);
+        answerRequiredTimer = setTimeout(() => {
+            toast.classList.add('hidden');
+        }, 2500);
+    }
+
+    function hideAnswerRequiredToast() {
+        const toast = document.getElementById('answer-required-toast');
+        if (!toast) return;
+        toast.classList.add('hidden');
+        if (answerRequiredTimer) {
+            clearTimeout(answerRequiredTimer);
+            answerRequiredTimer = null;
+        }
+    }
+
+    function showQuestion() {    
      // === QUESTION TIMER START ===
 if (questionTimerInterval) clearInterval(questionTimerInterval);
 
@@ -2699,11 +2741,12 @@ questionTimerInterval = setInterval(() => {
         
         container.innerHTML = '';
         
-        const nextBtn = document.getElementById('next-button');
+         const nextBtn = document.getElementById('next-button');
         if (nextBtn) {
-            nextBtn.disabled = true;
+            nextBtn.disabled = false;
             nextBtn.innerHTML = `${t('btn_next')} <i class="fa-solid fa-arrow-right"></i>`;
         }
+        hideAnswerRequiredToast();
         
         selectedAnswer = null;
         // PRACTICE: восстановим выбранный ответ, если уже отвечали
@@ -2732,7 +2775,7 @@ if (practiceMode) {
                         selectedAnswer = isLetterOption ? optText.charAt(0).toUpperCase() : optText;
                         if (!selectedAnswer && letter) selectedAnswer = letter;
                         if (!selectedAnswer) selectedAnswer = optText;
-                        if (nextBtn) nextBtn.disabled = false;
+                        hideAnswerRequiredToast();
                     };
                     container.appendChild(btn);
                 }
@@ -2744,7 +2787,7 @@ if (practiceMode) {
             textarea.rows = 2;
             textarea.addEventListener('input', () => {
                 selectedAnswer = textarea.value.trim();
-                if (nextBtn) nextBtn.disabled = selectedAnswer.length === 0;
+                hideAnswerRequiredToast();
             });
             container.appendChild(textarea);
         }
@@ -2758,8 +2801,9 @@ if (practiceMode) {
 
   // защита от клика без выбора
   if (selectedAnswer === null || selectedAnswer === undefined || String(selectedAnswer).trim() === '') {
+    showAnswerRequiredToast();
     return;
-  }
+  } 
 
   nextBtn.disabled = true;
   nextBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('saving_ans')}`;
@@ -3171,6 +3215,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
