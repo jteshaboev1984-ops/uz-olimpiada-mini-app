@@ -211,6 +211,20 @@
         </div>
     </div>
 
+    <div class="screen hidden" id="review-screen">
+        <div class="header-simple sticky-header">
+            <button class="nav-back-btn" id="review-back-btn">
+                <i class="fa-solid fa-chevron-left"></i> <span data-i18n="btn_back">Orqaga</span>
+            </button>
+            <h3 data-i18n="review_title">Xatolar ustida ishlash</h3>
+        </div>
+        <div class="container pb-large">
+            <div id="review-questions-list">
+                <p data-i18n="loading">Yuklanmoqda...</p>
+            </div>
+        </div>
+    </div>
+
     <div class="screen hidden" id="home-screen">
         <div class="top-bar">
             <div class="logo-area"><div class="logo-icon"><i class="fa-solid fa-graduation-cap"></i></div><span>Smart Olympiad</span></div>
@@ -343,7 +357,7 @@
             <h2 id="question-text" class="question-title">...</h2>
             <div id="options-container" class="options-list"></div>
         </div>
-       <div class="bottom-fixed">
+   <div class="bottom-fixed">
    <div class="quiz-actions">
     <button id="prev-button" class="btn-secondary hidden">
       <i class="fa-solid fa-arrow-left"></i> <span data-i18n="btn_back">Back</span>
@@ -351,9 +365,12 @@
 
     <button id="next-button" class="btn-primary" disabled data-i18n="btn_next">Keyingi</button>
   </div>
+  <div id="answer-required-toast" class="answer-required-toast hidden" data-i18n="answer_required_to_continue">
+    Javobni kiriting, keyingi savolga o'tish uchun.
+  </div>
 </div>
 
-    </div>
+    </div>    
 
    <div class="screen hidden" id="result-screen">
   <div class="header-simple sticky-header">
@@ -602,4 +619,5 @@
     <pre id="debug-box" style="white-space:pre-wrap;padding:10px;font-size:12px;color:#111;background:#fff;border-top:1px solid #ddd;max-height:40vh;overflow:auto;"></pre>
 </body>
 </html>
+
 
