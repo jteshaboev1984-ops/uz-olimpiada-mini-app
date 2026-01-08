@@ -279,16 +279,17 @@
             <button class="btn-primary" id="review-results-close" data-i18n="btn_close">Yopish</button>
         </div>
 
-        <div class="bottom-fixed column review-actions hidden" id="review-errors-actions">
-            <div class="review-actions-row">
-                <button class="btn-secondary" id="review-prev-btn" data-i18n="btn_back">Orqaga</button>
-                <button class="btn-primary" id="review-next-btn" data-i18n="btn_next">Keyingi</button>
+       <div class="bottom-fixed column review-actions review-errors-actions hidden" id="review-errors-actions">
+            <div class="review-nav-row">
+                <button class="review-nav-link" id="review-prev-btn" data-i18n="btn_back">Orqaga</button>
+                <div class="review-dots" id="review-errors-dots"></div>
+                <button class="review-nav-link" id="review-next-btn" data-i18n="btn_next">Keyingi</button>
             </div>
             <div class="review-actions-row">
                 <button class="btn-secondary" id="review-back-results-btn" data-i18n="review_back_to_results">Назад к результатам</button>
-                <button class="btn-secondary btn-secondary-light" id="review-close-btn" data-i18n="btn_close">Yopish</button>
+                <button class="btn-primary" id="review-close-btn" data-i18n="btn_close">Yopish</button>
             </div>
-        </div>
+        </div> 
 
         <div class="bottom-fixed column review-actions hidden" id="review-success-actions">
             <button class="btn-primary" id="review-success-back-results" data-i18n="review_back_to_results">Назад к результатам</button>
@@ -764,6 +765,7 @@
     <script src="./script.js?v=31" defer></script>
 </body>
 </html>
+
 
 
 
