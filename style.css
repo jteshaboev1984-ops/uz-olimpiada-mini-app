@@ -99,6 +99,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .settings-item { display: flex; align-items: center; padding: 16px 0; border-bottom: 1px solid #F2F2F7; cursor: pointer; transition: 0.2s; }
 .settings-item:last-child { border-bottom: none; }
 .settings-item:active { opacity: 0.6; }
+.settings-item.access-locked { opacity: 0.5; cursor: not-allowed; }
 .set-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-right: 14px; flex-shrink: 0; }
 .set-icon.blue { background: #E6F2FF; color: var(--primary); }
 .set-icon.green { background: #E8F5E9; color: var(--success); }
@@ -367,10 +368,22 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
   border:2px solid var(--border);
   background:#fff;
   border-radius:14px;
-  padding:14px;
+  padding:16px;
   font-weight:700;
+  margin-bottom:0;
 }
 .quiz-actions .btn-secondary:disabled{ opacity:0.5; }
+
+.answer-required-toast{
+  margin-top:10px;
+  padding:10px 12px;
+  background:#F2F2F7;
+  color:#3C3C43;
+  border-radius:12px;
+  font-size:12px;
+  line-height:1.35;
+  text-align:center;
+}
 
 .practice-exit-btn{
   width:34px;
@@ -500,6 +513,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .practice-modal-actions .btn-text-simple{
   margin-bottom: 0;
 }
+
 
 
 
