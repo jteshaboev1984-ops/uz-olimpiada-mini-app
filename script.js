@@ -316,9 +316,15 @@ function subjectDisplayName(key) {
     eco: t('subj_eco'),
     sat: 'SAT',
     ielts: 'IELTS'
-  };
+ };
   return map[k] || (k ? (k[0].toUpperCase() + k.slice(1)) : '');
 }  
+// t() может вернуть ключ, если перевода нет — тогда используем fallback (для практики)
+function tSafe(key, fallback) {
+  const v = typeof t === 'function' ? t(key) : '';
+  return (v && v !== key) ? v : fallback;
+}
+
 function getSubjectsFromCache() {
   const set = new Set();
 
@@ -349,6 +355,36 @@ console.log('[SUPABASE] key exists?', !!supabaseAnonKey, 'len=', (supabaseAnonKe
         }
     } 
 
+function applyPracticeModalTranslations() {
+  const titleEl = document.getElementById('practice-modal-title');
+  if (titleEl) titleEl.textContent = tSafe('practice_title', 'Practice');
+  const subtitleEl = document.getElementById('practice-modal-subtitle');
+  if (subtitleEl) subtitleEl.textContent = tSafe('practice_subtitle', 'Choose subject, difficulty, and question count.');
+  const subjectLabel = document.getElementById('practice-label-subject');
+  if (subjectLabel) subjectLabel.textContent = tSafe('practice_filter_subject', 'Subject');
+  const diffLabel = document.getElementById('practice-label-difficulty');
+  if (diffLabel) diffLabel.textContent = tSafe('practice_filter_difficulty', 'Difficulty');
+  const countLabel = document.getElementById('practice-label-count');
+  if (countLabel) countLabel.textContent = tSafe('practice_filter_count', 'Question count');
+
+  const backBtn = document.getElementById('practice-back-btn');
+  if (backBtn) backBtn.textContent = tSafe('btn_back', 'Back');
+  const contBtn = document.getElementById('practice-continue-btn');
+  if (contBtn) contBtn.textContent = tSafe('btn_continue_practice', 'Continue practice');
+  const startBtn = document.getElementById('practice-start-btn');
+  if (startBtn) startBtn.textContent = tSafe('btn_start_practice', 'Start practice');
+
+  const closeBtn = document.getElementById('practice-close-btn');
+  if (closeBtn) {
+    const closeText = tSafe('btn_close', 'Close');
+    closeBtn.setAttribute('aria-label', closeText);
+    closeBtn.setAttribute('title', closeText);
+  }
+
+  const allOption = document.querySelector('#practice-difficulty option[value="all"]');
+  if (allOption) allOption.textContent = tSafe('practice_filter_all', 'All');
+}
+
 function openPracticeConfigModal({ canContinue }) {
   const modal = document.getElementById('practice-config-modal');
   if (!modal) {
@@ -357,8 +393,8 @@ function openPracticeConfigModal({ canContinue }) {
     return;
   }
 
+  applyPracticeModalTranslations();
   practiceFilters = normalizePracticeFilters(practiceFilters);
-
   // собрать предметы из кеша вопросов
   const subjects = getSubjectsFromCache(); // уже есть у тебя
   const allowedSubjects = ['math', 'chem', 'bio', 'it', 'eco', 'sat', 'ielts'];
@@ -371,8 +407,8 @@ function openPracticeConfigModal({ canContinue }) {
 
     // chip: All
    const current = practiceFilters.subject || 'all';
-    chipsWrap.appendChild(makeChip(t('practice_filter_all'), 'all', current === 'all'));
-
+   chipsWrap.appendChild(makeChip(tSafe('practice_filter_all', 'All'), 'all', current === 'all'));
+    
     subjectList.forEach(key => {
       const label = subjectDisplayName(key);
       chipsWrap.appendChild(makeChip(label, key, normalizeSubjectKey(key) === normalizeSubjectKey(current)));
@@ -491,11 +527,15 @@ function makeChip(label, value, selected) {
     if (!wrap) return;
     [...wrap.querySelectorAll('.chip')].forEach(c => c.classList.remove('active'));
     btn.classList.add('active');
+    practiceFilters = normalizePracticeFilters({
+      ...practiceFilters,
+      subject: value
+    });
   });
 
   return btn;
 }
-
+  
 function getPracticeConfigFromUI() {
   const chipsWrap = document.getElementById('practice-subject-chips');
   const activeChip = chipsWrap ? chipsWrap.querySelector('.chip.active') : null;
@@ -590,8 +630,36 @@ function beginPracticeContinue() {
   const prevBtn = document.getElementById('prev-button');
   if (prevBtn) prevBtn.classList.toggle('hidden', currentQuestionIndex <= 0);
 
-  startPracticeStopwatch();
+ startPracticeStopwatch();
   showQuestion();
+}
+
+function exitPracticeToCabinet() {
+  savePracticeSession();
+  stopPracticeStopwatch();
+  practiceMode = false;
+  isTestActive = false;
+  selectedAnswer = null;
+
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  if (totalTimerInterval) {
+    clearInterval(totalTimerInterval);
+    totalTimerInterval = null;
+  }
+  if (questionTimerInterval) {
+    clearInterval(questionTimerInterval);
+    questionTimerInterval = null;
+  }
+
+  const exitBtn = document.getElementById('practice-exit-btn');
+  if (exitBtn) exitBtn.classList.add('hidden');
+  const prevBtn = document.getElementById('prev-button');
+  if (prevBtn) prevBtn.classList.add('hidden');
+
+  showScreen('cabinet-screen');
 }
   
     // === ФУНКЦИЯ ПЕРЕВОДА НАЗВАНИЯ ТУРА ===
@@ -724,6 +792,14 @@ function beginPracticeContinue() {
             btn_delete_confirm: "O'chirish",
             del_error_active_tour: "Joriy tur topshirilganligi sababli hisobni o'chirish mumkin emas. Iltimos, tur yakunlanishini kuting.",
             btn_back: "Orqaga",
+            practice_title: "Mashq",
+            practice_subtitle: "Fan, qiyinchilik va savollar sonini tanlang.",
+            practice_filter_subject: "Fan",
+            practice_filter_difficulty: "Qiyinchilik",
+            practice_filter_count: "Savollar soni",
+            practice_filter_all: "Barchasi",
+            btn_start_practice: "Mashqni boshlash",
+            btn_continue_practice: "Mashqni davom ettirish",
             menu_mistakes: "Xatolar tahlili",
             menu_mistakes_desc: "Javoblarni ko'rish",
             menu_practice: "Mashq",
@@ -864,6 +940,14 @@ function beginPracticeContinue() {
             btn_delete_confirm: "Удалить",
             del_error_active_tour: "Удаление невозможно, так как вы уже сдали текущий тур. Дождитесь его завершения.",
             btn_back: "Назад",
+            practice_title: "Практика",
+            practice_subtitle: "Выберите предмет, сложность и количество вопросов.",
+            practice_filter_subject: "Предмет",
+            practice_filter_difficulty: "Сложность",
+            practice_filter_count: "Количество вопросов",
+            practice_filter_all: "Все",
+            btn_start_practice: "Начать практику",
+            btn_continue_practice: "Продолжить практику",
             menu_mistakes: "Работа над ошибками",
             menu_mistakes_desc: "Посмотреть ответы",
             menu_practice: "Тренировка",
@@ -1004,6 +1088,14 @@ function beginPracticeContinue() {
             btn_delete_confirm: "Delete",
             del_error_active_tour: "Cannot delete account while you have submitted the current tour. Please wait.",
             btn_back: "Back",
+            practice_title: "Practice",
+            practice_subtitle: "Choose subject, difficulty, and question count.",
+            practice_filter_subject: "Subject",
+            practice_filter_difficulty: "Difficulty",
+            practice_filter_count: "Question count",
+            practice_filter_all: "All",
+            btn_start_practice: "Start practice",
+            btn_continue_practice: "Continue practice",
             menu_mistakes: "Mistake Review",
             menu_mistakes_desc: "Check answers",
             menu_practice: "Practice",
@@ -2976,26 +3068,19 @@ safeAddListener('practice-back-btn', 'click', () => {
   closePracticeConfigModal();
 });
 
+safeAddListener('practice-close-btn', 'click', () => {
+  closePracticeConfigModal();
+});
+
 safeAddListener('practice-continue-btn', 'click', () => {
   closePracticeConfigModal();
   beginPracticeContinue();
 });
 
 safeAddListener('practice-exit-btn', 'click', () => {
-  // Сохраняем прогресс и выходим домой
-  savePracticeSession();
-  stopPracticeStopwatch();
-  practiceMode = false;
-  isTestActive = false;
-
-  // вернуть UI
-  const exitBtn = document.getElementById('practice-exit-btn');
-  if (exitBtn) exitBtn.classList.add('hidden');
-  const prevBtn = document.getElementById('prev-button');
-  if (prevBtn) prevBtn.classList.add('hidden');
-
-  showScreen('cabinet-screen');
+  exitPracticeToCabinet();
 });
+  
 safeAddListener('prev-button', 'click', () => {
   // Назад разрешаем только в Practice
   if (!practiceMode) return;
@@ -3034,6 +3119,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
