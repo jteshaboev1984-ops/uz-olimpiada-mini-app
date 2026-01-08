@@ -209,16 +209,91 @@
     </div>
 
     <div class="screen hidden" id="review-screen">
-        <div class="header-simple sticky-header">
-            <button class="nav-back-btn" id="review-back-btn">
-                <i class="fa-solid fa-chevron-left"></i> <span data-i18n="btn_back">Orqaga</span>
-            </button>
+        <div class="header-simple sticky-header review-header-bar" id="review-header-tours">
             <h3 data-i18n="review_title">Xatolar ustida ishlash</h3>
         </div>
+
+        <div class="header-simple sticky-header review-header-bar hidden" id="review-header-results">
+            <button class="header-back-btn" id="review-results-back">
+                <i class="fa-solid fa-chevron-left"></i> <span data-i18n="btn_back">Orqaga</span>
+            </button>
+            <h3 id="review-results-title">...</h3>
+        </div>
+
+        <div class="header-simple sticky-header review-header-bar hidden" id="review-header-errors">
+            <button class="header-back-btn" id="review-errors-back">
+                <i class="fa-solid fa-chevron-left"></i> <span data-i18n="btn_back">Orqaga</span>
+            </button>
+            <h3 id="review-errors-title">...</h3>
+            <div class="review-counter" id="review-errors-counter">1/1</div>
+        </div>
+
+        <div class="header-simple sticky-header review-header-bar hidden" id="review-header-success">
+            <h3 data-i18n="review_title">Xatolar ustida ishlash</h3>
+        </div>
+
         <div class="container pb-large">
-            <div id="review-questions-list">
-                <p data-i18n="loading">Yuklanmoqda...</p>
+            <div id="review-tours-view">
+                <p class="review-subtitle" data-i18n="review_pick_tour_subtitle">...</p>
+                <div id="review-tours-list"></div>
             </div>
+
+            <div id="review-results-view" class="hidden">
+                <div class="review-results-card">
+                    <div class="circular-chart review-results-circle" id="review-results-circle">
+                        <div class="inner-circle">
+                            <span class="percent-text" id="review-results-percent">0%</span>
+                        </div>
+                    </div>
+                    <div class="review-results-caption" id="review-results-caption"></div>
+                </div>
+                <div class="review-section-header">
+                    <h4 data-i18n="review_subjects">Предметы</h4>
+                </div>
+                <div id="review-subjects-list"></div>
+            </div>
+
+            <div id="review-errors-view" class="hidden">
+                <div id="review-error-card"></div>
+            </div>
+
+            <div id="review-success-view" class="hidden">
+                <div class="review-success-card">
+                    <div class="review-success-icon"><i class="fa-solid fa-check"></i></div>
+                    <h3 data-i18n="review_success_title">Отличная работа!</h3>
+                    <p class="review-success-text" id="review-success-text">...</p>
+                    <div class="review-success-progress">
+                        <span data-i18n="review_progress_complete">100% завершено</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-fixed review-actions" id="review-tours-actions">
+            <button class="btn-secondary" id="review-tours-back" data-i18n="btn_back">Orqaga</button>
+            <button class="btn-secondary" id="review-tours-close" data-i18n="btn_close">Yopish</button>
+        </div>
+
+        <div class="bottom-fixed review-actions hidden" id="review-results-actions">
+            <button class="btn-secondary" id="review-results-back-list" data-i18n="btn_back">Orqaga</button>
+            <button class="btn-primary" id="review-results-close" data-i18n="btn_close">Yopish</button>
+        </div>
+
+        <div class="bottom-fixed column review-actions hidden" id="review-errors-actions">
+            <div class="review-actions-row">
+                <button class="btn-secondary" id="review-prev-btn" data-i18n="btn_back">Orqaga</button>
+                <button class="btn-primary" id="review-next-btn" data-i18n="btn_next">Keyingi</button>
+            </div>
+            <div class="review-actions-row">
+                <button class="btn-secondary" id="review-back-results-btn" data-i18n="review_back_to_results">Назад к результатам</button>
+                <button class="btn-secondary btn-secondary-light" id="review-close-btn" data-i18n="btn_close">Yopish</button>
+            </div>
+        </div>
+
+        <div class="bottom-fixed column review-actions hidden" id="review-success-actions">
+            <button class="btn-primary" id="review-success-back-results" data-i18n="review_back_to_results">Назад к результатам</button>
+            <button class="btn-secondary" id="review-success-other-tour" data-i18n="review_choose_other_tour">Выбрать другой тур</button>
+            <button class="btn-text" id="review-success-to-cabinet" data-i18n="review_to_cabinet">В личный кабинет</button>
         </div>
     </div>
 
@@ -689,6 +764,7 @@
     <script src="./script.js?v=31" defer></script>
 </body>
 </html>
+
 
 
 
