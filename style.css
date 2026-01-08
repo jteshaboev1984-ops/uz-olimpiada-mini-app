@@ -51,6 +51,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .btn-primary:active { transform: scale(0.98); background: var(--primary-dark); }
 .btn-primary:disabled { background: #B0C4DE; cursor: not-allowed; opacity: 0.7; }
 .btn-secondary { width: 100%; background: #EEF1F4; color: var(--primary); padding: 14px; border: none; border-radius: 14px; font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
+.btn-secondary-light { background: #F7F8FB; color: #5A6B8C; border: 1px solid #E2E6ED; }
 .btn-danger-box { width: 100%; background: #FFF2F2; color: var(--danger); padding: 14px; border: 1px solid #FFD6D6; border-radius: 14px; font-weight: 600; cursor: pointer;}
 .btn-text-danger { background: none; color: var(--danger); font-weight: 600; font-size: 14px; padding: 10px; border: none; cursor: pointer; margin-top: 20px; opacity: 0.7;}
 .bottom-fixed { position: fixed; bottom: 0; left: 0; width: 100%; padding: 16px 20px 30px; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid var(--border); z-index: 100; display: flex; gap: 10px; }
@@ -435,6 +436,9 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
   width:36px;
   height:36px;
 }
+.practice-modal-header .practice-close-hidden{
+  display:none;
+}
 .practice-modal-header .close-icon-btn:hover{
   background:#EAEAEE;
 }
@@ -496,6 +500,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .practice-modal-actions .btn-text-simple{
   margin-bottom: 0;
 }
+
 
 
 
