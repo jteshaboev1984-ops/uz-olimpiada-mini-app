@@ -309,11 +309,7 @@ function getSubjectsFromCache() {
   });
 
   return Array.from(set).sort();
-}
-    
-    // FIX #3: Флаг для отслеживания активного теста (для анти-чита)
-    let isTestActive = false;
-      
+}    
     // === ФУНКЦИЯ РЕНДЕРИНГА LATEX ===
     function renderLaTeX() {
         if (window.renderMathInElement) {
@@ -3626,6 +3622,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
