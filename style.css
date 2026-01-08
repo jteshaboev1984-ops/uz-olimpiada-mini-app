@@ -410,4 +410,28 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
   margin-top: 8px;
   margin-bottom: 2px;
 }
+/* PRACTICE UI */
+.practice-config-card{
+  text-align:left;
+  padding:20px;
+}
+.practice-modal-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:8px;
+}
+.practice-modal-header h3{
+  margin:0;
+  font-size:18px;
+  font-weight:800;
+}
+.practice-modal-actions{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-top:16px;
+}
+
 
