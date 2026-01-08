@@ -411,6 +411,47 @@
         </div>
     </div>
     
+    <div class="screen hidden" id="certificate-list-screen">
+        <div class="header-simple sticky-header cert-header">
+            <button class="nav-back-btn" id="certs-list-back">
+                <i class="fa-solid fa-chevron-left"></i> <span data-i18n="btn_back">Orqaga</span>
+            </button>
+            <h3 data-i18n="certs_screen_title">Mening sertifikatlarim</h3>
+        </div>
+
+        <div class="container pb-large">
+            <div class="cert-tabs">
+                <button class="cert-tab active" id="cert-tab-tours" data-kind="tour" data-i18n="certs_tab_tours">Turlar</button>
+                <button class="cert-tab" id="cert-tab-season" data-kind="season" data-i18n="certs_tab_season">Mavsum</button>
+            </div>
+
+            <div id="cert-list" class="cert-list"></div>
+            <div id="cert-empty" class="cert-empty hidden">
+                <i class="fa-solid fa-certificate"></i>
+                <h4 data-i18n="certs_empty_title">Sertifikatlar tez orada</h4>
+                <p data-i18n="certs_empty_desc">Yaqinda bu yerda paydo bo'ladi.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="screen hidden" id="certificate-detail-screen">
+        <div class="header-simple sticky-header cert-header">
+            <button class="nav-back-btn" id="cert-detail-back">
+                <i class="fa-solid fa-chevron-left"></i> <span data-i18n="btn_back">Orqaga</span>
+            </button>
+            <h3 data-i18n="cert_official_doc">Официальный документ</h3>
+        </div>
+
+        <div class="container pb-large">
+            <div id="cert-preview" class="cert-doc"></div>
+            <div class="cert-actions">
+                <button id="cert-download-btn" class="btn-primary-full" data-i18n="cert_download_pdf">Скачать PDF</button>
+                <button id="cert-share-btn" class="btn-secondary" data-i18n="cert_share">Поделиться</button>
+                <div id="cert-download-note" class="cert-note hidden" data-i18n="cert_preparing">Готовится</div>
+            </div>
+        </div>
+    </div>
+    
     <div class="screen hidden" id="leaderboard-screen">
         <div class="lb-header-bg">
             <div class="lb-nav">
@@ -648,6 +689,7 @@
     <script src="./script.js?v=31" defer></script>
 </body>
 </html>
+
 
 
 
