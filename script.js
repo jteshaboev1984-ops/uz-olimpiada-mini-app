@@ -153,7 +153,7 @@ async function startApp() {
 // =====================
 let practiceMode = false;
 let practiceAnswers = {}; // { [questionId]: answerString }
-let practiceFilters = normalizePracticeFilters({ subject: 'all', difficulty: 'all', count: 20 });
+let practiceFilters = normalizePracticeFilters({ subjects: [], difficulty: 'all', count: 20 });
 let practiceElapsedSec = 0;
 let practiceStopwatchInterval = null;
   // === TIMERS & BEHAVIOR METRICS ===
@@ -203,12 +203,27 @@ function formatMMSS(sec) {
 
 function normalizePracticeFilters(raw) {
   const f = raw || {};
-  const subject = typeof f.subject === 'string' ? f.subject : 'all';
+  let subjects = [];
+  if (Array.isArray(f.subjects)) {
+    subjects = f.subjects;
+  } else if (Array.isArray(f.subject)) {
+    subjects = f.subject;
+  } else if (typeof f.subject === 'string') {
+    subjects = f.subject === 'all' ? [] : [f.subject];
+  } else if (typeof f.subjects === 'string') {
+    subjects = f.subjects === 'all' ? [] : [f.subjects];
+  }
+  subjects = subjects
+    .map(s => normalizeSubjectKey(s))
+    .filter(Boolean);
+  const unique = Array.from(new Set(subjects));
+  subjects = unique.includes('all') ? [] : unique;
+
   const difficulty = typeof f.difficulty === 'string' ? f.difficulty : 'all';
   let count = Number(f.count);
   if (!Number.isFinite(count) || count <= 0) count = 20;
   count = Math.max(5, Math.min(200, Math.floor(count)));
-  return { subject, difficulty, count };
+  return { subjects, difficulty, count };
 }
 
 function stopPracticeStopwatch() {
@@ -389,12 +404,12 @@ function openPracticeConfigModal({ canContinue }) {
   const modal = document.getElementById('practice-config-modal');
   if (!modal) {
     // на крайний случай — если модалки нет, стартуем с дефолтом
-    beginPracticeNew({ subject: 'all', difficulty: 'all', count: 20 });
+  beginPracticeNew({ subjects: [], difficulty: 'all', count: 20 });
     return;
   }
 
   applyPracticeModalTranslations();
-  practiceFilters = normalizePracticeFilters(practiceFilters);
+  practiceFilters = normalizePracticeFilters(practiceFilters);  
   // собрать предметы из кеша вопросов
   const subjects = getSubjectsFromCache(); // уже есть у тебя
   const allowedSubjects = ['math', 'chem', 'bio', 'it', 'eco', 'sat', 'ielts'];
@@ -404,16 +419,13 @@ function openPracticeConfigModal({ canContinue }) {
   const chipsWrap = document.getElementById('practice-subject-chips');
   if (chipsWrap) {
     chipsWrap.innerHTML = '';
+    chipsWrap.appendChild(makeChip(tSafe('practice_filter_all', 'All'), 'all', false));
 
-    // chip: All
-   const current = practiceFilters.subject || 'all';
-   chipsWrap.appendChild(makeChip(tSafe('practice_filter_all', 'All'), 'all', current === 'all'));
-    
     subjectList.forEach(key => {
       const label = subjectDisplayName(key);
-      chipsWrap.appendChild(makeChip(label, key, normalizeSubjectKey(key) === normalizeSubjectKey(current)));
+      chipsWrap.appendChild(makeChip(label, key, false));
     });
-
+    updatePracticeSubjectChips(chipsWrap);
   }
 
   const diffEl = document.getElementById('practice-difficulty');
@@ -525,28 +537,67 @@ function makeChip(label, value, selected) {
   btn.addEventListener('click', () => {
     const wrap = btn.parentElement;
     if (!wrap) return;
-    [...wrap.querySelectorAll('.chip')].forEach(c => c.classList.remove('active'));
-    btn.classList.add('active');
+    if (value === 'all') {
+      practiceFilters = normalizePracticeFilters({
+        ...practiceFilters,
+        subjects: []
+      });
+      updatePracticeSubjectChips(wrap);
+      return;
+    }
+
+    const current = normalizePracticeFilters(practiceFilters).subjects || [];
+    const normalizedValue = normalizeSubjectKey(value);
+    let next = current.filter(s => normalizeSubjectKey(s) !== normalizedValue);
+    if (next.length === current.length) next = [...current, normalizedValue];
+
     practiceFilters = normalizePracticeFilters({
       ...practiceFilters,
-      subject: value
+      subjects: next
     });
+    updatePracticeSubjectChips(wrap);
   });
 
   return btn;
 }
   
+function updatePracticeSubjectChips(wrap) {
+  if (!wrap) return;
+  const current = normalizePracticeFilters(practiceFilters).subjects || [];
+  const subjectSet = new Set(current.map(s => normalizeSubjectKey(s)));
+  let anyActive = false;
+
+  [...wrap.querySelectorAll('.chip')].forEach(chip => {
+    const value = chip.dataset.value;
+    if (value === 'all') return;
+    const isActive = subjectSet.has(normalizeSubjectKey(value));
+    chip.classList.toggle('active', isActive);
+    if (isActive) anyActive = true;
+  });
+
+  const allChip = wrap.querySelector('.chip[data-value="all"]');
+  if (allChip) {
+    allChip.classList.toggle('active', !anyActive || subjectSet.size === 0);
+  }
+}
+
 function getPracticeConfigFromUI() {
   const chipsWrap = document.getElementById('practice-subject-chips');
-  const activeChip = chipsWrap ? chipsWrap.querySelector('.chip.active') : null;
-  const subject = activeChip ? activeChip.dataset.value : 'all';
+  let subjects = [];
+  if (chipsWrap) {
+    const activeChips = [...chipsWrap.querySelectorAll('.chip.active')];
+    subjects = activeChips
+      .map(chip => chip.dataset.value)
+      .filter(value => value && value !== 'all')
+      .map(value => normalizeSubjectKey(value));
+  }
   const diffEl = document.getElementById('practice-difficulty');
   const difficulty = diffEl ? (diffEl.value || 'all') : 'all';
   const countEl = document.getElementById('practice-count');
   let count = countEl ? parseInt(countEl.value, 10) : 20;
   if (!Number.isFinite(count) || count <= 0) count = 20;
 
-  return normalizePracticeFilters({ subject, difficulty, count });
+  return normalizePracticeFilters({ subjects, difficulty, count });
 }
 
 function beginPracticeNew(filters) {
@@ -559,9 +610,10 @@ function beginPracticeNew(filters) {
   // фильтруем вопросы
   let pool = [...(tourQuestionsCache || [])];
 
-  if (practiceFilters.subject && practiceFilters.subject !== 'all') {
-    const want = normalizeSubjectKey(practiceFilters.subject);
-    pool = pool.filter(q => normalizeSubjectKey(q.subject) === want);
+ const subjects = practiceFilters.subjects || [];
+  const subjectSet = new Set(subjects.map(s => normalizeSubjectKey(s)));
+  if (subjectSet.size && !subjectSet.has('all')) {
+    pool = pool.filter(q => subjectSet.has(normalizeSubjectKey(q.subject)));
   }
 
   if (practiceFilters.difficulty && practiceFilters.difficulty !== 'all') {
@@ -602,7 +654,7 @@ function beginPracticeContinue() {
   isTestActive = false;
 
   // восстановим фильтры/ответы/индекс/время
-  practiceFilters = normalizePracticeFilters((saved && saved.filters) || { subject: 'all', difficulty: 'all', count: 20 });
+  practiceFilters = normalizePracticeFilters((saved && saved.filters) || { subjects: [], difficulty: 'all', count: 20 });
   practiceAnswers = saved.answers || {};
   currentQuestionIndex = Number(saved.index || 0);
   // восстановим порядок вопросов по orderIds
@@ -3119,6 +3171,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
