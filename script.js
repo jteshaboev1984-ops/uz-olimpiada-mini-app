@@ -310,7 +310,6 @@ function getSubjectsFromCache() {
 
   return Array.from(set).sort();
 }
-  let cheatWarningCount = 0; 
     
     // FIX #3: Флаг для отслеживания активного теста (для анти-чита)
     let isTestActive = false;
@@ -3627,5 +3626,6 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
