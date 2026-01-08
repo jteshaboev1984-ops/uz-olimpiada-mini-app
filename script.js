@@ -2509,6 +2509,16 @@ function fillProfileForm(data) {
         const counterEl = document.getElementById('review-errors-counter');
         if (counterEl) counterEl.textContent = `${reviewState.currentErrorIndex + 1}/${errors.length}`;
 
+        const dotsEl = document.getElementById('review-errors-dots');
+        if (dotsEl) {
+            dotsEl.innerHTML = '';
+            errors.forEach((_, index) => {
+                const dot = document.createElement('span');
+                dot.className = `dot${index === reviewState.currentErrorIndex ? ' active' : ''}`;
+                dotsEl.appendChild(dot);
+            });
+        }
+
         const cardEl = document.getElementById('review-error-card');
         if (!cardEl) return;
 
@@ -3622,6 +3632,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
