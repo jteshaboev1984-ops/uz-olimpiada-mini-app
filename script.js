@@ -1,50 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
-  document.body.insertAdjacentHTML(
-    'beforeend',
-    '<div style="padding:20px;font:16px system-ui;color:#111">EXTERNAL JS RUN ✅</div>'
-  );
-});
-
-(function(){
-  function showErr(title, err){
-    const box = document.createElement('pre');
-    box.style.cssText = "position:fixed;z-index:99999;left:0;right:0;top:0;max-height:60vh;overflow:auto;background:#111;color:#0f0;padding:12px;font-size:12px;white-space:pre-wrap";
-    box.textContent = title + "\n" + (err?.stack || err?.message || String(err));
-    document.documentElement.appendChild(box);
-  }
-
-  window.addEventListener('error', (e) => showErr('JS ERROR', e.error || e.message));
-  window.addEventListener('unhandledrejection', (e) => showErr('PROMISE REJECTION', e.reason));
-})();
-  
-  (function () {
-  function showCrash(title, err) {
-    try {
-      document.body.innerHTML =
-        '<div style="padding:16px;font-family:system-ui">' +
-        '<h3 style="margin:0 0 8px">⚠️ ' + title + '</h3>' +
-        '<pre style="white-space:pre-wrap;background:#f6f6f6;padding:12px;border-radius:8px">' +
-        (err && (err.stack || err.message || String(err)) ? (err.stack || err.message || String(err)) : 'no details') +
-        '</pre>' +
-        '</div>';
-    } catch(e) {}
-  }
-
-  window.addEventListener('error', function (e) {
-    showCrash('JS Error', e.error || e.message);
-  });
-
-  window.addEventListener('unhandledrejection', function (e) {
-    showCrash('Promise Rejection', e.reason);
-  });
-
-  console.log('[BOOT] early ok', location.href, navigator.userAgent);
-})();
-
-console.log('[BOOT] location:', location.href);
-console.log('[BOOT] Telegram object:', window.Telegram);
-console.log('[BOOT] initData now:', window.Telegram?.WebApp?.initData || '(empty)');
-console.log('[BOOT] initDataUnsafe now:', window.Telegram?.WebApp?.initDataUnsafe || null);
+const APP_VERSION = '1.0';
 
 document.addEventListener('DOMContentLoaded', function () {
 
@@ -114,31 +68,11 @@ async function startApp() {
         await checkProfileAndTour();
     } catch (err) {
         console.error("Критическая ошибка при запуске:", err);
-        
-        // Если что-то сломалось, убираем загрузчик и пишем ошибку на экране
         const loader = document.getElementById('app-loader');
         if (loader) loader.style.display = 'none';
-        
-        document.body.innerHTML = `
-            <div style="padding: 20px; font-family: sans-serif; text-align: center;">
-                <h2 style="color: #FF3B30;">Ой! Произошла ошибка</h2>
-                <p style="color: #666;">Не удалось запустить приложение. Пожалуйста, попробуйте позже или свяжитесь с поддержкой.</p>
-                <div style="background: #f0f0f0; padding: 10px; border-radius: 8px; font-size: 12px; text-align: left; margin-top: 20px; overflow: auto;">
-                    ${err.message}
-                </div>
-                <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #007AFF; color: white; border: none; border-radius: 8px;">Повторить попытку</button>
-            </div>
-        `;
+        alert("Произошла ошибка запуска приложения. Попробуйте позже.");
     }
 }
- 
-        function dbg(...args) {
-        console.log(...args);
-        const el = document.getElementById('debug-box');
-        if (el) {
-            el.textContent += args.map(a => typeof a === 'string' ? a : JSON.stringify(a, null, 2)).join(' ') + "\n";
-        }
-    } 
     console.log('App Started: v31.js');
   
    // === ПЕРЕМЕННЫЕ ТЕСТА И АНТИ-ЧИТА ===
@@ -244,6 +178,7 @@ function startPracticeStopwatch() {
 
 function loadPracticeSession() {
   try {
+    // Practice хранится локально
     const raw = localStorage.getItem(practiceStorageKey());
     if (!raw) return null;
     const obj = JSON.parse(raw);
@@ -258,6 +193,7 @@ function loadPracticeSession() {
 
 function savePracticeSession() {
   try {
+    // Practice хранится локально
     const normalized = normalizePracticeFilters(practiceFilters);
     practiceFilters = normalized;
     const payload = {
@@ -748,9 +684,22 @@ function exitPracticeToCabinet() {
             subj_phys: "Fizika",
             subj_chem: "Kimyo",
             subj_bio: "Biologiya",
-            subj_it: "Informatika",
+             subj_it: "Informatika",
             subj_eco: "Iqtisodiyot",
             cert_title: "Sertifikat",
+            certs_title: "Sertifikat",
+            cert_subtitle: "Fanlar olimpiadasi ishtirokchisi",
+            cert_rank: "O'rin",
+            cert_score: "Ball",
+            cert_date: "Sana",
+            cert_download_pdf: "PDF yuklab olish",
+            cert_share: "Ulashish",
+            cert_share_text: "Smart Olympiad sertifikati",
+            cert_note: "Sertifikatni tekshirish ID orqali amalga oshiriladi.",
+            cert_sign: "Komissiya raisi",
+            cert_soon: "Soon",
+            link_copied: "Havola nusxalandi",
+            cert_share_unavailable: "Ulashish hozircha mavjud emas",
             cert_desc: "PDF yuklab olish",
             res_title: "Resurslar",
             res_vid_title: "Video darslar",
@@ -835,6 +784,7 @@ function exitPracticeToCabinet() {
             error: "Xatolik",
             answer_placeholder: "Javobni kiriting...",
             answer_required_to_continue: "Keyingi savolga o'tish uchun javobni kiriting. Zarur bo'lsa, orqaga qaytishingiz mumkin. Saqlash barcha savollar tugagach amalga oshiriladi.",
+            answer_required_short: "Javobni tanlang",
             menu_my_data: "Ma'lumotlarim",
             menu_my_data_desc: "Sinf, maktab, hudud",
             menu_lang: "Til",
@@ -903,6 +853,19 @@ function exitPracticeToCabinet() {
             subj_it: "Информатика",
             subj_eco: "Экономика",
             cert_title: "Сертификат",
+            certs_title: "Сертификат",
+            cert_subtitle: "Участник предметной олимпиады",
+            cert_rank: "Место",
+            cert_score: "Баллы",
+            cert_date: "Дата",
+            cert_download_pdf: "Скачать PDF",
+            cert_share: "Поделиться",
+            cert_share_text: "Сертификат Smart Olympiad",
+            cert_note: "Проверка сертификата по ID.",
+            cert_sign: "Председатель комиссии",
+            cert_soon: "Soon",
+            link_copied: "Ссылка скопирована",
+            cert_share_unavailable: "Поделиться пока нельзя",
             cert_desc: "Скачать PDF",
             res_title: "Ресурсы",
             res_vid_title: "Видеоуроки",
@@ -987,6 +950,7 @@ function exitPracticeToCabinet() {
             error: "Ошибка",
             answer_placeholder: "Введите ответ...",
             answer_required_to_continue: "Введите ответ, чтобы перейти к следующему вопросу. При необходимости можете вернуться. Сохранение будет после завершения всех вопросов.",
+            answer_required_short: "Выберите ответ",
             menu_my_data: "Мои данные",
             menu_my_data_desc: "Класс, школа, регион",
             menu_lang: "Язык",
@@ -1055,6 +1019,19 @@ function exitPracticeToCabinet() {
             subj_it: "Computer Science",
             subj_eco: "Economics",
             cert_title: "Certificate",
+            certs_title: "Certificate",
+            cert_subtitle: "Subject olympiad participant",
+            cert_rank: "Rank",
+            cert_score: "Score",
+            cert_date: "Date",
+            cert_download_pdf: "Download PDF",
+            cert_share: "Share",
+            cert_share_text: "Smart Olympiad certificate",
+            cert_note: "Certificate verification is available by ID.",
+            cert_sign: "Commission Chair",
+            cert_soon: "Soon",
+            link_copied: "Link copied",
+            cert_share_unavailable: "Sharing is unavailable right now",
             cert_desc: "Download PDF",
             res_title: "Resources",
             res_vid_title: "Video Lessons",
@@ -1139,6 +1116,7 @@ function exitPracticeToCabinet() {
             error: "Error",
             answer_placeholder: "Enter answer...",
             answer_required_to_continue: "Please enter an answer to move to the next question. You can go back if needed. Saving happens after all questions are completed.",
+            answer_required_short: "Choose an answer",
             menu_my_data: "My Details",
             menu_my_data_desc: "Grade, school, region",
             menu_lang: "Language",
@@ -1421,35 +1399,16 @@ if (!isInitialized) {
 
   if (!tgInitData) {
     console.error('[checkProfileAndTour] INITDATA EMPTY');
-    document.body.innerHTML = `
-      <div style="padding:30px; text-align:center; font-family:system-ui; color:#333;">
-        <h2>⚠️ Приложение недоступно</h2>
-        <p>Этот мини-экран работает <b>только внутри Telegram</b>.</p>
-        <p>Пожалуйста, откройте его через официального бота.</p>
-        <p style="margin-top:20px; font-size:12px; color:#888;">(initData пуст)</p>
-      </div>
-    `;
+    const loader = document.getElementById('app-loader');
+    if (loader) loader.style.display = 'none';
+    alert("Приложение доступно только внутри Telegram.");
     return;
-  }
-
-  // debug (опционально)
-  try {
-    const { data: dbgData, error: dbgError } = await supabaseClient
-      .rpc('telegram_login_debug', { p_init_data: tgInitData });
-
-    dbg('[telegram_login_debug] data:', dbgData);
-    dbg('[telegram_login_debug] error:', dbgError);
-  } catch (e) {
-    console.warn('[telegram_login_debug] skipped', e);
   }
 
   // основной логин
   const { data: authData, error: authError } = await supabaseClient
     .rpc('telegram_login', { p_init_data: tgInitData })
     .single();
-
-  dbg('[telegram_login] data:', authData);
-  dbg('[telegram_login] error:', authError);
 
   if (authError || !authData || authData.id == null) {
     console.error("Auth error detail:", authError);
@@ -1487,6 +1446,27 @@ if (!isInitialized) {
 
   const elID = document.getElementById('cab-id');
   if (elID) elID.textContent = String(telegramUserId || '').slice(-6);
+
+  const resolvedAvatarUrl = authData.avatar_url || telegramData.photoUrl || null;
+  if (!authData.avatar_url && telegramData.photoUrl) {
+    try {
+      await supabaseClient.from('users').update({ avatar_url: telegramData.photoUrl }).eq('id', internalDbId);
+      currentUserData.avatar_url = telegramData.photoUrl;
+    } catch (e) {
+      console.warn('[avatar] update skipped', e);
+    }
+  }
+
+  if (resolvedAvatarUrl) {
+    const cabAvatar = document.getElementById('cab-avatar-img');
+    if (cabAvatar) cabAvatar.src = resolvedAvatarUrl;
+
+    const regAvatar = document.querySelector('.profile-info-card .avatar-circle img');
+    if (regAvatar) regAvatar.src = resolvedAvatarUrl;
+  }
+
+  const versionEl = document.getElementById('cab-app-version');
+  if (versionEl) versionEl.textContent = `v${APP_VERSION}`;
 
   // язык: приоритет БД
   if (authData.fixed_language && translations[authData.fixed_language]) {
@@ -1880,9 +1860,10 @@ function fillProfileForm(data) {
             
             if (error) throw error;
 
-            const fullList = progressData.map(p => {
+             const fullList = progressData.map(p => {
                 const u = (usersData || []).find(user => user.id === p.user_id);
                 if (!u) return null;
+                const isMe = String(u.id) === String(internalDbId);
                 return {
                     id: u.id,
                     name: u.full_name || u.name || t('anonymous'),
@@ -1890,9 +1871,9 @@ function fillProfileForm(data) {
                     region: u.region,
                     district: u.district,
                     school: u.school,
-                    avatarUrl: u.avatar_url || null,
+                    avatarUrl: u.avatar_url || (isMe ? telegramData.photoUrl : null),
                     score: p.score,
-                    isMe: String(u.id) === String(internalDbId) 
+                    isMe
                 };
             }).filter(item => item !== null);
 
@@ -2645,26 +2626,29 @@ totalTimerInterval = setInterval(() => {
 
 let answerRequiredTimer = null;
 
-    function showAnswerRequiredToast() {
+ function showAnswerRequiredToast() {
         const toast = document.getElementById('answer-required-toast');
         if (!toast) return;
-        toast.textContent = t('answer_required_to_continue');
+        toast.textContent = t('answer_required_short');
         toast.classList.remove('hidden');
+        requestAnimationFrame(() => toast.classList.add('show'));
         if (answerRequiredTimer) clearTimeout(answerRequiredTimer);
         answerRequiredTimer = setTimeout(() => {
-            toast.classList.add('hidden');
+            toast.classList.remove('show');
+            setTimeout(() => toast.classList.add('hidden'), 200);
         }, 2500);
     }
 
     function hideAnswerRequiredToast() {
         const toast = document.getElementById('answer-required-toast');
         if (!toast) return;
-        toast.classList.add('hidden');
+        toast.classList.remove('show');
         if (answerRequiredTimer) {
             clearTimeout(answerRequiredTimer);
             answerRequiredTimer = null;
         }
-    }
+        setTimeout(() => toast.classList.add('hidden'), 150);
+    }    
 
     function showQuestion() {    
      // === QUESTION TIMER START ===
@@ -3141,10 +3125,12 @@ safeAddListener('exit-app-btn', 'click', () => {
   }
 });
 
-safeAddListener('home-cert-btn', 'click', () => showCertsModal());
-safeAddListener('download-certificate-res-btn', 'click', () => showCertsModal());
-safeAddListener('btn-open-certs-cab', 'click', () => showCertsModal());
-
+safeAddListener('home-cert-btn', 'click', () => openCertificates());
+safeAddListener('download-certificate-res-btn', 'click', () => openCertificates());
+safeAddListener('btn-open-certs-cab', 'click', () => openCertificates());
+safeAddListener('certs-back-btn', 'click', () => showScreen('cabinet-screen'));
+safeAddListener('cert-download-btn', 'click', () => downloadCertificatePdf());
+safeAddListener('cert-share-btn', 'click', () => shareCertificate());
 safeAddListener('cancel-start', 'click', () => {
   const modal = document.getElementById('warning-modal');
   if (modal) modal.classList.add('hidden');
@@ -3188,21 +3174,100 @@ safeAddListener('prev-button', 'click', () => {
   }
 });
   
-function showCertsModal() {
-  const container = document.getElementById('certs-list-container');
-  if (container) {
-    container.innerHTML = `
-      <div class="cert-card">
-        <div class="cert-icon"><i class="fa-solid fa-file-pdf"></i></div>
-        <div class="cert-info"><h4>${t('cert_title')}</h4><p>${new Date().toLocaleDateString()}</p></div>
-        <div class="cert-action"><span class="badge-soon">Soon</span></div>
-      </div>`;
-  }
 
-  const modal = document.getElementById('certs-modal');
-  if (modal) modal.classList.remove('hidden');
+function getCertificateDisplayName() {
+  const tgName = [telegramData.firstName, telegramData.lastName].filter(Boolean).join(' ').trim();
+  if (currentUserData && (currentUserData.full_name || currentUserData.name)) {
+    return (currentUserData.full_name || currentUserData.name).trim();
+  }
+  return tgName || t('participant_label');
 }
 
+function getCertificateSubjects() {
+  const subjectSet = new Set();
+  (tourQuestionsAllCache || []).forEach(q => {
+    const key = normalizeSubjectKey(q.subject);
+    if (key) subjectSet.add(subjectDisplayName(key));
+  });
+  const list = Array.from(subjectSet).filter(Boolean);
+  if (list.length > 0) return list.slice(0, 4);
+  return [t('subj_math'), t('subj_chem')].filter(Boolean);
+}
+
+function renderCertificatePreview() {
+  const nameEl = document.getElementById('cert-full-name');
+  if (nameEl) nameEl.textContent = getCertificateDisplayName();
+
+  const classVal = currentUserData?.class ? `${currentUserData.class} ${t('class_s')}` : '';
+  const schoolVal = currentUserData?.school ? `${t('school_prefix')} №${currentUserData.school}` : '';
+  const districtVal = currentUserData?.district || '';
+  const regionVal = currentUserData?.region || '';
+  const metaParts = [classVal, schoolVal, districtVal, regionVal].filter(Boolean);
+  const metaEl = document.getElementById('cert-meta');
+  if (metaEl) metaEl.textContent = metaParts.join(' • ') || t('no_data');
+
+  const subjectsEl = document.getElementById('cert-subjects');
+  if (subjectsEl) {
+    subjectsEl.innerHTML = '';
+    getCertificateSubjects().forEach(label => {
+      const pill = document.createElement('div');
+      pill.className = 'subject-pill';
+      pill.textContent = label;
+      subjectsEl.appendChild(pill);
+    });
+  }
+
+  const rankEl = document.getElementById('cert-rank');
+  if (rankEl) rankEl.textContent = t('cert_soon');
+
+  const scoreEl = document.getElementById('cert-score');
+  if (scoreEl) scoreEl.textContent = currentUserData?.score || '--';
+
+  const dateEl = document.getElementById('cert-date');
+  if (dateEl) dateEl.textContent = new Date().toLocaleDateString();
+
+  const idEl = document.getElementById('cert-id');
+  if (idEl) idEl.textContent = String(telegramUserId || '').slice(-6) || '000000';
+}
+
+function openCertificates() {
+  renderCertificatePreview();
+  showScreen('certificate-screen');
+}
+
+function downloadCertificatePdf() {
+  renderCertificatePreview();
+  window.print();
+}
+
+function shareCertificate() {
+  const shareText = t('cert_share_text');
+  const shareData = {
+    title: t('cert_title'),
+    text: shareText,
+    url: location.href
+  };
+
+  if (navigator.share) {
+    navigator.share(shareData).catch(() => {});
+    return;
+  }
+
+  if (window.Telegram && Telegram.WebApp && Telegram.WebApp.openLink) {
+    const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(location.href)}&text=${encodeURIComponent(shareText)}`;
+    Telegram.WebApp.openLink(tgUrl);
+    return;
+  }
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(location.href).then(() => alert(t('link_copied'))).catch(() => {
+      alert(t('cert_share_unavailable'));
+    });
+    return;
+  }
+
+  alert(t('cert_share_unavailable'));
+}
 // Cleanup on page unload
 window.addEventListener('beforeunload', () => {
   if (timerInterval) {
@@ -3215,17 +3280,4 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
 
