@@ -102,12 +102,8 @@
     </div>
 
     <div class="screen hidden" id="cabinet-screen">
-        <div class="cabinet-hero">
-            <div class="cabinet-top-nav">
-                <button class="nav-back-btn" id="close-cabinet">
-                    <i class="fa-solid fa-chevron-left"></i> <span data-i18n="btn_back">Orqaga</span>
-                </button>
-            </div>
+         <div class="cabinet-hero">
+            <div class="cabinet-top-nav"></div>
             <div class="hero-content">
                 <div class="hero-avatar">
                     <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" id="cab-avatar-img">
@@ -205,8 +201,9 @@
             </div>
 
             <div class="footer-info">
-                <p>Smart Olympiad v72.0</p>
-                <button class="btn-danger-box" id="delete-account-btn" style="margin-top: 15px;" data-i18n="btn_delete_account">Hisobni o'chirish</button>
+                <button class="btn-secondary cabinet-back-btn" id="close-cabinet" data-i18n="btn_back">Orqaga</button>
+                <button class="btn-danger-box" id="delete-account-btn" data-i18n="btn_delete_account">Hisobni o'chirish</button>
+                <div class="cabinet-version" id="cab-app-version">v1.0</div>
             </div>
         </div>
     </div>
@@ -365,8 +362,8 @@
 
     <button id="next-button" class="btn-primary" disabled data-i18n="btn_next">Keyingi</button>
   </div>
-  <div id="answer-required-toast" class="answer-required-toast hidden" data-i18n="answer_required_to_continue">
-    Javobni kiriting, keyingi savolga o'tish uchun.
+   <div id="answer-required-toast" class="answer-required-toast hidden" data-i18n="answer_required_short">
+    Javobni tanlang
   </div>
 </div>
 
@@ -488,15 +485,48 @@
         </div>
     </div>
 
-    <div class="modal hidden" id="certs-modal">
-        <div class="modal-card">
-            <div class="modal-header-custom">
-                <h3 data-i18n="my_certs">Mening sertifikatlarim</h3>
-                <div class="close-icon-btn" onclick="document.getElementById('certs-modal').classList.add('hidden')">
-                    <i class="fa-solid fa-times"></i>
+    <div class="screen hidden" id="certificate-screen">
+        <div class="header-simple sticky-header certificate-header">
+            <button class="header-back-btn" id="certs-back-btn">
+                <i class="fa-solid fa-chevron-left"></i> <span data-i18n="btn_back">Orqaga</span>
+            </button>
+            <h3 data-i18n="certs_title">Sertifikat</h3>
+        </div>
+        <div class="container pb-large certificate-container">
+            <div class="certificate-preview" id="certificate-preview">
+                <div class="certificate-badge"><i class="fa-solid fa-graduation-cap"></i></div>
+                <div class="certificate-title" data-i18n="cert_title">Sertifikat</div>
+                <div class="certificate-subtitle" data-i18n="cert_subtitle">Fanlar olimpiadasi ishtirokchisi</div>
+                <div class="certificate-name" id="cert-full-name">...</div>
+                <div class="certificate-meta" id="cert-meta">...</div>
+                <div class="certificate-subjects" id="cert-subjects"></div>
+                <div class="certificate-stats">
+                    <div class="cert-stat">
+                        <span class="cert-stat-label" data-i18n="cert_rank">O'rin</span>
+                        <span class="cert-stat-value" id="cert-rank">Soon</span>
+                    </div>
+                    <div class="cert-stat">
+                        <span class="cert-stat-label" data-i18n="cert_score">Ball</span>
+                        <span class="cert-stat-value" id="cert-score">--</span>
+                    </div>
+                    <div class="cert-stat">
+                        <span class="cert-stat-label" data-i18n="cert_date">Sana</span>
+                        <span class="cert-stat-value" id="cert-date">--</span>
+                    </div>
+                </div>
+                <div class="certificate-footer">
+                    <div class="certificate-sign">
+                        <div class="sign-line"></div>
+                        <div class="sign-label" data-i18n="cert_sign">Komissiya raisi</div>
+                    </div>
+                    <div class="certificate-id">ID: <span id="cert-id">000000</span></div>
                 </div>
             </div>
-            <div style="padding: 10px 0; text-align: left;" id="certs-list-container"><p data-i18n="loading">Yuklanmoqda...</p></div>
+            <div class="certificate-actions">
+                <button class="btn-primary" id="cert-download-btn"><i class="fa-solid fa-download"></i> <span data-i18n="cert_download_pdf">PDF yuklab olish</span></button>
+                <button class="btn-secondary" id="cert-share-btn"><i class="fa-solid fa-share-nodes"></i> <span data-i18n="cert_share">Ulashish</span></button>
+            </div>
+            <p class="certificate-note" data-i18n="cert_note">Sertifikatni tekshirish ID orqali amalga oshiriladi.</p>
         </div>
     </div>
 
@@ -616,8 +646,8 @@
     </div>
 
     <script src="./script.js?v=31" defer></script>
-    <pre id="debug-box" style="white-space:pre-wrap;padding:10px;font-size:12px;color:#111;background:#fff;border-top:1px solid #ddd;max-height:40vh;overflow:auto;"></pre>
 </body>
 </html>
+
 
 
