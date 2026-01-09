@@ -847,6 +847,8 @@ function exitPracticeToCabinet() {
             menu_mistakes_desc: "Javoblarni ko'rish",
             menu_practice: "Mashq",
             menu_practice_desc: "Mashq rejimi",
+            home_practice_subtitle: "Taymersiz mashq",
+            home_mistakes_subtitle: "Noto'g'ri javoblar tahlili",
             lock_review_title: "Tahlil yopiq",
             lock_review_msg: "Adolatli raqobat uchun xatolar tahlili olimpiada yakunlangandan so'ng ochiladi.",
             access_locked_title: "Kirish yopiq",
@@ -1034,6 +1036,8 @@ function exitPracticeToCabinet() {
             menu_mistakes_desc: "Посмотреть ответы",
             menu_practice: "Тренировка",
             menu_practice_desc: "Режим практики",
+            home_practice_subtitle: "Тренировка без таймера",
+            home_mistakes_subtitle: "Разбор неверных ответов",
             lock_review_title: "Разбор закрыт",
             lock_review_msg: "В целях честной игры разбор ошибок станет доступен после окончания олимпиады.",
             access_locked_title: "Доступ закрыт",
@@ -1221,6 +1225,8 @@ function exitPracticeToCabinet() {
             menu_mistakes_desc: "Check answers",
             menu_practice: "Practice",
             menu_practice_desc: "Practice mode",
+            home_practice_subtitle: "Timer-free practice",
+            home_mistakes_subtitle: "Review incorrect answers",
             lock_review_title: "Review Locked",
             lock_review_msg: "To ensure fair play, mistake review will be available after the Olympiad ends.",
             access_locked_title: "Access locked",
@@ -2578,7 +2584,7 @@ function fillProfileForm(data) {
         renderReviewErrorCard();
     }
 
-    safeAddListener('btn-mistakes', 'click', () => {
+   const handleMistakesClick = () => {
         if (!hasCompletedTourAccess()) {
             showAccessLockModal();
             return;
@@ -2599,16 +2605,23 @@ function fillProfileForm(data) {
         showScreen('review-screen');
         showReviewView('tours');
         loadReviewTours();
-    });
+    };
 
-    safeAddListener('btn-practice', 'click', () => {
+    const handlePracticeClick = () => {
         if (!hasCompletedTourAccess()) {
             showAccessLockModal();
             return;
         }
 
         startPracticeMode();
-    });     
+    };
+
+    safeAddListener('btn-mistakes', 'click', handleMistakesClick);
+    safeAddListener('home-mistakes-btn', 'click', handleMistakesClick);
+
+    safeAddListener('btn-practice', 'click', handlePracticeClick);
+    safeAddListener('home-practice-btn', 'click', handlePracticeClick);
+ 
 
     safeAddListener('close-lock-review-modal', 'click', () => {
         const modal = document.getElementById('review-lock-modal');
@@ -3460,7 +3473,7 @@ safeAddListener('leaderboard-btn', 'click', () => {
 
 safeAddListener('lb-back', 'click', () => showScreen('home-screen'));
 
-safeAddListener('about-btn', 'click', () => {
+safeAddListener('open-about-btn', 'click', () => {
   const modal = document.getElementById('about-modal');
   if (modal) modal.classList.remove('hidden');
 });
@@ -3643,6 +3656,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
