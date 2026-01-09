@@ -42,6 +42,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 body { background-color: var(--bg-color); color: var(--text-main); height: 100vh; overflow: hidden; }
 .screen { height: 100%; overflow-y: auto; padding-bottom: 20px; -webkit-overflow-scrolling: touch; }
 .hidden { display: none !important; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .container { padding: 16px; max-width: 500px; margin: 0 auto; }
 .pb-large { padding-bottom: 100px; }
 .pb-home { padding-bottom: 140px; }
@@ -118,7 +119,9 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: white; position: sticky; top: 0; z-index: 50; border-bottom: 1px solid rgba(0,0,0,0.05); }
 .logo-area { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; color: var(--primary); }
 .logo-icon { width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.top-bar-actions { display: flex; align-items: center; gap: 8px; }
 .profile-icon-btn { width: 36px; height: 36px; background: #F2F2F7; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; color: #000; }
+#open-about-btn { width: 32px; height: 32px; font-size: 14px; }
 .greeting { font-size: 26px; font-weight: 800; margin-bottom: 4px; margin-top: 10px; line-height: 1.2; }
 .subtitle { font-size: 15px; color: var(--text-sec); margin-bottom: 24px; }
 .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 30px; }
@@ -126,8 +129,12 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .action-card:active { transform: scale(0.96); border-color: var(--border); }
 .icon-circle { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 4px; }
 .icon-circle.gold { background: #FFF9E6; color: #FFD60A; }
+.icon-circle.green { background: #E8F5E9; color: var(--success); }
+.icon-circle.red { background: #FFF2F2; color: var(--danger); }
 .icon-circle.purple { background: #F5F2FF; color: #BF5AF2; }
 .action-card span { font-weight: 600; font-size: 14px; }
+.action-text { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.action-subtitle { font-size: 11px; color: var(--text-sec); }
 .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
 .section-header h2 { font-size: 19px; font-weight: 700; }
 .subjects-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
@@ -792,6 +799,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .practice-modal-actions .btn-text-simple{
   margin-bottom: 0;
 }
+
 
 
 
