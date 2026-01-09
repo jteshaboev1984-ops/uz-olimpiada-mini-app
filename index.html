@@ -171,26 +171,7 @@
                     <i class="fa-solid fa-chevron-right arrow"></i>
                 </div>
 
-                <div class="settings-item" id="btn-mistakes">
-                    <div class="set-icon red"><i class="fa-solid fa-clipboard-check"></i></div>
-                    <div class="set-text">
-                        <h4 data-i18n="menu_mistakes">Xatolar tahlili</h4>
-                        <p data-i18n="menu_mistakes_desc">Javoblarni ko'rish</p>
-                    </div>
-                    <i class="fa-solid fa-lock" id="mistake-lock-icon" style="font-size:12px; color:#C7C7CC;"></i>
-                </div>
-
-                <div class="settings-item" id="btn-practice">
-                    <div class="set-icon green"><i class="fa-solid fa-dumbbell"></i></div>
-                    <div class="set-text">
-                        <h4 data-i18n="menu_practice">Mashq</h4>
-                        <p data-i18n="menu_practice_desc">Mashq rejimi</p>
-                    </div>
-                    <i class="fa-solid fa-lock" id="practice-lock-icon" style="font-size:12px; color:#C7C7CC;"></i>
-                </div>
-
-
-                <div class="settings-item" onclick="openExternalLink('https://t.me/your_admin')">
+                 <div class="settings-item" onclick="openExternalLink('https://t.me/your_admin')">
                     <div class="set-icon gray"><i class="fa-regular fa-circle-question"></i></div>
                     <div class="set-text">
                         <h4 data-i18n="menu_support">Yordam</h4>
@@ -312,38 +293,40 @@
         <div class="top-bar">
             <div class="logo-area"><div class="logo-icon"><i class="fa-solid fa-graduation-cap"></i></div><span>Smart Olympiad</span></div>
             <div class="top-bar-actions">
-                <div class="profile-icon-btn" id="open-about-btn" aria-label="Loyiha haqida">
+              <div class="top-bar-icon-btn" id="open-about-btn" aria-label="Loyiha haqida">
                     <i class="fa-solid fa-circle-info"></i>
                     <span class="visually-hidden" data-i18n="btn_about">Loyiha haqida</span>
                 </div>
-                <div class="profile-icon-btn" id="open-cabinet-btn"><i class="fa-regular fa-user"></i></div>
+                <div class="top-bar-icon-btn" id="open-cabinet-btn"><i class="fa-regular fa-user"></i></div>
             </div>
         </div> 
 
         <div class="container pb-home">
-            <h1 class="greeting"><span data-i18n="greeting_hi">Salom</span>, <span id="home-user-name">Ishtirokchi</span>! 👋</h1>
+            <h1 class="greeting"><span data-i18n="greeting_hi">Salom</span>, <span id="home-user-name">Ishtirokchi</span>!</h1>
             <p class="subtitle" data-i18n="greeting_sub">Olimpiadaga xush kelibsiz.</p>
 
             <div class="action-grid">
+                <div class="action-card" id="leaderboard-btn">
+                    <div class="icon-circle gold"><i class="fa-solid fa-trophy"></i></div>
+                    <span data-i18n="btn_leaderboard">Reyting</span>
+                </div>
+                <div class="action-card hidden" id="home-cert-btn">
+                    <div class="icon-circle gold"><i class="fa-solid fa-award"></i></div>
+                    <span data-i18n="cert_title">Sertifikat</span>
+                </div>
                 <div class="action-card" id="home-practice-btn">
                     <div class="icon-circle green"><i class="fa-solid fa-dumbbell"></i></div>
                     <div class="action-text">
                         <span data-i18n="menu_practice">Mashq</span>
-                        <small class="action-subtitle" data-i18n="home_practice_subtitle">Taymersiz mashq</small>
                     </div>
                 </div>
                 <div class="action-card" id="home-mistakes-btn">
                     <div class="icon-circle red"><i class="fa-solid fa-clipboard-check"></i></div>
                     <div class="action-text">
                         <span data-i18n="menu_mistakes">Xatolar tahlili</span>
-                        <small class="action-subtitle" data-i18n="home_mistakes_subtitle">Noto'g'ri javoblar tahlili</small>
                     </div>
                 </div>
-                <div class="action-card" id="leaderboard-btn">
-                    <div class="icon-circle gold"><i class="fa-solid fa-trophy"></i></div>
-                    <span data-i18n="btn_leaderboard">Reyting</span>
-                </div>
-            </div>
+            </div>  
 
             <div class="section-header"><h2 id="subjects-title" data-i18n="subjects_title">Fanlar</h2></div>
 
@@ -384,14 +367,7 @@
                     <h3>IELTS</h3><div class="progress-line"><div id="ielts-bar" style="width: 0%"></div></div>
                 </div>
 
-                <div id="home-cert-btn" class="subject-card hidden">
-                    <div class="subject-top">
-                        <div class="sub-icon gold"><i class="fa-solid fa-award"></i></div>
-                    </div>
-                    <h3 data-i18n="cert_title">Sertifikat</h3>
-                    <div style="font-size: 12px; color: #8E8E93; margin-top: 5px;" data-i18n="cert_desc">PDF yuklab olish</div>
                 </div>
-            </div>
 
             <div class="section-header" style="margin-top: 30px;"><h2 data-i18n="res_title">Resurslar</h2></div>
             <div class="resources-list">
@@ -791,6 +767,7 @@
     <script src="./script.js?v=31" defer></script>
 </body>
 </html>
+
 
 
 
