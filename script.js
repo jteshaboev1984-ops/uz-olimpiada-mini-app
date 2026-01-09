@@ -100,6 +100,8 @@ let practiceAnswers = {}; // { [questionId]: answerString }
 let practiceFilters = normalizePracticeFilters({ subjects: [], difficulty: 'all', count: 20 });
 let practiceElapsedSec = 0;
 let practiceStopwatchInterval = null;
+let practiceReturnScreen = 'cabinet-screen';
+let reviewReturnScreen = 'cabinet-screen';
   // === TIMERS & BEHAVIOR METRICS ===
 
 // total test timer
@@ -639,7 +641,7 @@ function beginPracticeContinue() {
   showQuestion();
 }
 
-function exitPracticeToCabinet() {
+function exitPracticeToReturnScreen() {
   savePracticeSession();
   stopPracticeStopwatch();
   isTestActive = false;
@@ -663,7 +665,7 @@ function exitPracticeToCabinet() {
   const prevBtn = document.getElementById('prev-button');
   if (prevBtn) prevBtn.classList.add('hidden');
 
-  showScreen('cabinet-screen');
+  showScreen(practiceReturnScreen);
 }
   
     // === ФУНКЦИЯ ПЕРЕВОДА НАЗВАНИЯ ТУРА ===
@@ -821,7 +823,7 @@ function exitPracticeToCabinet() {
             error: "Xatolik",
             answer_placeholder: "Javobni kiriting...",
             answer_required_to_continue: "Keyingi savolga o'tish uchun javobni kiriting. Zarur bo'lsa, orqaga qaytishingiz mumkin. Saqlash barcha savollar tugagach amalga oshiriladi.",
-            answer_required_short: "Javobni tanlang",
+            answer_required_short: "Davom etish uchun javob bering",
             menu_my_data: "Ma'lumotlarim",
             menu_my_data_desc: "Sinf, maktab, hudud",
             menu_lang: "Til",
@@ -1010,7 +1012,7 @@ function exitPracticeToCabinet() {
             error: "Ошибка",
             answer_placeholder: "Введите ответ...",
             answer_required_to_continue: "Введите ответ, чтобы перейти к следующему вопросу. При необходимости можете вернуться. Сохранение будет после завершения всех вопросов.",
-            answer_required_short: "Выберите ответ",
+            answer_required_short: "Ответьте на вопрос, чтобы продолжить",
             menu_my_data: "Мои данные",
             menu_my_data_desc: "Класс, школа, регион",
             menu_lang: "Язык",
@@ -1199,7 +1201,7 @@ function exitPracticeToCabinet() {
             error: "Error",
             answer_placeholder: "Enter answer...",
             answer_required_to_continue: "Please enter an answer to move to the next question. You can go back if needed. Saving happens after all questions are completed.",
-            answer_required_short: "Choose an answer",
+            answer_required_short: "Answer the question to continue",
             menu_my_data: "My Details",
             menu_my_data_desc: "Grade, school, region",
             menu_lang: "Language",
@@ -2584,7 +2586,7 @@ function fillProfileForm(data) {
         renderReviewErrorCard();
     }
 
-   const handleMistakesClick = () => {
+  const handleMistakesClick = () => {
         if (!hasCompletedTourAccess()) {
             showAccessLockModal();
             return;
@@ -2616,11 +2618,23 @@ function fillProfileForm(data) {
         startPracticeMode();
     };
 
-    safeAddListener('btn-mistakes', 'click', handleMistakesClick);
-    safeAddListener('home-mistakes-btn', 'click', handleMistakesClick);
+    safeAddListener('btn-mistakes', 'click', () => {
+        reviewReturnScreen = 'cabinet-screen';
+        handleMistakesClick();
+    });
+    safeAddListener('home-mistakes-btn', 'click', () => {
+        reviewReturnScreen = 'home-screen';
+        handleMistakesClick();
+    });
 
-    safeAddListener('btn-practice', 'click', handlePracticeClick);
-    safeAddListener('home-practice-btn', 'click', handlePracticeClick);
+    safeAddListener('btn-practice', 'click', () => {
+        practiceReturnScreen = 'cabinet-screen';
+        handlePracticeClick();
+    });
+    safeAddListener('home-practice-btn', 'click', () => {
+        practiceReturnScreen = 'home-screen';
+        handlePracticeClick();
+    });
  
 
     safeAddListener('close-lock-review-modal', 'click', () => {
@@ -2628,17 +2642,17 @@ function fillProfileForm(data) {
         if (modal) modal.classList.add('hidden');
     });
 
-    safeAddListener('review-tours-back', 'click', () => showScreen('cabinet-screen'));
-    safeAddListener('review-tours-close', 'click', () => showScreen('cabinet-screen'));
+    safeAddListener('review-tours-back', 'click', () => showScreen(reviewReturnScreen));
+    safeAddListener('review-tours-close', 'click', () => showScreen(reviewReturnScreen));
     safeAddListener('review-results-back', 'click', () => showReviewView('tours'));
     safeAddListener('review-results-back-list', 'click', () => showReviewView('tours'));
-    safeAddListener('review-results-close', 'click', () => showScreen('cabinet-screen'));
+    safeAddListener('review-results-close', 'click', () => showScreen(reviewReturnScreen));
     safeAddListener('review-errors-back', 'click', () => showReviewView('results'));
     safeAddListener('review-back-results-btn', 'click', () => showReviewView('results'));
-    safeAddListener('review-close-btn', 'click', () => showScreen('cabinet-screen'));
+    safeAddListener('review-close-btn', 'click', () => showScreen(reviewReturnScreen));
     safeAddListener('review-success-back-results', 'click', () => showReviewView('results'));
     safeAddListener('review-success-other-tour', 'click', () => showReviewView('tours'));
-    safeAddListener('review-success-to-cabinet', 'click', () => showScreen('cabinet-screen'));
+    safeAddListener('review-success-to-cabinet', 'click', () => showScreen(reviewReturnScreen));
 
     safeAddListener('review-prev-btn', 'click', () => {
         if (reviewState.currentErrorIndex > 0) {
@@ -3536,7 +3550,7 @@ safeAddListener('practice-continue-btn', 'click', () => {
 });
 
 safeAddListener('practice-exit-btn', 'click', () => {
-  exitPracticeToCabinet();
+  exitPracticeToReturnScreen();
 });
   
 safeAddListener('prev-button', 'click', () => {
@@ -3656,6 +3670,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
