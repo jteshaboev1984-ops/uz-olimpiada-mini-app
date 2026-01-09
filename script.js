@@ -753,6 +753,7 @@ function exitPracticeToCabinet() {
             review_to_cabinet: "Shaxsiy kabinetga",
             review_success_title: "Ajoyib ish!",
             review_success_text: "{subject} bo'yicha barcha xatolar ko'rib chiqildi.",
+            review_progress_label: "PROGRESS",
             review_progress_complete: "100% yakunlandi",
             data_saved: "Ma'lumotlar saqlandi",
             review_desc: "Batafsil tahlil natijalar e'lon qilingandan so'ng mavjud bo'ladi.",
@@ -939,6 +940,7 @@ function exitPracticeToCabinet() {
             review_to_cabinet: "В личный кабинет",
             review_success_title: "Отличная работа!",
             review_success_text: "Все ошибки по предмету {subject} успешно просмотрены.",
+            review_progress_label: "ПРОГРЕСС",
             review_progress_complete: "100% завершено",
             data_saved: "Данные сохранены",
             review_desc: "Детальный разбор будет доступен после подведения итогов.",
@@ -1125,6 +1127,7 @@ function exitPracticeToCabinet() {
             review_to_cabinet: "Go to profile",
             review_success_title: "Great job!",
             review_success_text: "All errors for {subject} have been reviewed.",
+            review_progress_label: "PROGRESS",
             review_progress_complete: "100% completed",
             data_saved: "Data Saved",
             review_desc: "Detailed review will be available after results.",
@@ -2562,8 +2565,11 @@ function fillProfileForm(data) {
         const subjectName = subjectDisplayName(reviewState.currentSubjectKey) || t('review_subjects');
         const textEl = document.getElementById('review-success-text');
         if (textEl) textEl.textContent = t('review_success_text').replace('{subject}', subjectName);
+        const countEl = document.getElementById('review-success-count');
+        const errors = reviewState.errorsBySubject[reviewState.currentSubjectKey] || [];
+        if (countEl) countEl.textContent = errors.length;
         showReviewView('success');
-    }
+    } 
 
     function openReviewErrorsForSubject(subjectKey) {
         reviewState.currentSubjectKey = subjectKey;
@@ -3412,11 +3418,16 @@ function showScreen(screenId) {
 }
 
 window.openExternalLink = function(url) {
+  const isTelegramLink = typeof url === 'string' && url.includes('t.me');
   if (window.Telegram && Telegram.WebApp) {
+    if (isTelegramLink && typeof Telegram.WebApp.openTelegramLink === 'function') {
+      Telegram.WebApp.openTelegramLink(url);
+      return;
+    }
     Telegram.WebApp.openLink(url);
-  } else {
-    window.open(url, '_blank');
+    return;
   }
+  window.open(url, '_blank');
 };
 
 function safeAddListener(id, event, handler) {
@@ -3632,6 +3643,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
