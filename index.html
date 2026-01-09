@@ -257,16 +257,26 @@
                 <div id="review-error-card"></div>
             </div>
 
-            <div id="review-success-view" class="hidden">
+        <div id="review-success-view" class="hidden">
                 <div class="review-success-card">
-                    <div class="review-success-icon"><i class="fa-solid fa-check"></i></div>
+                    <div class="review-success-icon">
+                        <i class="fa-solid fa-check"></i>
+                        <span class="review-success-badge"><i class="fa-solid fa-star"></i></span>
+                    </div>
                     <h3 data-i18n="review_success_title">Отличная работа!</h3>
                     <p class="review-success-text" id="review-success-text">...</p>
-                    <div class="review-success-progress">
-                        <span data-i18n="review_progress_complete">100% завершено</span>
+                    <div class="review-success-progress-card">
+                        <div class="review-progress-left">
+                            <div class="review-progress-icon"><i class="fa-solid fa-chart-line"></i></div>
+                            <div class="review-progress-text">
+                                <span class="review-progress-label" data-i18n="review_progress_label">PROGRESS</span>
+                                <span class="review-progress-value" data-i18n="review_progress_complete">100% завершено</span>
+                            </div>
+                        </div>
+                        <span class="review-success-count" id="review-success-count">0</span>
                     </div>
                 </div>
-            </div>
+            </div>    
         </div>
 
         <div class="bottom-fixed review-actions" id="review-tours-actions">
@@ -374,12 +384,12 @@
                     <div class="res-info"><h4 data-i18n="res_vid_title">Video darslar</h4><p data-i18n="res_vid_desc">Masalalar yechimi</p></div>
                     <i class="fa-solid fa-chevron-right arrow"></i>
                 </div>
-                <div class="resource-card" onclick="openExternalLink('https://t.me/your_channel')">
+               <div class="resource-card" onclick="openExternalLink('https://t.me/iClubuzofficial')">
                     <div class="res-icon telegram"><i class="fa-solid fa-bullhorn"></i></div>
                     <div class="res-info"><h4 data-i18n="res_ch_title">Kanal</h4><p data-i18n="res_ch_desc">Yangiliklar</p></div>
                     <i class="fa-solid fa-chevron-right arrow"></i>
                 </div>
-                <div class="resource-card" onclick="openExternalLink('https://t.me/your_group')">
+                <div class="resource-card" onclick="openExternalLink('https://t.me/+yp3GKhnohKQxOTdi')">
                     <div class="res-icon group"><i class="fa-solid fa-users"></i></div>
                     <div class="res-info"><h4 data-i18n="res_grp_title">Ishtirokchilar chati</h4><p data-i18n="res_grp_desc">Muhokama</p></div>
                     <i class="fa-solid fa-chevron-right arrow"></i>
@@ -765,6 +775,7 @@
     <script src="./script.js?v=31" defer></script>
 </body>
 </html>
+
 
 
 
