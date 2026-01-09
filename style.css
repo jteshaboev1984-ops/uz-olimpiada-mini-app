@@ -120,8 +120,9 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .logo-area { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; color: var(--primary); }
 .logo-icon { width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
 .top-bar-actions { display: flex; align-items: center; gap: 8px; }
-.profile-icon-btn { width: 36px; height: 36px; background: #F2F2F7; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; color: #000; }
-#open-about-btn { width: 32px; height: 32px; font-size: 14px; }
+.top-bar-icon-btn { width: 36px; height: 36px; background: #F2F2F7; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; color: var(--primary); }
+.top-bar-icon-btn:hover { background: #E5E5EA; }
+.top-bar-icon-btn:active { transform: scale(0.96); }
 .greeting { font-size: 26px; font-weight: 800; margin-bottom: 4px; margin-top: 10px; line-height: 1.2; }
 .subtitle { font-size: 15px; color: var(--text-sec); margin-bottom: 24px; }
 .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 30px; }
@@ -799,6 +800,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .practice-modal-actions .btn-text-simple{
   margin-bottom: 0;
 }
+
 
 
 
