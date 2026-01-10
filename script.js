@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', function () {
   let isInitialized = false;
   let tourEnded = false;
   let tourTaken = false;
+  let activeSubject = null;
   let reviewState = {
     tours: [],
     progressByTourId: {},
@@ -1575,11 +1576,11 @@ if (!isInitialized) {
       regLang.style.opacity = '0.5';
     }
 
-    fillProfileForm(authData);
+     fillProfileForm(authData);
     showScreen('home-screen');
+    initActiveSubject();
     await fetchStatsData();
   }
-
   // 1) берём активный тур, иначе последний
   let { data: tourData, error: tourErr } = await supabaseClient
     .from('tours')
@@ -1799,6 +1800,7 @@ function fillProfileForm(data) {
     const allowedIds = new Set(tourQuestionsAllCache.map(q => q.id));
     userAnswersCache = (rawAns || []).filter(a => allowedIds.has(a.question_id));
     refreshCabinetAccessUI();
+    renderAllSubjectCardProgress();
     return;
   }
 
@@ -1807,6 +1809,7 @@ function fillProfileForm(data) {
     is_correct: a.is_correct
   }));
   refreshCabinetAccessUI();
+  renderAllSubjectCardProgress();
 }
 
     function calculateSubjectStats(prefix) {
@@ -1847,8 +1850,76 @@ function fillProfileForm(data) {
                 </div>
             </div>`;
         content.innerHTML = html; 
-        modal.classList.remove('hidden');
+         modal.classList.remove('hidden');
     };
+
+    function setActiveSubject(prefix) {
+        if (!prefix) return;
+        activeSubject = prefix;
+        try {
+            localStorage.setItem('active_subject', prefix);
+        } catch (e) {
+            console.warn('[activeSubject] localStorage failed', e);
+        }
+        renderSubjectTabsUI();
+        renderHomeContextUI();
+        renderAllSubjectCardProgress();
+    }
+
+    function initActiveSubject() {
+        let saved = null;
+        try {
+            saved = localStorage.getItem('active_subject');
+        } catch (e) {
+            console.warn('[activeSubject] read failed', e);
+        }
+        const cards = Array.from(document.querySelectorAll('.subject-card[data-subject]'));
+        const savedCard = saved ? cards.find(card => card.dataset.subject === saved) : null;
+        const next = savedCard ? savedCard.dataset.subject : cards[0]?.dataset.subject;
+        if (next) setActiveSubject(next);
+    }
+
+    function renderSubjectTabsUI() {
+        document.querySelectorAll('.subject-card[data-subject]').forEach(card => {
+            const isActive = card.dataset.subject === activeSubject;
+            card.classList.toggle('is-active', isActive);
+        });
+    }
+
+    function renderHomeContextUI() {
+        // TODO: context-specific content can be updated here in next stages.
+    }
+
+    function getCurrentTourNumber() {
+        if (Number.isFinite(currentTourId)) return currentTourId;
+        const numericId = Number(currentTourId);
+        if (Number.isFinite(numericId)) return numericId;
+        if (currentTourTitle) {
+            const match = String(currentTourTitle).match(/\d+/);
+            if (match) return Number(match[0]);
+        }
+        return null;
+    }
+
+    function renderSubjectCardProgress(prefix) {
+        const percentEl = document.getElementById(`${prefix}-percent`);
+        const barEl = document.getElementById(`${prefix}-bar`);
+        if (!percentEl && !barEl) return;
+        const totalTours = 7;
+        const tourNumber = getCurrentTourNumber();
+        const safeTour = Number.isFinite(tourNumber)
+            ? Math.max(0, Math.min(totalTours, tourNumber))
+            : null;
+        const progressValue = safeTour ? Math.round((safeTour / totalTours) * 100) : 0;
+        if (percentEl) percentEl.textContent = `Tur ${safeTour ?? '?'} / ${totalTours}`;
+        if (barEl) barEl.style.width = `${progressValue}%`;
+    }
+
+    function renderAllSubjectCardProgress() {
+        document.querySelectorAll('.subject-card[data-subject]').forEach(card => {
+            renderSubjectCardProgress(card.dataset.subject);
+        });
+    }
 
     // === ЛИДЕРБОРД ===
     window.setLeaderboardFilter = function(filter) {
@@ -3462,6 +3533,23 @@ function safeAddListener(id, event, handler) {
   if (el) el.addEventListener(event, handler);
 }
 
+const subjectsGrid = document.querySelector('.subjects-grid');
+if (subjectsGrid) {
+  subjectsGrid.addEventListener('click', (event) => {
+    const detailsBtn = event.target.closest('.subject-details-btn');
+    if (detailsBtn) {
+      event.stopPropagation();
+      const subject = detailsBtn.dataset.subject;
+      if (subject) window.openSubjectStats?.(subject);
+      return;
+    }
+    const card = event.target.closest('.subject-card[data-subject]');
+    if (card) {
+      setActiveSubject(card.dataset.subject);
+    }
+  });
+}
+
 safeAddListener('open-cabinet-btn', 'click', () => { 
   showScreen('cabinet-screen'); 
   loadLeaderboard(); 
@@ -3670,6 +3758,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
