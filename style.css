@@ -42,6 +42,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 body { background-color: var(--bg-color); color: var(--text-main); height: 100vh; overflow: hidden; }
 .screen { height: 100%; overflow-y: auto; padding-bottom: 20px; -webkit-overflow-scrolling: touch; }
 .hidden { display: none !important; }
+.is-hidden { display: none !important; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .container { padding: 16px; max-width: 500px; margin: 0 auto; }
 .pb-large { padding-bottom: 100px; }
@@ -379,6 +380,11 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .alert-badge { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; width: 24px; height: 24px; border-radius: 50%; font-size: 14px; font-weight: 800; border: 3px solid white; display: flex; align-items: center; justify-content: center; }
 .modal-card h2 { font-size: 20px; font-weight: 800; margin-bottom: 8px; line-height: 1.3; }
 .modal-card p { color: var(--text-sec); font-size: 15px; line-height: 1.5; margin-bottom: 20px; }
+.modal-subtitle { color: var(--text-sec); font-size: 13px; line-height: 1.4; margin-top: -8px; }
+.subject-select-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; text-align: left; }
+.subject-select-item { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; background: #F9F9F9; font-size: 14px; color: var(--text-main); }
+.subject-select-item input { width: 18px; height: 18px; accent-color: var(--primary); }
+.subject-select-warning { font-size: 12px; color: var(--danger); margin-bottom: 12px; }
 .alert-box { background: #FFF2F2; border: 1px solid #FFD6D6; padding: 12px; border-radius: 12px; display: flex; gap: 10px; align-items: flex-start; margin-bottom: 20px; }
 .alert-box i { color: var(--danger); margin-top: 3px; }
 .alert-box p { color: #333; margin: 0; font-size: 13px; text-align: left; }
@@ -803,6 +809,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .practice-modal-actions .btn-text-simple{
   margin-bottom: 0;
 }
+
 
 
 
