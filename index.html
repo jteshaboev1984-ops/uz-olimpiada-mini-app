@@ -597,7 +597,7 @@
             <div class="modal-icon-big"><i class="fa-solid fa-stopwatch"></i><div class="alert-badge">!</div></div>
             <h2 data-i18n="warn_title">Diqqat</h2>
             <p><span data-i18n="warn_msg_1">Sizda</span> <strong id="warn-q-val">...</strong> <span data-i18n="warn_msg_2">uchun</span> <strong id="warn-time-val">...</strong> <span data-i18n="warn_msg_3">vaqt bor.</span></p>
-            <div class="alert-box" style="flex-direction: column; align-items: flex-start;">
+    <div class="alert-box" style="flex-direction: column; align-items: flex-start;">
                 <div style="display:flex; gap:10px; margin-bottom:5px;">
                     <i class="fa-solid fa-layer-group" style="color:var(--primary);"></i>
                     <p style="font-weight:600;" data-i18n="warn_hint">Savollar oddiydan qiyinga qarab boradi.</p>
@@ -607,8 +607,28 @@
                     <p data-i18n="warn_hint_2">Orqaga qaytish imkonsiz!</p>
                 </div>
             </div>
-            <button id="confirm-start" class="btn-primary"><span data-i18n="btn_start">Boshlash</span> <i class="fa-solid fa-arrow-right"></i></button>
+             <button id="confirm-start" class="btn-primary"><span data-i18n="btn_start">Boshlash</span> <i class="fa-solid fa-arrow-right"></i></button>
             <button id="cancel-start" class="btn-text" data-i18n="btn_cancel">Bekor qilish</button>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="subject-select-modal">
+        <div class="modal-card">
+            <h2>Выберите предметы</h2>
+            <p class="modal-subtitle">Можно выбрать от 1 до 3. После подтверждения изменить предметы нельзя до завершения всех 7 туров.</p>
+            <div id="subject-select-list" class="subject-select-list"></div>
+            <div id="subject-select-warning" class="subject-select-warning is-hidden">Можно выбрать не более 3 предметов.</div>
+            <button id="subject-select-next" class="btn-primary" disabled>Продолжить</button>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="subject-confirm-modal">
+        <div class="modal-card">
+            <h2>Подтвердить выбор?</h2>
+            <p id="subject-confirm-text">Вы выбрали: ...</p>
+            <p class="modal-subtitle">После подтверждения изменить предметы нельзя до завершения всех 7 туров.</p>
+            <button id="subject-confirm-yes" class="btn-primary">Подтвердить</button>
+            <button id="subject-confirm-back" class="btn-secondary">Вернуться</button>
         </div>
     </div>
     
@@ -788,6 +808,7 @@
     <script src="./script.js?v=31" defer></script>
 </body>
 </html>
+
 
 
 
