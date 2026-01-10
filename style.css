@@ -139,9 +139,12 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
 .section-header h2 { font-size: 19px; font-weight: 700; }
 .subjects-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-.subject-card { background: white; border-radius: 18px; padding: 16px; position: relative; box-shadow: 0 2px 6px rgba(0,0,0,0.04); transition: transform 0.1s; cursor: pointer; border: 1px solid transparent; }
+.subject-card { background: white; border-radius: 18px; padding: 16px; position: relative; box-shadow: 0 2px 6px rgba(0,0,0,0.04); transition: transform 0.1s; cursor: pointer; border: 1px solid transparent; min-height: 108px; display: flex; flex-direction: column; justify-content: space-between; }
+.subject-card.is-active { border-color: rgba(0,122,255,0.35); box-shadow: 0 4px 10px rgba(0,122,255,0.12); background: #F7FAFF; }
 .subject-card:active { transform: scale(0.97); }
-.subject-top { display: flex; justify-content: space-between; margin-bottom: 12px; }
+.subject-top { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.subject-details-btn { border: 0; background: #F2F2F7; color: var(--text-sec); font-size: 11px; font-weight: 700; width: 22px; height: 22px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.subject-details-btn:active { transform: scale(0.95); }
 .sub-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
 .sub-icon.blue { background: #E6F2FF; color: var(--primary); }
 .sub-icon.violet { background: #F5F2FF; color: #5856D6; }
@@ -800,6 +803,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .practice-modal-actions .btn-text-simple{
   margin-bottom: 0;
 }
+
 
 
 
