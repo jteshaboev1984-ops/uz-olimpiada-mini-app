@@ -297,6 +297,128 @@ function subjectDisplayName(key) {
  };
   return map[k] || (k ? (k[0].toUpperCase() + k.slice(1)) : '');
 }  
+const SUBJECTS_STORAGE_KEY = 'olympiad_subjects';
+const SUBJECTS_LOCK_KEY = 'olympiad_subjects_locked';
+
+function getAvailableSubjectKeys() {
+  const cards = Array.from(document.querySelectorAll('.subject-card[data-subject]'));
+  return cards
+    .map(card => normalizeSubjectKey(card.dataset.subject))
+    .filter(Boolean);
+}
+
+function getSelectedSubjects() {
+  let raw = null;
+  try {
+    raw = localStorage.getItem(SUBJECTS_STORAGE_KEY);
+  } catch (e) {
+    console.warn('[subjects] read failed', e);
+  }
+
+  let list = [];
+  try {
+    const parsed = raw ? JSON.parse(raw) : [];
+    if (Array.isArray(parsed)) list = parsed;
+  } catch (e) {
+    list = [];
+  }
+
+  const available = new Set(getAvailableSubjectKeys());
+  const normalized = list
+    .map(item => normalizeSubjectKey(item))
+    .filter(Boolean)
+    .filter(key => !available.size || available.has(key));
+
+  return Array.from(new Set(normalized));
+}
+
+function isSubjectsLocked() {
+  try {
+    return localStorage.getItem(SUBJECTS_LOCK_KEY) === '1';
+  } catch (e) {
+    return false;
+  }
+}
+
+function setSubjectsLocked() {
+  try {
+    localStorage.setItem(SUBJECTS_LOCK_KEY, '1');
+  } catch (e) {
+    console.warn('[subjects] lock failed', e);
+  }
+}
+
+function clearSubjectsLock() {
+  try {
+    localStorage.removeItem(SUBJECTS_LOCK_KEY);
+  } catch (e) {
+    console.warn('[subjects] unlock failed', e);
+  }
+}
+
+function ensureActiveSubjectValid(selected) {
+  const list = Array.isArray(selected) && selected.length
+    ? selected
+    : getAvailableSubjectKeys();
+  if (!list.length) return;
+
+  let saved = null;
+  try {
+    saved = localStorage.getItem('active_subject');
+  } catch (e) {
+    console.warn('[activeSubject] read failed', e);
+  }
+
+  const normalizedSaved = normalizeSubjectKey(saved);
+  const next = list.includes(normalizedSaved) ? normalizedSaved : list[0];
+  if (next) setActiveSubject(next);
+}
+
+function applySelectedSubjectsToHomeUI(selected) {
+  const list = Array.isArray(selected) ? selected : [];
+  const allowed = new Set(list);
+  document.querySelectorAll('.subject-card[data-subject]').forEach(card => {
+    const key = normalizeSubjectKey(card.dataset.subject);
+    if (!list.length) {
+      card.classList.remove('is-hidden');
+    } else {
+      card.classList.toggle('is-hidden', !allowed.has(key));
+    }
+  });
+  renderSubjectTabsUI();
+}
+
+function isSelectedSubjectsValid(list) {
+  return Array.isArray(list) && list.length >= 1 && list.length <= 3;
+}
+
+function initSubjectSelectionFlow() {
+  const selected = getSelectedSubjects();
+  const locked = isSubjectsLocked();
+
+  if (locked && !isSelectedSubjectsValid(selected)) {
+    clearSubjectsLock();
+    openSubjectSelectModal();
+    return;
+  }
+
+  if (locked && isSelectedSubjectsValid(selected)) {
+    applySelectedSubjectsToHomeUI(selected);
+    ensureActiveSubjectValid(selected);
+    return;
+  }
+
+  if (!locked) {
+    if (selected.length) {
+      applySelectedSubjectsToHomeUI(selected);
+      ensureActiveSubjectValid(selected);
+      return;
+    }
+    openSubjectSelectModal();
+    return;
+  }
+}
+
 // t() может вернуть ключ, если перевода нет — тогда используем fallback (для практики)
 function tSafe(key, fallback) {
   const v = typeof t === 'function' ? t(key) : '';
@@ -1578,7 +1700,7 @@ if (!isInitialized) {
 
      fillProfileForm(authData);
     showScreen('home-screen');
-    initActiveSubject();
+    initSubjectSelectionFlow();
     await fetchStatsData();
   }
   // 1) берём активный тур, иначе последний
@@ -1854,10 +1976,13 @@ function fillProfileForm(data) {
     };
 
     function setActiveSubject(prefix) {
-        if (!prefix) return;
-        activeSubject = prefix;
+        const normalized = normalizeSubjectKey(prefix);
+        if (!normalized) return;
+        const selected = getSelectedSubjects();
+        if (selected.length && !selected.includes(normalized)) return;
+        activeSubject = normalized;
         try {
-            localStorage.setItem('active_subject', prefix);
+            localStorage.setItem('active_subject', normalized);
         } catch (e) {
             console.warn('[activeSubject] localStorage failed', e);
         }
@@ -1866,26 +1991,16 @@ function fillProfileForm(data) {
         renderAllSubjectCardProgress();
     }
 
-    function initActiveSubject() {
-        let saved = null;
-        try {
-            saved = localStorage.getItem('active_subject');
-        } catch (e) {
-            console.warn('[activeSubject] read failed', e);
-        }
-        const cards = Array.from(document.querySelectorAll('.subject-card[data-subject]'));
-        const savedCard = saved ? cards.find(card => card.dataset.subject === saved) : null;
-        const next = savedCard ? savedCard.dataset.subject : cards[0]?.dataset.subject;
-        if (next) setActiveSubject(next);
+     function initActiveSubject() {
+        ensureActiveSubjectValid(getSelectedSubjects());
     }
 
     function renderSubjectTabsUI() {
         document.querySelectorAll('.subject-card[data-subject]').forEach(card => {
-            const isActive = card.dataset.subject === activeSubject;
+            const isActive = normalizeSubjectKey(card.dataset.subject) === activeSubject;
             card.classList.toggle('is-active', isActive);
         });
     }
-
     function renderHomeContextUI() {
         // TODO: context-specific content can be updated here in next stages.
     }
@@ -1919,6 +2034,76 @@ function fillProfileForm(data) {
         document.querySelectorAll('.subject-card[data-subject]').forEach(card => {
             renderSubjectCardProgress(card.dataset.subject);
         });
+    }
+
+    function renderSubjectSelectList(selected) {
+        const listEl = document.getElementById('subject-select-list');
+        if (!listEl) return;
+        listEl.innerHTML = '';
+        const list = Array.isArray(selected) ? selected : [];
+        const subjects = getAvailableSubjectKeys();
+
+        subjects.forEach(key => {
+            const item = document.createElement('label');
+            item.className = 'subject-select-item';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = key;
+            checkbox.checked = list.includes(key);
+
+            const text = document.createElement('span');
+            text.textContent = `${key} — ${subjectDisplayName(key)}`;
+
+            item.appendChild(checkbox);
+            item.appendChild(text);
+            listEl.appendChild(item);
+        });
+    }
+
+    function updateSubjectSelectState() {
+        const listEl = document.getElementById('subject-select-list');
+        if (!listEl) return;
+        const inputs = Array.from(listEl.querySelectorAll('input[type="checkbox"]'));
+        const checked = inputs.filter(input => input.checked);
+        const count = checked.length;
+        const btn = document.getElementById('subject-select-next');
+        if (btn) btn.disabled = count < 1;
+
+        inputs.forEach(input => {
+            input.disabled = !input.checked && count >= 3;
+        });
+    }
+
+    function getSelectedSubjectsFromModal() {
+        const listEl = document.getElementById('subject-select-list');
+        if (!listEl) return [];
+        return Array.from(listEl.querySelectorAll('input[type="checkbox"]:checked'))
+            .map(input => normalizeSubjectKey(input.value))
+            .filter(Boolean);
+    }
+
+    function openSubjectSelectModal(options = {}) {
+        if (isSubjectsLocked()) return;
+        const modal = document.getElementById('subject-select-modal');
+        if (!modal) return;
+        if (!options.preserve) {
+            const selected = getSelectedSubjects();
+            renderSubjectSelectList(selected);
+        }
+        updateSubjectSelectState();
+        modal.classList.remove('hidden');
+    }
+
+    function openSubjectConfirmModal(selected) {
+        const modal = document.getElementById('subject-confirm-modal');
+        if (!modal) return;
+        const list = Array.isArray(selected) ? selected : [];
+        const textEl = document.getElementById('subject-confirm-text');
+        if (textEl) {
+            const names = list.map(key => subjectDisplayName(key)).join(', ');
+            textEl.textContent = `Вы выбрали: ${names}. После подтверждения изменить предметы нельзя до завершения всех 7 туров.`;
+        }
+        modal.classList.remove('hidden');
     }
 
     // === ЛИДЕРБОРД ===
@@ -2217,7 +2402,8 @@ function fillProfileForm(data) {
                         localStorage.setItem('user_lang', currentLang);
                     } catch (e) { console.warn(e); }
                     
-                    showScreen('home-screen');
+                   showScreen('home-screen');
+                    initSubjectSelectionFlow();
                     await fetchStatsData();
                 } else {
                     alert("Xatolik: Ma'lumotlar bazadan qaytmadi.");
@@ -3533,12 +3719,68 @@ function safeAddListener(id, event, handler) {
   if (el) el.addEventListener(event, handler);
 }
 
+const subjectSelectList = document.getElementById('subject-select-list');
+if (subjectSelectList) {
+  subjectSelectList.addEventListener('change', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement) || target.type !== 'checkbox') return;
+    const checked = getSelectedSubjectsFromModal();
+    const warning = document.getElementById('subject-select-warning');
+    if (checked.length > 3) {
+      target.checked = false;
+      if (warning) warning.classList.remove('is-hidden');
+    } else if (warning) {
+      warning.classList.add('is-hidden');
+    }
+    updateSubjectSelectState();
+  });
+}
+
+safeAddListener('subject-select-next', 'click', () => {
+  const selected = getSelectedSubjectsFromModal();
+  if (!isSelectedSubjectsValid(selected)) {
+    updateSubjectSelectState();
+    return;
+  }
+  const modal = document.getElementById('subject-select-modal');
+  if (modal) modal.classList.add('hidden');
+  openSubjectConfirmModal(selected);
+});
+
+safeAddListener('subject-confirm-back', 'click', () => {
+  const modal = document.getElementById('subject-confirm-modal');
+  if (modal) modal.classList.add('hidden');
+  openSubjectSelectModal({ preserve: true });
+});
+
+safeAddListener('subject-confirm-yes', 'click', () => {
+  const selected = getSelectedSubjectsFromModal();
+  if (!isSelectedSubjectsValid(selected)) {
+    const modal = document.getElementById('subject-confirm-modal');
+    if (modal) modal.classList.add('hidden');
+    openSubjectSelectModal({ preserve: true });
+    return;
+  }
+  try {
+    localStorage.setItem(SUBJECTS_STORAGE_KEY, JSON.stringify(selected));
+  } catch (e) {
+    console.warn('[subjects] save failed', e);
+  }
+  setSubjectsLocked();
+  ensureActiveSubjectValid(selected);
+  applySelectedSubjectsToHomeUI(selected);
+  const selectModal = document.getElementById('subject-select-modal');
+  const confirmModal = document.getElementById('subject-confirm-modal');
+  if (selectModal) selectModal.classList.add('hidden');
+  if (confirmModal) confirmModal.classList.add('hidden');
+});
+
 const subjectsGrid = document.querySelector('.subjects-grid');
 if (subjectsGrid) {
   subjectsGrid.addEventListener('click', (event) => {
     const detailsBtn = event.target.closest('.subject-details-btn');
     if (detailsBtn) {
-      event.stopPropagation();
+event.stopPropagation();
       const subject = detailsBtn.dataset.subject;
       if (subject) window.openSubjectStats?.(subject);
       return;
@@ -3758,6 +4000,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
