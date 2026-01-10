@@ -302,8 +302,70 @@
         </div> 
 
         <div class="container pb-home">
-            <h1 class="greeting"><span data-i18n="greeting_hi">Salom</span>, <span id="home-user-name">Ishtirokchi</span>!</h1>
+           <h1 class="greeting"><span data-i18n="greeting_hi">Salom</span>, <span id="home-user-name">Ishtirokchi</span>!</h1>
             <p class="subtitle" data-i18n="greeting_sub">Olimpiadaga xush kelibsiz.</p>
+
+            <div class="section-header"><h2 id="subjects-title" data-i18n="subjects_title">Fanlar</h2></div>
+
+            <div class="subjects-grid">
+                <div class="subject-card" data-subject="math">
+                    <span class="percent-badge" id="math-percent">Tur ? / 7</span>
+                    <div class="subject-top">
+                        <div class="sub-icon blue"><i class="fa-solid fa-calculator"></i></div>
+                        <button class="subject-details-btn" type="button" data-subject="math" aria-label="Подробнее">i</button>
+                    </div>
+                    <h3 data-i18n="subj_math">Matematika</h3><div class="progress-line"><div id="math-bar" style="width: 0%"></div></div>
+                </div>
+                 <div class="subject-card" data-subject="chem">
+                    <span class="percent-badge" id="chem-percent">Tur ? / 7</span>
+                    <div class="subject-top">
+                        <div class="sub-icon teal"><i class="fa-solid fa-flask"></i></div>
+                        <button class="subject-details-btn" type="button" data-subject="chem" aria-label="Подробнее">i</button>
+                    </div>
+                    <h3 data-i18n="subj_chem">Kimyo</h3><div class="progress-line"><div id="chem-bar" style="width: 0%"></div></div>
+                </div>
+                <div class="subject-card" data-subject="bio">
+                    <span class="percent-badge" id="bio-percent">Tur ? / 7</span>
+                    <div class="subject-top">
+                        <div class="sub-icon green"><i class="fa-solid fa-leaf"></i></div>
+                        <button class="subject-details-btn" type="button" data-subject="bio" aria-label="Подробнее">i</button>
+                    </div>
+                    <h3 data-i18n="subj_bio">Biologiya</h3><div class="progress-line"><div id="bio-bar" style="width: 0%"></div></div>
+                </div>
+                <div class="subject-card" data-subject="it">
+                    <span class="percent-badge" id="it-percent">Tur ? / 7</span>
+                    <div class="subject-top">
+                        <div class="sub-icon cyan"><i class="fa-solid fa-laptop-code"></i></div>
+                        <button class="subject-details-btn" type="button" data-subject="it" aria-label="Подробнее">i</button>
+                    </div>
+                    <h3 data-i18n="subj_it">Informatika</h3><div class="progress-line"><div id="it-bar" style="width: 0%"></div></div>
+                </div>
+                 <div class="subject-card" data-subject="eco">
+                    <span class="percent-badge" id="eco-percent">Tur ? / 7</span>
+                    <div class="subject-top">
+                        <div class="sub-icon brown"><i class="fa-solid fa-chart-line"></i></div>
+                        <button class="subject-details-btn" type="button" data-subject="eco" aria-label="Подробнее">i</button>
+                    </div>
+                    <h3 data-i18n="subj_eco">Iqtisodiyot</h3><div class="progress-line"><div id="eco-bar" style="width: 0%"></div></div>
+                </div>
+                <div class="subject-card" data-subject="sat">
+                    <span class="percent-badge" id="sat-percent">Tur ? / 7</span>
+                    <div class="subject-top">
+                        <div class="sub-icon red"><i class="fa-solid fa-brain"></i></div>
+                        <button class="subject-details-btn" type="button" data-subject="sat" aria-label="Подробнее">i</button>
+                    </div>
+                    <h3>SAT</h3><div class="progress-line"><div id="sat-bar" style="width: 0%"></div></div>
+                </div>
+                <div class="subject-card" data-subject="ielts">
+                    <span class="percent-badge" id="ielts-percent">Tur ? / 7</span>
+                    <div class="subject-top">
+                        <div class="sub-icon red"><i class="fa-solid fa-graduation-cap"></i></div>
+                        <button class="subject-details-btn" type="button" data-subject="ielts" aria-label="Подробнее">i</button>
+                    </div>
+                    <h3>IELTS</h3><div class="progress-line"><div id="ielts-bar" style="width: 0%"></div></div>
+                </div>
+
+                </div>
 
             <div class="action-grid">
                 <div class="action-card" id="leaderboard-btn">
@@ -325,49 +387,8 @@
                     <div class="action-text">
                         <span data-i18n="menu_mistakes">Xatolar tahlili</span>
                     </div>
-                </div>
+                    </div>
             </div>  
-
-            <div class="section-header"><h2 id="subjects-title" data-i18n="subjects_title">Fanlar</h2></div>
-
-            <div class="subjects-grid">
-                <div class="subject-card" onclick="openSubjectStats('math')">
-                    <span class="percent-badge" id="math-percent">0%</span>
-                    <div class="subject-top"><div class="sub-icon blue"><i class="fa-solid fa-calculator"></i></div></div>
-                    <h3 data-i18n="subj_math">Matematika</h3><div class="progress-line"><div id="math-bar" style="width: 0%"></div></div>
-                </div>
-                 <div class="subject-card" onclick="openSubjectStats('chem')">
-                    <span class="percent-badge" id="chem-percent">0%</span>
-                    <div class="subject-top"><div class="sub-icon teal"><i class="fa-solid fa-flask"></i></div></div>
-                    <h3 data-i18n="subj_chem">Kimyo</h3><div class="progress-line"><div id="chem-bar" style="width: 0%"></div></div>
-                </div>
-                <div class="subject-card" onclick="openSubjectStats('bio')">
-                    <span class="percent-badge" id="bio-percent">0%</span>
-                    <div class="subject-top"><div class="sub-icon green"><i class="fa-solid fa-leaf"></i></div></div>
-                    <h3 data-i18n="subj_bio">Biologiya</h3><div class="progress-line"><div id="bio-bar" style="width: 0%"></div></div>
-                </div>
-                <div class="subject-card" onclick="openSubjectStats('it')">
-                    <span class="percent-badge" id="it-percent">0%</span>
-                    <div class="subject-top"><div class="sub-icon cyan"><i class="fa-solid fa-laptop-code"></i></div></div>
-                    <h3 data-i18n="subj_it">Informatika</h3><div class="progress-line"><div id="it-bar" style="width: 0%"></div></div>
-                </div>
-                 <div class="subject-card" onclick="openSubjectStats('eco')">
-                    <span class="percent-badge" id="eco-percent">0%</span>
-                    <div class="subject-top"><div class="sub-icon brown"><i class="fa-solid fa-chart-line"></i></div></div>
-                    <h3 data-i18n="subj_eco">Iqtisodiyot</h3><div class="progress-line"><div id="eco-bar" style="width: 0%"></div></div>
-                </div>
-                <div class="subject-card" onclick="openSubjectStats('sat')">
-                    <span class="percent-badge" id="sat-percent">0%</span>
-                    <div class="subject-top"><div class="sub-icon red"><i class="fa-solid fa-brain"></i></div></div>
-                    <h3>SAT</h3><div class="progress-line"><div id="sat-bar" style="width: 0%"></div></div>
-                </div>
-                <div class="subject-card" onclick="openSubjectStats('ielts')">
-                    <span class="percent-badge" id="ielts-percent">0%</span>
-                    <div class="subject-top"><div class="sub-icon red"><i class="fa-solid fa-graduation-cap"></i></div></div>
-                    <h3>IELTS</h3><div class="progress-line"><div id="ielts-bar" style="width: 0%"></div></div>
-                </div>
-
-                </div>
 
             <div class="section-header" style="margin-top: 30px;"><h2 data-i18n="res_title">Resurslar</h2></div>
             <div class="resources-list">
@@ -767,6 +788,7 @@
     <script src="./script.js?v=31" defer></script>
 </body>
 </html>
+
 
 
 
