@@ -1984,9 +1984,10 @@ function fillProfileForm(data) {
      if (rawErr) console.error('[fetchStatsData] fallback answers error:', rawErr);
 
     const allowedIds = new Set(tourQuestionsAllCache.map(q => q.id));
-    userAnswersCache = (rawAns || []).filter(a => allowedIds.has(a.question_id));
+     userAnswersCache = (rawAns || []).filter(a => allowedIds.has(a.question_id));
     refreshCabinetAccessUI();
     renderAllSubjectCardProgress();
+    renderHomeContextUI();
     return;
   }
 
@@ -1996,6 +1997,7 @@ function fillProfileForm(data) {
   }));
   refreshCabinetAccessUI();
   renderAllSubjectCardProgress();
+  renderHomeContextUI();
 }
 
     function calculateSubjectStats(prefix) {
@@ -2051,9 +2053,8 @@ function fillProfileForm(data) {
             console.warn('[activeSubject] localStorage failed', e);
         }
          renderSubjectTabsUI();
-        renderHomeContextUI();
+         renderHomeContextUI();
         renderAllSubjectCardProgress();
-        renderSubjectExpandDetails();
     }
 
      function initActiveSubject() {
@@ -2067,9 +2068,64 @@ function fillProfileForm(data) {
         });
     }
     function renderHomeContextUI() {
-        // TODO: context-specific content can be updated here in next stages.
+        renderActiveSubjectCard();
+        renderNextEventCard();
     }
 
+    function renderActiveSubjectCard() {
+        const titleEl = document.getElementById('active-subject-title');
+        const tourEl = document.getElementById('active-subject-tour');
+        const statusEl = document.getElementById('active-subject-status');
+        const nextEl = document.getElementById('active-subject-next');
+        if (!titleEl && !tourEl && !statusEl && !nextEl) return;
+
+        const subjectName = subjectDisplayName(activeSubject) || '—';
+        if (titleEl) titleEl.textContent = subjectName;
+
+        const totalTours = 7;
+        const currentNumber = getCurrentTourNumber();
+        const isValidTour = Number.isFinite(currentNumber) && currentNumber > 0;
+        if (tourEl) {
+            tourEl.textContent = isValidTour
+                ? `Тур ${currentNumber} / ${totalTours}`
+                : `Тур — / ${totalTours}`;
+        }
+
+        if (statusEl) {
+            statusEl.textContent = isValidTour
+                ? 'Текущий тур активен'
+                : 'Следующий тур скоро';
+        }
+
+        if (nextEl) {
+            if (isValidTour && currentNumber < totalTours) {
+                nextEl.textContent = 'Следующий тур скоро';
+                nextEl.classList.remove('hidden');
+            } else {
+                nextEl.textContent = '';
+                nextEl.classList.add('hidden');
+            }
+        }
+    }
+
+    function renderNextEventCard() {
+        const nextTourEl = document.getElementById('next-tour-text');
+        if (!nextTourEl) return;
+        const totalTours = 7;
+        const currentNumber = getCurrentTourNumber();
+        if (Number.isFinite(currentNumber) && currentNumber > 0) {
+            if (currentNumber < totalTours) {
+                nextTourEl.textContent = `Тур ${currentNumber + 1} скоро`;
+                return;
+            }
+            if (currentNumber === totalTours) {
+                nextTourEl.textContent = `Все ${totalTours} туров завершены`;
+                return;
+            }
+        }
+        nextTourEl.textContent = 'Следующий тур скоро';
+    }
+  
     function getCurrentTourNumber() {
         if (Number.isFinite(currentTourId)) return currentTourId;
         const numericId = Number(currentTourId);
@@ -2112,60 +2168,6 @@ function fillProfileForm(data) {
         return (userAnswersCache || []).some(a => ids.has(a.question_id));
     }
 
-    function renderSubjectExpandDetails() {
-        const cards = document.querySelectorAll('.subject-card[data-subject]');
-        const totalTours = 7;
-        const currentNumber = getCurrentTourNumber();
-        const completedTours = getCompletedToursCount();
-        const tourLabel = tSafe('tour_label', 'Тур');
-        const statusActive = tSafe('tour_status_active', 'Активен');
-        const statusDone = tSafe('tour_status_done', 'Завершён');
-        const statusLocked = tSafe('tour_status_locked', 'Заблокирован');
-
-        cards.forEach(card => {
-            const key = normalizeSubjectKey(card.dataset.subject);
-            const expand = card.querySelector('.subject-expand');
-            if (!expand) return;
-            const isActive = normalizeSubjectKey(card.dataset.subject) === activeSubject;
-            expand.classList.toggle('hidden', !isActive);
-            if (!isActive) return;
-
-            expand.innerHTML = '';
-            const list = document.createElement('div');
-            list.className = 'subject-expand-list';
-
-            for (let i = 1; i <= totalTours; i += 1) {
-                let status = statusLocked;
-                let statusClass = 'is-locked';
-
-                if (completedTours >= i) {
-                    status = statusDone;
-                    statusClass = 'is-done';
-                } else if (Number.isFinite(currentNumber) && i === currentNumber) {
-                    const hasResult = tourCompleted || hasSubjectAnswersInCurrentTour(key);
-                    status = hasResult ? statusDone : statusActive;
-                    statusClass = hasResult ? 'is-done' : 'is-active';
-                } else if (!Number.isFinite(currentNumber) && i === 1) {
-                    status = statusActive;
-                    statusClass = 'is-active';
-                }
-
-                const row = document.createElement('div');
-                row.className = 'subject-expand-item';
-                const title = document.createElement('strong');
-                title.textContent = `${tourLabel} ${i}`;
-                const statusEl = document.createElement('span');
-                statusEl.className = `subject-expand-status ${statusClass}`;
-                statusEl.textContent = status;
-                row.appendChild(title);
-                row.appendChild(statusEl);
-                list.appendChild(row);
-            }
-
-            expand.appendChild(list);
-        });
-    }
-
     function renderSubjectCardProgress(prefix) {
         const percentEl = document.getElementById(`${prefix}-percent`);
         const barEl = document.getElementById(`${prefix}-bar`);
@@ -2184,7 +2186,6 @@ function fillProfileForm(data) {
         document.querySelectorAll('.subject-card[data-subject]').forEach(card => {
             renderSubjectCardProgress(card.dataset.subject);
         });
-        renderSubjectExpandDetails();
     }
 
     function renderSubjectSelectList(selected) {
@@ -3984,20 +3985,25 @@ safeAddListener('tour-subject-pick-cancel', 'click', () => {
 const subjectsGrid = document.querySelector('.subjects-grid');
 if (subjectsGrid) {
   subjectsGrid.addEventListener('click', (event) => {
-    const detailsBtn = event.target.closest('.subject-details-btn');
-    if (detailsBtn) {
-event.stopPropagation();
-      const subject = detailsBtn.dataset.subject;
-      if (subject) window.openSubjectStats?.(subject);
-      return;
-    }
     const card = event.target.closest('.subject-card[data-subject]');
     if (card) {
-      setActiveSubject(card.dataset.subject);
+      const subject = normalizeSubjectKey(card.dataset.subject);
+      if (!subject) return;
+      setActiveSubject(subject);
+      window.openSubjectStats?.(subject);
     }
   });
 }
 
+const resourcesAccordion = document.getElementById('resources-accordion');
+const resourcesToggle = document.getElementById('resources-accordion-toggle');
+const resourcesContent = document.getElementById('resources-accordion-content');
+if (resourcesAccordion && resourcesToggle && resourcesContent) {
+  resourcesToggle.addEventListener('click', () => {
+    const isOpen = resourcesAccordion.classList.toggle('is-open');
+    resourcesToggle.setAttribute('aria-expanded', String(isOpen));
+  });
+}
 safeAddListener('open-cabinet-btn', 'click', () => { 
   showScreen('cabinet-screen'); 
   loadLeaderboard(); 
@@ -4206,6 +4212,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
