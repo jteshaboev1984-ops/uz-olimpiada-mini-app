@@ -97,7 +97,7 @@
             <div id="reg-locked-msg" class="locked-status-btn hidden">
                 <i class="fa-solid fa-lock"></i> <span data-i18n="profile_locked_msg">O'zgartirish vaqtincha yopiq</span>
             </div>
-            <button id="reg-back-btn" class="btn-secondary hidden" data-i18n="btn_cancel">Bekor qilish</button>
+            <button id="reg-back-btn" class="btn-secondary hidden" data-i18n="btn_back">Orqaga</button>
         </div>
     </div>
 
@@ -315,6 +315,7 @@
                         <button class="subject-details-btn" type="button" data-subject="math" aria-label="Подробнее">i</button>
                     </div>
                     <h3 data-i18n="subj_math">Matematika</h3><div class="progress-line"><div id="math-bar" style="width: 0%"></div></div>
+                    <div class="subject-expand hidden" data-subject-expand="math"></div>
                 </div>
                  <div class="subject-card" data-subject="chem">
                     <span class="percent-badge" id="chem-percent">Tur ? / 7</span>
@@ -323,6 +324,7 @@
                         <button class="subject-details-btn" type="button" data-subject="chem" aria-label="Подробнее">i</button>
                     </div>
                     <h3 data-i18n="subj_chem">Kimyo</h3><div class="progress-line"><div id="chem-bar" style="width: 0%"></div></div>
+                    <div class="subject-expand hidden" data-subject-expand="chem"></div>
                 </div>
                 <div class="subject-card" data-subject="bio">
                     <span class="percent-badge" id="bio-percent">Tur ? / 7</span>
@@ -331,6 +333,7 @@
                         <button class="subject-details-btn" type="button" data-subject="bio" aria-label="Подробнее">i</button>
                     </div>
                     <h3 data-i18n="subj_bio">Biologiya</h3><div class="progress-line"><div id="bio-bar" style="width: 0%"></div></div>
+                    <div class="subject-expand hidden" data-subject-expand="bio"></div>
                 </div>
                 <div class="subject-card" data-subject="it">
                     <span class="percent-badge" id="it-percent">Tur ? / 7</span>
@@ -338,7 +341,8 @@
                         <div class="sub-icon cyan"><i class="fa-solid fa-laptop-code"></i></div>
                         <button class="subject-details-btn" type="button" data-subject="it" aria-label="Подробнее">i</button>
                     </div>
-                    <h3 data-i18n="subj_it">Informatika</h3><div class="progress-line"><div id="it-bar" style="width: 0%"></div></div>
+                     <h3 data-i18n="subj_it">Informatika</h3><div class="progress-line"><div id="it-bar" style="width: 0%"></div></div>
+                    <div class="subject-expand hidden" data-subject-expand="it"></div>
                 </div>
                  <div class="subject-card" data-subject="eco">
                     <span class="percent-badge" id="eco-percent">Tur ? / 7</span>
@@ -347,6 +351,7 @@
                         <button class="subject-details-btn" type="button" data-subject="eco" aria-label="Подробнее">i</button>
                     </div>
                     <h3 data-i18n="subj_eco">Iqtisodiyot</h3><div class="progress-line"><div id="eco-bar" style="width: 0%"></div></div>
+                    <div class="subject-expand hidden" data-subject-expand="eco"></div>
                 </div>
                 <div class="subject-card" data-subject="sat">
                     <span class="percent-badge" id="sat-percent">Tur ? / 7</span>
@@ -355,6 +360,7 @@
                         <button class="subject-details-btn" type="button" data-subject="sat" aria-label="Подробнее">i</button>
                     </div>
                     <h3>SAT</h3><div class="progress-line"><div id="sat-bar" style="width: 0%"></div></div>
+                    <div class="subject-expand hidden" data-subject-expand="sat"></div>
                 </div>
                 <div class="subject-card" data-subject="ielts">
                     <span class="percent-badge" id="ielts-percent">Tur ? / 7</span>
@@ -363,6 +369,7 @@
                         <button class="subject-details-btn" type="button" data-subject="ielts" aria-label="Подробнее">i</button>
                     </div>
                     <h3>IELTS</h3><div class="progress-line"><div id="ielts-bar" style="width: 0%"></div></div>
+                    <div class="subject-expand hidden" data-subject-expand="ielts"></div>
                 </div>
 
                 </div>
@@ -379,7 +386,7 @@
                 <div class="action-card" id="home-practice-btn">
                     <div class="icon-circle green"><i class="fa-solid fa-dumbbell"></i></div>
                     <div class="action-text">
-                        <span data-i18n="menu_practice">Mashq</span>
+                         <span data-i18n="menu_practice">Amaliyot</span>    
                     </div>
                 </div>
                 <div class="action-card" id="home-mistakes-btn">
@@ -615,9 +622,9 @@
     <div class="modal hidden" id="subject-select-modal">
         <div class="modal-card">
             <h2>Выберите предметы</h2>
-            <p class="modal-subtitle">Можно выбрать от 1 до 3. После подтверждения изменить предметы нельзя до завершения всех 7 туров.</p>
+            <p class="modal-subtitle">Можно выбрать от 1 до 3 предметов.<br>После подтверждения изменить нельзя до конца 7 туров.</p>
             <div id="subject-select-list" class="subject-select-list"></div>
-            <div id="subject-select-warning" class="subject-select-warning is-hidden">Можно выбрать не более 3 предметов.</div>
+            <div id="subject-select-warning" class="subject-select-warning is-hidden">Не более 3 предметов.</div>
             <button id="subject-select-next" class="btn-primary" disabled>Продолжить</button>
         </div>
     </div>
@@ -629,6 +636,14 @@
             <p class="modal-subtitle">После подтверждения изменить предметы нельзя до завершения всех 7 туров.</p>
             <button id="subject-confirm-yes" class="btn-primary">Подтвердить</button>
             <button id="subject-confirm-back" class="btn-secondary">Вернуться</button>
+        </div>
+    </div>
+    
+    <div class="modal hidden" id="tour-subject-pick-modal">
+        <div class="modal-card tour-subject-card">
+            <h2 data-i18n="tour_subject_pick_title">Выберите предмет для тура</h2>
+            <div id="tour-subject-pick-list" class="tour-subject-pick-list"></div>
+            <button id="tour-subject-pick-cancel" class="btn-secondary" data-i18n="btn_cancel">Отмена</button>
         </div>
     </div>
     
@@ -808,6 +823,7 @@
     <script src="./script.js?v=31" defer></script>
 </body>
 </html>
+
 
 
 
