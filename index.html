@@ -305,84 +305,78 @@
            <h1 class="greeting"><span data-i18n="greeting_hi">Salom</span>, <span id="home-user-name">Ishtirokchi</span>!</h1>
             <p class="subtitle" data-i18n="greeting_sub">Olimpiadaga xush kelibsiz.</p>
 
+            <div id="active-subject-card" class="active-subject-card">
+                <div class="active-subject-icon">
+                    <i class="fa-solid fa-star"></i>
+                </div>
+                <div class="active-subject-content">
+                    <span class="active-subject-label">Активный предмет</span>
+                    <div class="active-subject-title" id="active-subject-title">—</div>
+                    <div class="active-subject-meta">
+                        <span class="active-subject-tour" id="active-subject-tour">Тур — / 7</span>
+                        <span class="active-subject-status" id="active-subject-status">Следующий тур скоро</span>
+                    </div>
+                    <div class="active-subject-next" id="active-subject-next"></div>
+                </div>
+            </div>
+
             <div class="section-header"><h2 id="subjects-title" data-i18n="subjects_title">Fanlar</h2></div>
 
             <div class="subjects-grid">
-                <div class="subject-card" data-subject="math">
+                 <div class="subject-card" data-subject="math">
                     <span class="percent-badge" id="math-percent">Tur ? / 7</span>
                     <div class="subject-top">
                         <div class="sub-icon blue"><i class="fa-solid fa-calculator"></i></div>
-                        <button class="subject-details-btn" type="button" data-subject="math" aria-label="Подробнее">i</button>
                     </div>
                     <h3 data-i18n="subj_math">Matematika</h3><div class="progress-line"><div id="math-bar" style="width: 0%"></div></div>
-                    <div class="subject-expand hidden" data-subject-expand="math"></div>
                 </div>
                  <div class="subject-card" data-subject="chem">
                     <span class="percent-badge" id="chem-percent">Tur ? / 7</span>
                     <div class="subject-top">
                         <div class="sub-icon teal"><i class="fa-solid fa-flask"></i></div>
-                        <button class="subject-details-btn" type="button" data-subject="chem" aria-label="Подробнее">i</button>
                     </div>
                     <h3 data-i18n="subj_chem">Kimyo</h3><div class="progress-line"><div id="chem-bar" style="width: 0%"></div></div>
-                    <div class="subject-expand hidden" data-subject-expand="chem"></div>
                 </div>
                 <div class="subject-card" data-subject="bio">
                     <span class="percent-badge" id="bio-percent">Tur ? / 7</span>
                     <div class="subject-top">
                         <div class="sub-icon green"><i class="fa-solid fa-leaf"></i></div>
-                        <button class="subject-details-btn" type="button" data-subject="bio" aria-label="Подробнее">i</button>
                     </div>
                     <h3 data-i18n="subj_bio">Biologiya</h3><div class="progress-line"><div id="bio-bar" style="width: 0%"></div></div>
-                    <div class="subject-expand hidden" data-subject-expand="bio"></div>
                 </div>
                 <div class="subject-card" data-subject="it">
                     <span class="percent-badge" id="it-percent">Tur ? / 7</span>
                     <div class="subject-top">
                         <div class="sub-icon cyan"><i class="fa-solid fa-laptop-code"></i></div>
-                        <button class="subject-details-btn" type="button" data-subject="it" aria-label="Подробнее">i</button>
                     </div>
                      <h3 data-i18n="subj_it">Informatika</h3><div class="progress-line"><div id="it-bar" style="width: 0%"></div></div>
-                    <div class="subject-expand hidden" data-subject-expand="it"></div>
                 </div>
                  <div class="subject-card" data-subject="eco">
                     <span class="percent-badge" id="eco-percent">Tur ? / 7</span>
                     <div class="subject-top">
                         <div class="sub-icon brown"><i class="fa-solid fa-chart-line"></i></div>
-                        <button class="subject-details-btn" type="button" data-subject="eco" aria-label="Подробнее">i</button>
                     </div>
                     <h3 data-i18n="subj_eco">Iqtisodiyot</h3><div class="progress-line"><div id="eco-bar" style="width: 0%"></div></div>
-                    <div class="subject-expand hidden" data-subject-expand="eco"></div>
                 </div>
                 <div class="subject-card" data-subject="sat">
                     <span class="percent-badge" id="sat-percent">Tur ? / 7</span>
                     <div class="subject-top">
                         <div class="sub-icon red"><i class="fa-solid fa-brain"></i></div>
-                        <button class="subject-details-btn" type="button" data-subject="sat" aria-label="Подробнее">i</button>
                     </div>
                     <h3>SAT</h3><div class="progress-line"><div id="sat-bar" style="width: 0%"></div></div>
-                    <div class="subject-expand hidden" data-subject-expand="sat"></div>
                 </div>
                 <div class="subject-card" data-subject="ielts">
                     <span class="percent-badge" id="ielts-percent">Tur ? / 7</span>
                     <div class="subject-top">
                         <div class="sub-icon red"><i class="fa-solid fa-graduation-cap"></i></div>
-                        <button class="subject-details-btn" type="button" data-subject="ielts" aria-label="Подробнее">i</button>
                     </div>
                     <h3>IELTS</h3><div class="progress-line"><div id="ielts-bar" style="width: 0%"></div></div>
-                    <div class="subject-expand hidden" data-subject-expand="ielts"></div>
                 </div>
 
                 </div>
 
+            <div class="section-header"><h2>Действия</h2></div>
             <div class="action-grid">
-                <div class="action-card" id="leaderboard-btn">
-                    <div class="icon-circle gold"><i class="fa-solid fa-trophy"></i></div>
-                    <span data-i18n="btn_leaderboard">Reyting</span>
-                </div>
-                <div class="action-card hidden" id="home-cert-btn">
-                    <div class="icon-circle gold"><i class="fa-solid fa-award"></i></div>
-                    <span data-i18n="cert_title">Sertifikat</span>
-                </div>
                 <div class="action-card" id="home-practice-btn">
                     <div class="icon-circle green"><i class="fa-solid fa-dumbbell"></i></div>
                     <div class="action-text">
@@ -397,23 +391,53 @@
                     </div>
             </div>  
 
-            <div class="section-header" style="margin-top: 30px;"><h2 data-i18n="res_title">Resurslar</h2></div>
-            <div class="resources-list">
-                <div class="resource-card" onclick="openExternalLink('https://youtube.com')">
-                    <div class="res-icon youtube"><i class="fa-brands fa-youtube"></i></div>
-                    <div class="res-info"><h4 data-i18n="res_vid_title">Video darslar</h4><p data-i18n="res_vid_desc">Masalalar yechimi</p></div>
-                    <i class="fa-solid fa-chevron-right arrow"></i>
+            <div class="resources-accordion" id="resources-accordion">
+                <button class="accordion-toggle" id="resources-accordion-toggle" type="button" aria-expanded="false" aria-controls="resources-accordion-content">
+                    <span>Ресурсы</span>
+                    <i class="fa-solid fa-chevron-down"></i>
+                </button>
+                <div class="accordion-content" id="resources-accordion-content">
+                    <div class="accordion-section">
+                        <h3>Материалы</h3>
+                        <div class="resources-list">
+                            <div class="resource-card" onclick="openExternalLink('https://youtube.com')">
+                                <div class="res-icon youtube"><i class="fa-brands fa-youtube"></i></div>
+                                <div class="res-info"><h4 data-i18n="res_vid_title">Video darslar</h4><p data-i18n="res_vid_desc">Masalalar yechimi</p></div>
+                                <i class="fa-solid fa-chevron-right arrow"></i>
+                            </div>
+                           <div class="resource-card" onclick="openExternalLink('https://t.me/iClubuzofficial')">
+                                <div class="res-icon telegram"><i class="fa-solid fa-bullhorn"></i></div>
+                                <div class="res-info"><h4 data-i18n="res_ch_title">Kanal</h4><p data-i18n="res_ch_desc">Yangiliklar</p></div>
+                                <i class="fa-solid fa-chevron-right arrow"></i>
+                            </div>
+                            <div class="resource-card" onclick="openExternalLink('https://t.me/+yp3GKhnohKQxOTdi')">
+                                <div class="res-icon group"><i class="fa-solid fa-users"></i></div>
+                                <div class="res-info"><h4 data-i18n="res_grp_title">Ishtirokchilar chati</h4><p data-i18n="res_grp_desc">Muhokama</p></div>
+                                <i class="fa-solid fa-chevron-right arrow"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-section">
+                        <h3>Книги</h3>
+                        <div class="books-list">
+                            <button class="book-link" type="button" onclick="openExternalLink('https://example.com/books/math.pdf')">
+                                Математика • Сборник задач (PDF)
+                            </button>
+                            <button class="book-link" type="button" onclick="openExternalLink('https://example.com/books/chemistry.pdf')">
+                                Химия • Базовый курс (PDF)
+                            </button>
+                            <button class="book-link" type="button" onclick="openExternalLink('https://example.com/books/biology.pdf')">
+                                Биология • Конспекты (PDF)
+                            </button>
+                        </div>
+                    </div>
                 </div>
-               <div class="resource-card" onclick="openExternalLink('https://t.me/iClubuzofficial')">
-                    <div class="res-icon telegram"><i class="fa-solid fa-bullhorn"></i></div>
-                    <div class="res-info"><h4 data-i18n="res_ch_title">Kanal</h4><p data-i18n="res_ch_desc">Yangiliklar</p></div>
-                    <i class="fa-solid fa-chevron-right arrow"></i>
-                </div>
-                <div class="resource-card" onclick="openExternalLink('https://t.me/+yp3GKhnohKQxOTdi')">
-                    <div class="res-icon group"><i class="fa-solid fa-users"></i></div>
-                    <div class="res-info"><h4 data-i18n="res_grp_title">Ishtirokchilar chati</h4><p data-i18n="res_grp_desc">Muhokama</p></div>
-                    <i class="fa-solid fa-chevron-right arrow"></i>
-                </div>
+            </div>
+
+            <div class="section-header" style="margin-top: 24px;"><h2>Ближайшее событие</h2></div>
+            <div class="next-event-card">
+                <span class="next-event-label">Следующий тур</span>
+                <div class="next-event-text" id="next-tour-text">Следующий тур скоро</div>
             </div>
         </div> 
 
@@ -823,6 +847,7 @@
     <script src="./script.js?v=31" defer></script>
 </body>
 </html>
+
 
 
 
