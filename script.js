@@ -283,6 +283,15 @@ function normalizeSubjectKey(raw) {
   return base;
 }
 
+function escapeHTML(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 function subjectDisplayName(key) {
   // key уже lower-case
   const k = String(key || '').toLowerCase();
@@ -478,6 +487,24 @@ function applyPracticeModalTranslations() {
   if (allOption) allOption.textContent = tSafe('practice_filter_all', 'All');
 }
 
+function getPracticeSubjectOptions() {
+  const subjects = getSubjectsFromCache();
+  const allowedSubjects = ['math', 'chem', 'bio', 'it', 'eco', 'sat', 'ielts'];
+  const available = new Set(subjects.map(s => normalizeSubjectKey(s)));
+  const list = allowedSubjects.filter(key => available.has(key));
+  const subjectList = list.length ? list : allowedSubjects.slice();
+  const locked = isSubjectsLocked();
+  const selected = getSelectedSubjects();
+
+  if (locked && selected.length) {
+    const filtered = selected.filter(key => subjectList.includes(key));
+    const finalList = filtered.length ? filtered : selected.slice();
+    return { subjectList: finalList, allowAll: finalList.length >= 2 };
+  }
+
+  return { subjectList, allowAll: true };
+}
+
 function openPracticeConfigModal({ canContinue }) {
   const modal = document.getElementById('practice-config-modal');
   if (!modal) {
@@ -489,20 +516,28 @@ function openPracticeConfigModal({ canContinue }) {
   applyPracticeModalTranslations();
   practiceFilters = normalizePracticeFilters(practiceFilters);  
   // собрать предметы из кеша вопросов
-  const subjects = getSubjectsFromCache(); // уже есть у тебя
-  const allowedSubjects = ['math', 'chem', 'bio', 'it', 'eco', 'sat', 'ielts'];
-  const available = new Set(subjects.map(s => normalizeSubjectKey(s)));
-  const list = allowedSubjects.filter(key => available.has(key));
-  const subjectList = list.length ? list : allowedSubjects.slice();
+  const { subjectList, allowAll } = getPracticeSubjectOptions();
+  const allowedSet = new Set(subjectList.map(key => normalizeSubjectKey(key)));
+  const currentSubjects = normalizePracticeFilters(practiceFilters).subjects || [];
+  let nextSubjects = currentSubjects.filter(key => allowedSet.has(normalizeSubjectKey(key)));
+  if (subjectList.length === 1 && nextSubjects.length === 0) {
+    nextSubjects = [subjectList[0]];
+  }
+  practiceFilters = normalizePracticeFilters({
+    ...practiceFilters,
+    subjects: nextSubjects
+  });
   const chipsWrap = document.getElementById('practice-subject-chips');
   if (chipsWrap) {
     chipsWrap.innerHTML = '';
-    chipsWrap.appendChild(makeChip(tSafe('practice_filter_all', 'All'), 'all', false));
+    if (allowAll) {
+      chipsWrap.appendChild(makeChip(tSafe('practice_filter_all', 'All'), 'all', false));
+    }
 
     subjectList.forEach(key => {
       const label = subjectDisplayName(key);
       chipsWrap.appendChild(makeChip(label, key, false));
-    });
+});
     updatePracticeSubjectChips(chipsWrap);
   }
 
@@ -674,6 +709,15 @@ function getPracticeConfigFromUI() {
   const countEl = document.getElementById('practice-count');
   let count = countEl ? parseInt(countEl.value, 10) : 20;
   if (!Number.isFinite(count) || count <= 0) count = 20;
+
+  const locked = isSubjectsLocked();
+  const selected = getSelectedSubjects();
+  if (locked && selected.length) {
+    const allowedSet = new Set(selected.map(key => normalizeSubjectKey(key)));
+    if (!subjects.length) subjects = selected.slice();
+    subjects = subjects.filter(key => allowedSet.has(normalizeSubjectKey(key)));
+    if (!subjects.length) subjects = selected.slice();
+  }
 
   return normalizePracticeFilters({ subjects, difficulty, count });
 }
@@ -924,11 +968,11 @@ function exitPracticeToReturnScreen() {
             no_active_tour: "Faol turlar yo'q",
             tour_completed_btn: "Tur yakunlangan",
             start_tour_btn: "Turni boshlash",
-            main_btn_completed_hint: "Mashq va xatolar tahlili — profil bo'limida",
-            main_btn_completed_hint_locked: "Mashq tur yakunlangach profil bo'limida ochiladi",
-            main_btn_practice_hint: "Mashq yakunlangan turlar uchun mavjud",
+            main_btn_completed_hint: "Amaliyot va xatolar tahlili — profil bo'limida",
+            main_btn_completed_hint_locked: "Amaliyot tur yakunlangach profil bo'limida ochiladi",
+            main_btn_practice_hint: "Amaliyot yakunlangan turlar uchun mavjud",
             main_btn_start_hint: "Boshlash uchun bosing",
-            practice_btn: "Mashq",
+            practice_btn: "Amaliyot",
             minutes: "daqiqa",
             questions: "savol",
             correct_txt: "to'g'ri",
@@ -960,29 +1004,34 @@ function exitPracticeToReturnScreen() {
             btn_delete_confirm: "O'chirish",
             del_error_active_tour: "Joriy tur topshirilganligi sababli hisobni o'chirish mumkin emas. Iltimos, tur yakunlanishini kuting.",
             btn_back: "Orqaga",
-            practice_title: "Mashq",
-            practice_subtitle: "Fan, qiyinchilik va savollar sonini tanlang.",
+            practice_title: "Amaliyot",
+            practice_subtitle: "Fan, daraja va savollar sonini tanlang.",
             practice_filter_subject: "Fan",
             practice_filter_difficulty: "Qiyinchilik",
             practice_filter_count: "Savollar soni",
             practice_filter_all: "Barchasi",
-            btn_start_practice: "Mashqni boshlash",
-            btn_continue_practice: "Mashqni davom ettirish",
+            btn_start_practice: "Amaliyotni boshlash",
+            btn_continue_practice: "Amaliyotni davom ettirish",
             menu_mistakes: "Xatolar tahlili",
             menu_mistakes_desc: "Javoblarni ko'rish",
-            menu_practice: "Mashq",
-            menu_practice_desc: "Mashq rejimi",
-            home_practice_subtitle: "Taymersiz mashq",
+            menu_practice: "Amaliyot",
+            menu_practice_desc: "Amaliyot rejimi",
+            home_practice_subtitle: "Taymersiz amaliyot",
             home_mistakes_subtitle: "Noto'g'ri javoblar tahlili",
             lock_review_title: "Tahlil yopiq",
             lock_review_msg: "Adolatli raqobat uchun xatolar tahlili olimpiada yakunlangandan so'ng ochiladi.",
             access_locked_title: "Kirish yopiq",
-            access_locked_msg: "Mashq va xatolar tahlili faqat kamida 1 ta tur yakunlangandan so'ng ochiladi.",
+            access_locked_msg: "Amaliyot va xatolar tahlili faqat kamida 1 ta tur yakunlangandan so'ng ochiladi.",
             tour_info_practice_title: "Tur yakunlangan",
-            tour_info_practice_msg: "Mashq va xatolar tahlili shaxsiy kabinetda mavjud.",
-            tour_info_practice_locked_title: "Mashq yopiq",
-            tour_info_practice_locked_msg: "Mashq tur yakunlangach ochiladi.",
+            tour_info_practice_msg: "Amaliyot va xatolar tahlili shaxsiy kabinetda mavjud.",
+            tour_info_practice_locked_title: "Amaliyot yopiq",
+            tour_info_practice_locked_msg: "Amaliyot tur yakunlangach ochiladi.",
             btn_open_profile: "Profilga o'tish",
+            tour_subject_pick_title: "Tur uchun fanni tanlang",
+            tour_label: "Tur",
+            tour_status_active: "Faol",
+            tour_status_done: "Yakunlangan",
+            tour_status_locked: "Yopiq",
             lang_warning_reg: "Diqqat: Til va ma'lumotlar saqlangandan so'ng o'zgartirib bo'lmaydi!",
             lang_locked_reason: "Adolatli raqobat uchun tilni o'zgartirish imkoniyati o'chirilgan.",
             cheat_title: "DIQQAT! QOIDABUZARLIK!",
@@ -1117,7 +1166,7 @@ function exitPracticeToReturnScreen() {
             main_btn_completed_hint_locked: "Практика в профиле откроется после завершения тура",
             main_btn_practice_hint: "Практика доступна после завершения тура",
             main_btn_start_hint: "Нажмите, чтобы начать текущий тур",
-            practice_btn: "Тренировка",
+            practice_btn: "Практика",
             minutes: "минут",
             questions: "вопросов",
             correct_txt: "верно",
@@ -1159,19 +1208,24 @@ function exitPracticeToReturnScreen() {
             btn_continue_practice: "Продолжить практику",
             menu_mistakes: "Работа над ошибками",
             menu_mistakes_desc: "Посмотреть ответы",
-            menu_practice: "Тренировка",
+            menu_practice: "Практика",
             menu_practice_desc: "Режим практики",
-            home_practice_subtitle: "Тренировка без таймера",
+            home_practice_subtitle: "Практика без таймера",
             home_mistakes_subtitle: "Разбор неверных ответов",
             lock_review_title: "Разбор закрыт",
             lock_review_msg: "В целях честной игры разбор ошибок станет доступен после окончания олимпиады.",
             access_locked_title: "Доступ закрыт",
             access_locked_msg: "Практика и разбор ошибок доступны после завершения хотя бы одного тура.",
-            tour_info_practice_title: "Тур завершён",
+             tour_info_practice_title: "Тур завершён",
             tour_info_practice_msg: "Практика и разбор ошибок доступны в личном кабинете.",
             tour_info_practice_locked_title: "Практика недоступна",
             tour_info_practice_locked_msg: "Практика откроется после завершения тура.",
             btn_open_profile: "В профиль",
+            tour_subject_pick_title: "Выберите предмет для тура",
+            tour_label: "Тур",
+            tour_status_active: "Активен",
+            tour_status_done: "Завершён",
+            tour_status_locked: "Заблокирован",
             lang_warning_reg: "Внимание: Язык и данные профиля нельзя будет изменить после сохранения!",
             lang_locked_reason: "Смена языка отключена для обеспечения честной конкуренции.",
             cheat_title: "НАРУШЕНИЕ!",
@@ -1361,6 +1415,11 @@ function exitPracticeToReturnScreen() {
             tour_info_practice_locked_title: "Practice unavailable",
             tour_info_practice_locked_msg: "Practice opens after the tour ends.",
             btn_open_profile: "Open profile",
+            tour_subject_pick_title: "Choose a subject for the tour",
+            tour_label: "Tour",
+            tour_status_active: "Active",
+            tour_status_done: "Completed",
+            tour_status_locked: "Locked",
             lang_warning_reg: "Attention: Language and profile data cannot be changed after saving!",
             lang_locked_reason: "Language changing is disabled to ensure fair competition.",
             cheat_title: "VIOLATION!",
@@ -1368,12 +1427,17 @@ function exitPracticeToReturnScreen() {
         }
     };
 
-    function t(key) {
+  function t(key) {
         return (translations[currentLang] && translations[currentLang][key]) || key;
     }
 
-    // FIX #2: Улучшенная функция setLanguage - не вызывает повторные обновления UI если язык не изменился
-    function setLanguage(lang, forceUpdate = false) {
+    function tSafe(key, fallback) {
+        const value = t(key);
+        return value && value !== key ? value : fallback;
+    }
+
+    // FIX #2: Улучшенная функция setLanguage - не вызывает повторные обновления UI если язык не изменился  
+  function setLanguage(lang, forceUpdate = false) {
         if (isLangLocked && lang !== currentLang && !forceUpdate) {
             return; 
         }
@@ -1986,9 +2050,10 @@ function fillProfileForm(data) {
         } catch (e) {
             console.warn('[activeSubject] localStorage failed', e);
         }
-        renderSubjectTabsUI();
+         renderSubjectTabsUI();
         renderHomeContextUI();
         renderAllSubjectCardProgress();
+        renderSubjectExpandDetails();
     }
 
      function initActiveSubject() {
@@ -2016,6 +2081,91 @@ function fillProfileForm(data) {
         return null;
     }
 
+    function getCompletedToursCount() {
+        const counts = [];
+        if (currentUserData) {
+            const values = [
+                currentUserData.completed_tours,
+                currentUserData.tours_completed,
+                currentUserData.completedTours,
+                currentUserData.tours_count
+            ];
+            values.forEach(val => {
+                if (Number.isFinite(val)) counts.push(Number(val));
+            });
+        }
+        const currentNumber = getCurrentTourNumber();
+        if (tourCompleted && Number.isFinite(currentNumber)) counts.push(currentNumber);
+        if (!counts.length) return 0;
+        return Math.max(...counts);
+    }
+
+    function hasSubjectAnswersInCurrentTour(subjectKey) {
+        const normalized = normalizeSubjectKey(subjectKey);
+        if (!normalized) return false;
+        const ids = new Set(
+            (tourQuestionsAllCache || [])
+                .filter(q => String(q.subject || '').toLowerCase().startsWith(normalized))
+                .map(q => q.id)
+        );
+        if (!ids.size) return false;
+        return (userAnswersCache || []).some(a => ids.has(a.question_id));
+    }
+
+    function renderSubjectExpandDetails() {
+        const cards = document.querySelectorAll('.subject-card[data-subject]');
+        const totalTours = 7;
+        const currentNumber = getCurrentTourNumber();
+        const completedTours = getCompletedToursCount();
+        const tourLabel = tSafe('tour_label', 'Тур');
+        const statusActive = tSafe('tour_status_active', 'Активен');
+        const statusDone = tSafe('tour_status_done', 'Завершён');
+        const statusLocked = tSafe('tour_status_locked', 'Заблокирован');
+
+        cards.forEach(card => {
+            const key = normalizeSubjectKey(card.dataset.subject);
+            const expand = card.querySelector('.subject-expand');
+            if (!expand) return;
+            const isActive = normalizeSubjectKey(card.dataset.subject) === activeSubject;
+            expand.classList.toggle('hidden', !isActive);
+            if (!isActive) return;
+
+            expand.innerHTML = '';
+            const list = document.createElement('div');
+            list.className = 'subject-expand-list';
+
+            for (let i = 1; i <= totalTours; i += 1) {
+                let status = statusLocked;
+                let statusClass = 'is-locked';
+
+                if (completedTours >= i) {
+                    status = statusDone;
+                    statusClass = 'is-done';
+                } else if (Number.isFinite(currentNumber) && i === currentNumber) {
+                    const hasResult = tourCompleted || hasSubjectAnswersInCurrentTour(key);
+                    status = hasResult ? statusDone : statusActive;
+                    statusClass = hasResult ? 'is-done' : 'is-active';
+                } else if (!Number.isFinite(currentNumber) && i === 1) {
+                    status = statusActive;
+                    statusClass = 'is-active';
+                }
+
+                const row = document.createElement('div');
+                row.className = 'subject-expand-item';
+                const title = document.createElement('strong');
+                title.textContent = `${tourLabel} ${i}`;
+                const statusEl = document.createElement('span');
+                statusEl.className = `subject-expand-status ${statusClass}`;
+                statusEl.textContent = status;
+                row.appendChild(title);
+                row.appendChild(statusEl);
+                list.appendChild(row);
+            }
+
+            expand.appendChild(list);
+        });
+    }
+
     function renderSubjectCardProgress(prefix) {
         const percentEl = document.getElementById(`${prefix}-percent`);
         const barEl = document.getElementById(`${prefix}-bar`);
@@ -2034,6 +2184,7 @@ function fillProfileForm(data) {
         document.querySelectorAll('.subject-card[data-subject]').forEach(card => {
             renderSubjectCardProgress(card.dataset.subject);
         });
+        renderSubjectExpandDetails();
     }
 
     function renderSubjectSelectList(selected) {
@@ -2052,7 +2203,7 @@ function fillProfileForm(data) {
             checkbox.checked = list.includes(key);
 
             const text = document.createElement('span');
-            text.textContent = `${key} — ${subjectDisplayName(key)}`;
+            text.textContent = subjectDisplayName(key);
 
             item.appendChild(checkbox);
             item.appendChild(text);
@@ -2101,7 +2252,7 @@ function fillProfileForm(data) {
         const textEl = document.getElementById('subject-confirm-text');
         if (textEl) {
             const names = list.map(key => subjectDisplayName(key)).join(', ');
-            textEl.textContent = `Вы выбрали: ${names}. После подтверждения изменить предметы нельзя до завершения всех 7 туров.`;
+            textEl.textContent = `Вы выбрали: ${names}.`;
         }
         modal.classList.remove('hidden');
     }
@@ -2214,13 +2365,20 @@ function fillProfileForm(data) {
         const realRanks = [2, 1, 3];
         const defaultAvatar = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%23E1E1E6"/><text x="50" y="60" font-size="40" text-anchor="middle" fill="%23666">?</text></svg>';
 
-        top3.forEach((player, i) => {
+      top3.forEach((player, i) => {
             if (player) {
+                const rawName = String(player.name || '').trim() || t('anonymous');
+                const displayName = rawName.split(/\s+/).slice(0, 2).join(' ');
+                const safeDisplayName = escapeHTML(displayName);
+                const initial = escapeHTML(rawName.charAt(0) || '?');
                 const avatarHtml = player.avatarUrl 
                     ? `<img src="${player.avatarUrl}" class="winner-img" onerror="this.src='${defaultAvatar}'">`
-                    : `<div class="winner-img" style="background:#E1E1E6; display:flex; align-items:center; justify-content:center; font-size:24px; color:#666;">${player.name[0] || '?'}</div>`;
+                    : `<div class="winner-img" style="background:#E1E1E6; display:flex; align-items:center; justify-content:center; font-size:24px; color:#666;">${initial}</div>`;
 
-                const shortLoc = (player.region || "").split(' ')[0] + ", " + (player.district || "").replace(' tumani', '').replace(' района', '');
+                const shortRegion = (player.region || "").split(' ')[0];
+                const shortDistrict = (player.district || "").replace(' tumani', '').replace(' района', '');
+                const shortLoc = `${escapeHTML(shortRegion)}${shortRegion || shortDistrict ? ", " : ""}${escapeHTML(shortDistrict)}`;
+                const safeSchool = escapeHTML(player.school || '?');
 
                 const html = `
                     <div class="winner ${ranks[i]}">
@@ -2228,14 +2386,14 @@ function fillProfileForm(data) {
                             ${avatarHtml}
                             <div class="rank-circle ${rkClasses[i]}">${realRanks[i]}</div>
                         </div>
-                        <div class="winner-name">${player.name.split(' ').slice(0, 2).join(' ')}</div>
+                        <div class="winner-name">${safeDisplayName}</div>
                         <div class="winner-class" style="font-size:10px; opacity:0.8; line-height:1.2; margin-top:3px;">
-                            📍 ${shortLoc}<br>🏫 №${player.school || '?'}
+                            📍 ${shortLoc}<br>🏫 №${safeSchool}
                         </div>
                         <div class="winner-score">${player.score}</div>
                     </div>
-                `;
-                podiumEl.insertAdjacentHTML('beforeend', html);
+                `;  
+      podiumEl.insertAdjacentHTML('beforeend', html);
             } else {
                 podiumEl.insertAdjacentHTML('beforeend', `<div class="winner ${ranks[i]}" style="opacity:0"></div>`);
             }
@@ -2246,13 +2404,14 @@ function fillProfileForm(data) {
             const avatarHtml = player.avatarUrl 
                 ? `<img src="${player.avatarUrl}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
                 : '';
-            const fallbackAvatar = `<div class="no-img">${player.name[0] || '?'}</div>`;
-
-            const displayName = player.name.split(' ').slice(0, 2).join(' ');
+            const rawName = String(player.name || '').trim() || t('anonymous');
+            const displayName = rawName.split(/\s+/).slice(0, 2).join(' ');
+            const safeDisplayName = escapeHTML(displayName);
+            const fallbackAvatar = `<div class="no-img">${escapeHTML(rawName.charAt(0) || '?')}</div>`;
             
             const reg = (player.region || "").replace(" viloyati", "").replace(" shahri", "").replace(" vil", "");
             const dist = (player.district || "").replace(" tumani", "").replace(" района", "");
-            const metaInfo = `📍 ${reg}, ${dist} • 🏫 №${player.school || '?'}`;
+            const metaInfo = `📍 ${escapeHTML(reg)}, ${escapeHTML(dist)} • 🏫 №${escapeHTML(player.school || '?')}`;
 
             const cardStyle = player.isMe ? 'background:#F0F8FF; border:1px solid var(--primary);' : '';
 
@@ -2264,7 +2423,7 @@ function fillProfileForm(data) {
                         ${player.avatarUrl ? fallbackAvatar.replace('class="no-img"', 'class="no-img" style="display:none"') : fallbackAvatar}
                     </div>
                     <div class="l-info">
-                        <span class="l-name" style="font-weight:700; display:block; color:#000; font-size:14px;">${displayName}</span>
+                        <span class="l-name" style="font-weight:700; display:block; color:#000; font-size:14px;">${safeDisplayName}</span>
                         <div class="l-sub" style="font-size:11px; color:#8E8E93; margin-top:2px;">${metaInfo}</div>
                     </div>
                     <div class="l-score" style="font-weight:800; color:var(--primary); font-size:16px; min-width:35px; text-align:right;">${player.score}</div>
@@ -2866,12 +3025,7 @@ function fillProfileForm(data) {
         loadReviewTours();
     };
 
-    const handlePracticeClick = () => {
-        if (!hasCompletedTourAccess()) {
-            showAccessLockModal();
-            return;
-        }
-
+     const handlePracticeClick = () => {
         startPracticeMode();
     };
 
@@ -3116,6 +3270,42 @@ questions = tourQuestionsSelected;          // тест идёт по 15
         if (warnModal) warnModal.classList.remove('hidden');
     }
 
+    function openTourSubjectPickModal(subjects) {
+        const modal = document.getElementById('tour-subject-pick-modal');
+        const listEl = document.getElementById('tour-subject-pick-list');
+        if (!modal || !listEl) return false;
+        listEl.innerHTML = '';
+        subjects.forEach(key => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'tour-subject-pick-btn';
+            btn.dataset.subject = key;
+            btn.textContent = subjectDisplayName(key);
+            listEl.appendChild(btn);
+        });
+        modal.classList.remove('hidden');
+        return true;
+    }
+
+    function closeTourSubjectPickModal() {
+        const modal = document.getElementById('tour-subject-pick-modal');
+        if (modal) modal.classList.add('hidden');
+    }
+
+    function startTourWithSubjectPick() {
+        if (tourCompleted) {
+            handleStartClick();
+            return;
+        }
+        const selected = getSelectedSubjects();
+        if (selected.length >= 2) {
+            openTourSubjectPickModal(selected);
+            return;
+        }
+        if (selected.length === 1) setActiveSubject(selected[0]);
+        handleStartClick();
+    }
+
     function updateMainButton(state, title) {
         const activeBtn = document.getElementById('main-action-btn');
         const certCard = document.getElementById('home-cert-btn');
@@ -3195,7 +3385,7 @@ setHint(tSafe('main_btn_practice_hint', 'Практика доступна по�
             newBtn.disabled = false;
             newBtn.style.background = "";
             if (certCard) certCard.classList.add('hidden'); 
-            newBtn.addEventListener('click', handleStartClick);
+            newBtn.addEventListener('click', startTourWithSubjectPick);
 
           setHint(tSafe('main_btn_start_hint', 'Нажмите, чтобы начать текущий тур'));
         }
@@ -3524,7 +3714,7 @@ if (questionTimerInterval) {
     // поясняющий текст (по твоему требованию: "берём максимум и объясняем")
     const resHint = document.getElementById('res-hint');
     if (resHint) {
-      resHint.textContent = 'Тренировка. Прогресс сохранён. Баллы в рейтинге за завершённый тур не учитываются.';
+      resHint.textContent = 'Практика. Прогресс сохранён. Баллы в рейтинге за завершённый тур не учитываются.';
       resHint.classList.remove('hidden');
     }
 
@@ -3775,6 +3965,22 @@ safeAddListener('subject-confirm-yes', 'click', () => {
   if (confirmModal) confirmModal.classList.add('hidden');
 });
 
+const tourSubjectPickList = document.getElementById('tour-subject-pick-list');
+if (tourSubjectPickList) {
+  tourSubjectPickList.addEventListener('click', (event) => {
+    const btn = event.target.closest('.tour-subject-pick-btn');
+    if (!btn) return;
+    const subject = btn.dataset.subject;
+    if (subject) setActiveSubject(subject);
+    closeTourSubjectPickModal();
+    handleStartClick();
+  });
+}
+
+safeAddListener('tour-subject-pick-cancel', 'click', () => {
+  closeTourSubjectPickModal();
+});
+
 const subjectsGrid = document.querySelector('.subjects-grid');
 if (subjectsGrid) {
   subjectsGrid.addEventListener('click', (event) => {
@@ -4000,6 +4206,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
