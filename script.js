@@ -2207,12 +2207,36 @@ function fillProfileForm(data) {
                 ? `${tourLabel} ${activeCount} / ${totalTours}`
                 : `${tourLabel} — / ${totalTours}`;
         }
-        if (dotsEl) {
+                if (dotsEl) {
             dotsEl.innerHTML = Array.from({ length: totalTours }, (_, index) => (
                 `<span class="tour-dot${index < activeCount ? ' is-active' : ''}"></span>`
             )).join('');
         }
+
+        // === pre-info (до раскрытия карточки) ===
+        const preWrap = card.querySelector('.subject-preinfo');
+        if (preWrap) {
+            const pillProgress = preWrap.querySelector('[data-kind="progress"]');
+            const pillAccuracy = preWrap.querySelector('[data-kind="accuracy"]');
+
+            if (pillProgress && labelEl) {
+                pillProgress.textContent = labelEl.textContent || '—';
+            }
+
+            if (pillAccuracy) {
+                const stats = calculateSubjectStats(prefix);
+                const total = Number(stats.total || 0);
+                const correct = Number(stats.correct || 0);
+
+                if (total > 0) {
+                    pillAccuracy.textContent = `${tSafe('correct_txt', 'Верно')} ${correct}/${total}`;
+                } else {
+                    pillAccuracy.textContent = tSafe('no_data', 'Нет данных');
+                }
+            }
+        }
     }
+
 
     function renderAllSubjectCardProgress() {
         document.querySelectorAll('.subject-card[data-subject]').forEach(card => {
@@ -2442,9 +2466,22 @@ function fillProfileForm(data) {
             const safeDisplayName = escapeHTML(displayName);
             const fallbackAvatar = `<div class="no-img">${escapeHTML(rawName.charAt(0) || '?')}</div>`;
             
-            const reg = (player.region || "").replace(" viloyati", "").replace(" shahri", "").replace(" vil", "");
-            const dist = (player.district || "").replace(" tumani", "").replace(" района", "");
-            const metaInfo = `📍 ${escapeHTML(reg)}, ${escapeHTML(dist)} • 🏫 №${escapeHTML(player.school || '?')}`;
+            const reg = (player.region || "").replace(" viloyati", "").replace(" shahri", "").replace(" vil", "").trim();
+            const dist = (player.district || "").replace(" tumani", "").replace(" района", "").trim();
+            const schoolRaw = String(player.school || "").trim();
+
+            const locParts = [reg, dist].filter(Boolean);
+            const loc = locParts.join(', ');
+
+            let school = schoolRaw;
+            if (school && !/^№/i.test(school)) school = `№${school}`;
+
+            const metaParts = [];
+            if (loc) metaParts.push(loc);
+            if (school) metaParts.push(school);
+
+            const metaInfo = metaParts.join(' • ');
+
 
             const cardStyle = player.isMe ? 'background:#F0F8FF; border:1px solid var(--primary);' : '';
 
@@ -2457,7 +2494,7 @@ function fillProfileForm(data) {
                     </div>
                     <div class="l-info">
                         <span class="l-name" style="font-weight:700; display:block; color:#000; font-size:14px;">${safeDisplayName}</span>
-                        <div class="l-sub" style="font-size:11px; color:#8E8E93; margin-top:2px;">${metaInfo}</div>
+                        ${metaInfo ? `<div class="l-sub" style="font-size:11px; color:#8E8E93; margin-top:2px;">${escapeHTML(metaInfo)}</div>` : ``}
                     </div>
                     <div class="l-score" style="font-weight:800; color:var(--primary); font-size:16px; min-width:35px; text-align:right;">${player.score}</div>
                 </div>
@@ -4302,6 +4339,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
