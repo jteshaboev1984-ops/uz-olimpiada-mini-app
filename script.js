@@ -1041,6 +1041,13 @@ function exitPracticeToReturnScreen() {
             tour_info_practice_locked_title: "Amaliyot yopiq",
             tour_info_practice_locked_msg: "Amaliyot tur yakunlangach ochiladi.",
             btn_open_profile: "Profilga o'tish",
+            subject_select_title: "Fanlarni tanlang",
+            subject_select_subtitle: "1 dan 3 tagacha fan tanlash mumkin. Tasdiqlangandan so‘ng 7 tur tugaguncha o‘zgartirib bo‘lmaydi.",
+            subject_select_warning: "3 tadan ko‘p bo‘lishi mumkin emas.",
+            subject_select_next: "Davom etish",
+            subject_confirm_title: "Tanlovni tasdiqlaysizmi?",
+            subject_confirm_you_selected: "Siz tanladingiz:",
+            subject_confirm_subtitle: "Tasdiqlangandan so‘ng fanlarni 7 tur yakunlanguncha o‘zgartirib bo‘lmaydi.",
             tour_subject_pick_title: "Tur uchun fanni tanlang",
             tour_label: "Tur",
             tour_status_active: "Faol",
@@ -1240,6 +1247,13 @@ function exitPracticeToReturnScreen() {
             tour_info_practice_locked_title: "Практика недоступна",
             tour_info_practice_locked_msg: "Практика откроется после завершения тура.",
             btn_open_profile: "В профиль",
+            subject_select_title: "Выберите предметы",
+            subject_select_subtitle: "Можно выбрать от 1 до 3 предметов. После подтверждения изменить нельзя до конца 7 туров.",
+            subject_select_warning: "Не более 3 предметов.",
+            subject_select_next: "Продолжить",
+            subject_confirm_title: "Подтвердить выбор?",
+            subject_confirm_you_selected: "Вы выбрали:",
+            subject_confirm_subtitle: "После подтверждения изменить предметы нельзя до завершения всех 7 туров.",
             tour_subject_pick_title: "Выберите предмет для тура",
             tour_label: "Тур",
             tour_status_active: "Активен",
@@ -1439,6 +1453,13 @@ function exitPracticeToReturnScreen() {
             tour_info_practice_locked_title: "Practice unavailable",
             tour_info_practice_locked_msg: "Practice opens after the tour ends.",
             btn_open_profile: "Open profile",
+            subject_select_title: "Choose subjects",
+            subject_select_subtitle: "You can choose 1 to 3 subjects. After confirmation, you can't change them until all 7 tours are completed.",
+            subject_select_warning: "No more than 3 subjects.",
+            subject_select_next: "Continue",
+            subject_confirm_title: "Confirm selection?",
+            subject_confirm_you_selected: "You selected:",
+            subject_confirm_subtitle: "After confirmation, you cannot change subjects until all 7 tours are completed.",
             tour_subject_pick_title: "Choose a subject for the tour",
             tour_label: "Tour",
             tour_status_active: "Active",
@@ -4395,6 +4416,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
