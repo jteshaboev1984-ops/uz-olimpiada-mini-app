@@ -596,20 +596,17 @@ function openTourInfoModal({ practiceAllowed }) {
       iconWrap.style.color = "var(--success)";
     }
     if (iconEl) iconEl.className = "fa-solid fa-calendar-check";
-    if (primaryBtn) {
-      primaryBtn.removeAttribute('onclick');
-      primaryBtn.textContent = t('btn_open_profile');
-      primaryBtn.onclick = () => {
-        showScreen('cabinet-screen');
-        modal.classList.add('hidden');
-      };
-    }
-    if (secondaryBtn) {
-      secondaryBtn.removeAttribute('onclick');
-      secondaryBtn.textContent = t('btn_understood');
-      secondaryBtn.onclick = () => modal.classList.add('hidden');
-      secondaryBtn.classList.remove('hidden');
-    }
+   // В профиле больше ничего не открываем — пользователь остаётся на главном экране
+if (primaryBtn) {
+  primaryBtn.removeAttribute('onclick');
+  primaryBtn.textContent = t('btn_understood');
+  primaryBtn.onclick = () => modal.classList.add('hidden');
+  primaryBtn.classList.remove('hidden');
+}
+if (secondaryBtn) {
+  secondaryBtn.classList.add('hidden');
+}
+
   } else {
     if (titleEl) titleEl.textContent = t('tour_info_practice_locked_title');
     if (messageEl) messageEl.textContent = t('tour_info_practice_locked_msg');
@@ -1239,7 +1236,7 @@ function exitPracticeToReturnScreen() {
             access_locked_title: "Доступ закрыт",
             access_locked_msg: "Практика и разбор ошибок доступны после завершения хотя бы одного тура.",
              tour_info_practice_title: "Тур завершён",
-            tour_info_practice_msg: "Практика и разбор ошибок доступны в личном кабинете.",
+            tour_info_practice_msg: "Практика и разбор ошибок доступны в разделе «Действия» на главном экране.",
             tour_info_practice_locked_title: "Практика недоступна",
             tour_info_practice_locked_msg: "Практика откроется после завершения тура.",
             btn_open_profile: "В профиль",
@@ -2348,7 +2345,8 @@ function fillProfileForm(data) {
         const textEl = document.getElementById('subject-confirm-text');
         if (textEl) {
             const names = list.map(key => subjectDisplayName(key)).join(', ');
-            textEl.textContent = `Вы выбрали: ${names}.`;
+            const prefix = (typeof t === 'function') ? t('subject_confirm_you_selected') : 'Вы выбрали:';
+            textEl.textContent = `${prefix} ${names}.`;
         }
         modal.classList.remove('hidden');
     }
@@ -2467,8 +2465,9 @@ function fillProfileForm(data) {
                 const displayName = rawName.split(/\s+/).slice(0, 2).join(' ');
                 const safeDisplayName = escapeHTML(displayName);
                 const initial = escapeHTML(rawName.charAt(0) || '?');
-                const avatarHtml = player.avatarUrl 
-                    ? `<img src="${player.avatarUrl}" class="winner-img" onerror="this.src='${defaultAvatar}'">`
+                const safeAvatarUrl = escapeHTML(String(player.avatarUrl || ''));
+                const avatarHtml = safeAvatarUrl
+                    ? `<img src="${safeAvatarUrl}" class="winner-img" onerror="this.src='${defaultAvatar}'">`
                     : `<div class="winner-img" style="background:#E1E1E6; display:flex; align-items:center; justify-content:center; font-size:24px; color:#666;">${initial}</div>`;
 
                 const shortRegion = (player.region || "").split(' ')[0];
@@ -2497,7 +2496,8 @@ function fillProfileForm(data) {
 
         list.slice(3).forEach((player, index) => {
             const realRank = index + 4;
-            const avatarHtml = player.avatarUrl 
+            const safeAvatarUrl = escapeHTML(String(player.avatarUrl || ''));
+            const avatarHtml = safeAvatarUrl
                 ? `<img src="${player.avatarUrl}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
                 : '';
             const rawName = String(player.name || '').trim() || t('anonymous');
@@ -3481,7 +3481,7 @@ const tSafe = (key, fallback) => {
 setHint(
   practiceAllowed
     ? tSafe('main_btn_completed_hint', 'Практика и разбор ошибок — в профиле')
-    : tSafe('main_btn_completed_hint_locked', 'Практика станет доступной в профиле после завершения тура')
+    : tSafe('main_btn_completed_hint_locked', 'Практика откроется после окончания тура')
 );
 
 newBtn.addEventListener('click', () => {
@@ -4395,6 +4395,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
