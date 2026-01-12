@@ -98,11 +98,13 @@ async function startApp() {
 // =====================
 let practiceMode = false;
 let practiceAnswers = {}; // { [questionId]: { answer: string, isCorrect: boolean } }
-let practiceFilters = normalizePracticeFilters({ subjects: [], difficulty: 'all', count: 20 });
+let practiceFilters = normalizePracticeFilters({ subjects: [], difficulty: 'all', count: 20, practiceTourId: null });
 let practiceElapsedSec = 0;
 let practiceStopwatchInterval = null;
 let practiceReturnScreen = 'cabinet-screen';
 let reviewReturnScreen = 'cabinet-screen';
+let practiceTourQuestionsCache = new Map();
+let practiceCompletedToursCache = { userId: null, list: [] };
   // === TIMERS & BEHAVIOR METRICS ===
 
 // total test timer
@@ -151,10 +153,17 @@ function handleVisibilityChange() {
 
 document.addEventListener('visibilitychange', handleVisibilityChange);
 
-function practiceStorageKey() {
-  return `practice_v1:${internalDbId}:${currentTourId}:${currentLang}`;
+function getPracticeTourIdValue(raw) {
+  if (raw === null || raw === undefined) return null;
+  const str = String(raw).trim();
+  if (!str || str === 'all') return null;
+  return str;
 }
 
+function practiceStorageKey(practiceTourId) {
+  const tourKey = getPracticeTourIdValue(practiceTourId) || String(currentTourId || '');
+  return `practice_v1:${internalDbId}:${tourKey}:${currentLang}`;
+}
 function formatMMSS(sec) {
   const s = Math.max(0, Math.floor(sec || 0));
   const mm = String(Math.floor(s / 60)).padStart(2, '0');
@@ -181,10 +190,12 @@ function normalizePracticeFilters(raw) {
   subjects = unique.includes('all') ? [] : unique;
 
   const difficulty = typeof f.difficulty === 'string' ? f.difficulty : 'all';
+  const difficulty = typeof f.difficulty === 'string' ? f.difficulty : 'all';
   let count = Number(f.count);
   if (!Number.isFinite(count) || count <= 0) count = 20;
   count = Math.max(5, Math.min(200, Math.floor(count)));
-  return { subjects, difficulty, count };
+  const practiceTourId = getPracticeTourIdValue(f.practiceTourId);
+  return { subjects, difficulty, count, practiceTourId };
 }
 
 function stopPracticeStopwatch() {
@@ -203,14 +214,23 @@ function startPracticeStopwatch() {
   }, 1000);
 }
 
-function loadPracticeSession() {
+function loadPracticeSession(practiceTourId) {
   try {
     // Practice хранится локально
-    const raw = localStorage.getItem(practiceStorageKey());
+    const raw = localStorage.getItem(practiceStorageKey(practiceTourId));
     if (!raw) return null;
     const obj = JSON.parse(raw);
     if (!obj || obj.v !== 1) return null;
-    if (obj.tourId !== currentTourId || obj.lang !== currentLang) return null;
+    if (obj.lang !== currentLang) return null;
+// тур для практики валидируем по practiceTourId
+const storedTourId = getPracticeTourIdValue(obj.practiceTourId);
+const wantTourId = getPracticeTourIdValue(practiceTourId);
+if (wantTourId && String(storedTourId) !== String(wantTourId)) return null;
+
+    const storedTourId = getPracticeTourIdValue(obj.practiceTourId);
+    if (getPracticeTourIdValue(practiceTourId) && String(storedTourId) !== String(getPracticeTourIdValue(practiceTourId))) {
+      return null;
+    }
     return obj;
   } catch (e) {
     console.warn('[practice] load failed', e);
@@ -225,24 +245,25 @@ function savePracticeSession() {
     practiceFilters = normalized;
     const payload = {
       v: 1,
-      tourId: currentTourId,
+      tourId: normalized.practiceTourId || currentTourId,
       lang: currentLang,
       orderIds: (questions || []).map(q => Number(q.id)),
       index: currentQuestionIndex,
       answers: practiceAnswers,
       filters: normalized,
+      practiceTourId: normalized.practiceTourId || null,
       elapsedSec: practiceElapsedSec,
       savedAt: Date.now()
     };
     
-  localStorage.setItem(practiceStorageKey(), JSON.stringify(payload));
+  localStorage.setItem(practiceStorageKey(normalized.practiceTourId), JSON.stringify(payload));
   } catch (e) {
     console.warn('[practice] save failed', e);
   }
 }
 
-function clearPracticeSession() {
-  try { localStorage.removeItem(practiceStorageKey()); } catch (e) {}
+function clearPracticeSession(practiceTourId) {
+  try { localStorage.removeItem(practiceStorageKey(practiceTourId)); } catch (e) {}
 }
 
 function shuffleArray(arr) {
@@ -253,6 +274,98 @@ function shuffleArray(arr) {
   return arr;
 }
 
+function practiceSeenStorageKey(practiceTourId) {
+  const tourKey = getPracticeTourIdValue(practiceTourId) || 'all';
+  return `practice_seen_ids_v1:${internalDbId}:${tourKey}:${currentLang}`;
+}
+
+function loadPracticeSeenIds(practiceTourId) {
+  try {
+    const raw = localStorage.getItem(practiceSeenStorageKey(practiceTourId));
+    if (!raw) return new Set();
+    const data = JSON.parse(raw);
+    if (!Array.isArray(data)) return new Set();
+    return new Set(data.map(id => String(id)));
+  } catch (e) {
+    console.warn('[practice] seenIds load failed', e);
+    return new Set();
+  }
+}
+
+function savePracticeSeenIds(practiceTourId, seenSet) {
+  try {
+    const list = Array.from(seenSet || []).map(id => String(id));
+    localStorage.setItem(practiceSeenStorageKey(practiceTourId), JSON.stringify(list));
+  } catch (e) {
+    console.warn('[practice] seenIds save failed', e);
+  }
+}
+
+async function getPracticeQuestionsForTour(practiceTourId) {
+  const normalizedTourId = getPracticeTourIdValue(practiceTourId);
+  if (!normalizedTourId || String(normalizedTourId) === String(currentTourId)) {
+    return tourQuestionsCache || [];
+  }
+
+  const cacheKey = `${normalizedTourId}:${currentLang}`;
+  if (practiceTourQuestionsCache.has(cacheKey)) {
+    return practiceTourQuestionsCache.get(cacheKey);
+  }
+
+  const { data: qData, error: qErr } = await supabaseClient
+    .from('questions')
+    .select('id, subject, topic, question_text, options_text, type, tour_id, time_limit_seconds, language, difficulty, image_url')
+    .eq('tour_id', normalizedTourId)
+    .eq('language', currentLang)
+    .order('id', { ascending: true });
+
+  if (qErr) {
+    console.error('[practice] questions fetch error:', qErr);
+    return [];
+  }
+
+  const result = qData || [];
+  practiceTourQuestionsCache.set(cacheKey, result);
+  return result;
+}
+
+async function getCompletedToursForPractice() {
+  if (!internalDbId) return [];
+  if (practiceCompletedToursCache.userId === internalDbId && practiceCompletedToursCache.list.length) {
+    return practiceCompletedToursCache.list;
+  }
+
+  const { data: toursData, error: toursError } = await supabaseClient
+    .from('tours')
+    .select('id, title, start_date, end_date')
+    .order('start_date', { ascending: true });
+
+  if (toursError) {
+    console.error('[practice] tours fetch error:', toursError);
+    return [];
+  }
+
+  const { data: progressData, error: progressError } = await supabaseClient
+    .from('tour_progress')
+    .select('tour_id, score')
+    .eq('user_id', internalDbId);
+
+  if (progressError) {
+    console.error('[practice] progress fetch error:', progressError);
+    return [];
+  }
+
+  const completedIds = new Set(
+    (progressData || [])
+      .filter(row => row && row.score !== null && row.score !== undefined)
+      .map(row => String(row.tour_id))
+  );
+
+  const completedTours = (toursData || []).filter(tour => completedIds.has(String(tour.id)));
+  practiceCompletedToursCache = { userId: internalDbId, list: completedTours };
+  return completedTours;
+}
+  
 function normalizeSubjectKey(raw) {
   const s = String(raw || '').trim();
   if (!s) return '';
@@ -493,7 +606,9 @@ function applyPracticeModalTranslations() {
   if (diffLabel) diffLabel.textContent = tSafe('practice_filter_difficulty', 'Difficulty');
   const countLabel = document.getElementById('practice-label-count');
   if (countLabel) countLabel.textContent = tSafe('practice_filter_count', 'Question count');
-
+  const tourLabel = document.getElementById('practice-label-tour');
+  if (tourLabel) tourLabel.textContent = tSafe('practice_filter_tour', 'Tour');
+  
   const backBtn = document.getElementById('practice-back-btn');
   if (backBtn) backBtn.textContent = tSafe('btn_back', 'Back');
   const contBtn = document.getElementById('practice-continue-btn');
@@ -530,12 +645,96 @@ function getPracticeSubjectOptions() {
   return { subjectList, allowAll: true };
 }
 
+function ensurePracticeTourSelect() {
+  const modal = document.getElementById('practice-config-modal');
+  if (!modal) return null;
+
+  let field = document.getElementById('practice-tour-field');
+  if (!field) {
+    field = document.createElement('div');
+    field.id = 'practice-tour-field';
+    field.className = 'practice-field';
+
+    const label = document.createElement('div');
+    label.className = 'practice-label';
+    label.id = 'practice-label-tour';
+    label.textContent = tSafe('practice_filter_tour', 'Tour');
+
+    const select = document.createElement('select');
+    select.id = 'practice-tour';
+    select.className = 'input';
+
+    field.appendChild(label);
+    field.appendChild(select);
+
+    const firstField = modal.querySelector('.practice-field');
+    if (firstField && firstField.parentElement) {
+      firstField.parentElement.insertBefore(field, firstField);
+    } else {
+      modal.appendChild(field);
+    }
+
+    select.addEventListener('change', () => {
+      const nextValue = select.value || '';
+      practiceFilters = normalizePracticeFilters({
+        ...practiceFilters,
+        practiceTourId: nextValue
+      });
+      updatePracticeContinueButton(nextValue);
+    });
+  }
+
+  return field.querySelector('#practice-tour');
+}
+
+async function updatePracticeTourOptions() {
+  const selectEl = ensurePracticeTourSelect();
+  if (!selectEl) return;
+
+  selectEl.innerHTML = '';
+  const tours = await getCompletedToursForPractice();
+
+  if (!tours.length) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = tSafe('review_no_data', 'No data');
+    opt.disabled = true;
+    selectEl.appendChild(opt);
+    selectEl.value = '';
+    return;
+  }
+
+  tours.forEach((tour, index) => {
+    const opt = document.createElement('option');
+    opt.value = String(tour.id);
+    opt.textContent = formatTourTitle(tour.title || `${t('stat_tour')} ${index + 1}`);
+    selectEl.appendChild(opt);
+  });
+
+  const normalized = getPracticeTourIdValue(practiceFilters.practiceTourId);
+  const fallbackId = tours[0]?.id;
+  const nextValue = tours.some(t => String(t.id) === String(normalized)) ? normalized : String(fallbackId || '');
+  selectEl.value = nextValue || '';
+  practiceFilters = normalizePracticeFilters({
+    ...practiceFilters,
+    practiceTourId: nextValue
+  });
+  updatePracticeContinueButton(nextValue);
+}
+
+function updatePracticeContinueButton(practiceTourId) {
+  const contBtn = document.getElementById('practice-continue-btn');
+  if (!contBtn) return;
+  const saved = loadPracticeSession(practiceTourId);
+  contBtn.classList.toggle('hidden', !saved);
+}
+
 function openPracticeConfigModal({ canContinue }) {
   const modal = document.getElementById('practice-config-modal');
   if (!modal) {
     // на крайний случай — если модалки нет, стартуем с дефолтом
   beginPracticeNew({ subjects: [], difficulty: 'all', count: 20 });
-    return;
+  return;
   }
 
   applyPracticeModalTranslations();
@@ -576,6 +775,8 @@ function openPracticeConfigModal({ canContinue }) {
   if (contBtn) {
     contBtn.classList.toggle('hidden', !canContinue);
   }
+
+  updatePracticeTourOptions();
 
   modal.classList.remove('hidden');
 }
@@ -732,6 +933,9 @@ function getPracticeConfigFromUI() {
   let count = countEl ? parseInt(countEl.value, 10) : 20;
   if (!Number.isFinite(count) || count <= 0) count = 20;
 
+  const tourEl = document.getElementById('practice-tour');
+  const practiceTourId = tourEl ? tourEl.value : null;
+
   const locked = isSubjectsLocked();
   const selected = getSelectedSubjects();
   if (locked && selected.length) {
@@ -741,10 +945,10 @@ function getPracticeConfigFromUI() {
     if (!subjects.length) subjects = selected.slice();
   }
 
-  return normalizePracticeFilters({ subjects, difficulty, count });
+return normalizePracticeFilters({ subjects, difficulty, count, practiceTourId });
 }
 
-function beginPracticeNew(filters) {
+async function beginPracticeNew(filters) {
   practiceMode = true;
   isTestActive = false;
 
@@ -752,22 +956,46 @@ function beginPracticeNew(filters) {
   practiceAnswers = {};
   practiceElapsedSec = 0;
   // фильтруем вопросы
-  let pool = [...(tourQuestionsCache || [])];
+  const practiceTourId = getPracticeTourIdValue(practiceFilters.practiceTourId);
+  let pool = await getPracticeQuestionsForTour(practiceTourId);
+  pool = Array.isArray(pool) ? pool.slice() : [];
+
+  if (practiceTourId) {
+    pool = pool.filter(q => String(q.tour_id) === String(practiceTourId));
+  }
 
  const subjects = practiceFilters.subjects || [];
   const subjectSet = new Set(subjects.map(s => normalizeSubjectKey(s)));
   if (subjectSet.size && !subjectSet.has('all')) {
-    pool = pool.filter(q => subjectSet.has(normalizeSubjectKey(q.subject)));
-  }
+    pool = pool.filter(q => subjectSet.has(normalizeSubjectKey(q.subject)));  
+}
 
   if (practiceFilters.difficulty && practiceFilters.difficulty !== 'all') {
     const want = String(practiceFilters.difficulty).toLowerCase();
     pool = pool.filter(q => String(q.difficulty || '').toLowerCase() === want);
   }
 
-  shuffleArray(pool);
+   const seenIds = loadPracticeSeenIds(practiceTourId);
+  const unseen = pool.filter(q => !seenIds.has(String(q.id)));
+  const targetCount = practiceFilters.count || 20;
+  const sourcePool = unseen.length >= targetCount ? unseen : pool;
+  let limited = [];
+const shuffledUnseen = unseen.slice();
+shuffleArray(shuffledUnseen);
+limited = shuffledUnseen.slice(0, Math.min(targetCount, shuffledUnseen.length));
 
-  const limited = pool.slice(0, Math.min(practiceFilters.count || 20, pool.length));
+const remaining = targetCount - limited.length;
+if (remaining > 0) {
+  // добор из полного пула (могут быть повторы)
+  limited = limited.concat(pickNWithRepeats(pool, remaining));
+}
+
+// можно перемешать limited, если хотите, но НЕ обязательно
+
+  } else {
+    limited = pickNWithRepeats(sourcePool, targetCount);
+  }
+
   practiceQuestionOrder = limited.map(q => q.id);
   
   questions = limited;
@@ -790,28 +1018,28 @@ function beginPracticeNew(filters) {
   savePracticeSession();
 }
 
-function beginPracticeContinue() {
-  const saved = loadPracticeSession();
+async function beginPracticeContinue() {
+  const saved = loadPracticeSession(practiceFilters.practiceTourId);
   if (!saved) return;
 
   practiceMode = true;
   isTestActive = false;
 
   // восстановим фильтры/ответы/индекс/время
-  practiceFilters = normalizePracticeFilters((saved && saved.filters) || { subjects: [], difficulty: 'all', count: 20 });
+  practiceFilters = normalizePracticeFilters((saved && saved.filters) || { subjects: [], difficulty: 'all', count: 20, practiceTourId: saved.practiceTourId });
   practiceAnswers = saved.answers || {};
   currentQuestionIndex = Number(saved.index || 0);
   // восстановим порядок вопросов по orderIds
   const orderIds = Array.isArray(saved.orderIds) ? saved.orderIds : [];
-  const byId = new Map((tourQuestionsCache || []).map(q => [String(q.id), q]));
+  const pool = await getPracticeQuestionsForTour(practiceFilters.practiceTourId);
+  const byId = new Map((pool || []).map(q => [String(q.id), q]));
   const restored = orderIds.map(id => byId.get(String(id))).filter(Boolean);
 
   if (!restored.length) {
     // если по какой-то причине не восстановилось — начинаем заново с текущими фильтрами
-    beginPracticeNew(practiceFilters);
+    await beginPracticeNew(practiceFilters);
     return;
   }
-
   questions = restored;
 
   showScreen('quiz-screen');
@@ -1038,6 +1266,7 @@ function exitPracticeToReturnScreen() {
             practice_filter_subject: "Fan",
             practice_filter_difficulty: "Qiyinchilik",
             practice_filter_count: "Savollar soni",
+            practice_filter_tour: "Tur",
             practice_filter_all: "Barchasi",
             btn_start_practice: "Amaliyotni boshlash",
             btn_continue_practice: "Amaliyotni davom ettirish",
@@ -1251,6 +1480,7 @@ function exitPracticeToReturnScreen() {
             practice_filter_subject: "Предмет",
             practice_filter_difficulty: "Сложность",
             practice_filter_count: "Количество вопросов",
+            practice_filter_tour: "Тур",
             practice_filter_all: "Все",
             btn_start_practice: "Начать практику",
             btn_continue_practice: "Продолжить практику",
@@ -1464,6 +1694,7 @@ function exitPracticeToReturnScreen() {
             practice_filter_subject: "Subject",
             practice_filter_difficulty: "Difficulty",
             practice_filter_count: "Question count",
+            practice_filter_tour: "Tour",
             practice_filter_all: "All",
             btn_start_practice: "Start practice",
             btn_continue_practice: "Continue practice",
@@ -3095,13 +3326,30 @@ Object.keys(errorsBySubject || {}).forEach(k => {
             .eq('questions.tour_id', tour.id)
             .eq('questions.language', currentLang);
 
-        if (error || !answers || answers.length === 0) {
+         if (error || !answers || answers.length === 0) {
             if (listEl) listEl.innerHTML = `<div class="review-empty">${t('review_no_data')}</div>`;
             return;
         }
 
-        const summary = buildReviewSubjectStats(answers);
-        reviewState.answers = answers;
+        let filteredAnswers = answers;
+        if (Array.isArray(tourQuestionsAllCache) && tourQuestionsAllCache.length) {
+            const allowedIds = new Set(
+                tourQuestionsAllCache
+                    .filter(q => String(q.tour_id) === String(tour.id))
+                    .map(q => q.id)
+            );
+            if (allowedIds.size) {
+                filteredAnswers = (answers || []).filter(row => allowedIds.has(row.questions?.id));
+            }
+        }
+
+        if (!filteredAnswers || filteredAnswers.length === 0) {
+            if (listEl) listEl.innerHTML = `<div class="review-empty">${t('review_no_data')}</div>`;
+            return;
+        }
+
+        const summary = buildReviewSubjectStats(filteredAnswers);
+        reviewState.answers = filteredAnswers;
         reviewState.subjectStats = summary.subjectStats;
         reviewState.errorsBySubject = summary.errorsBySubject;
         reviewState.totalQuestions = summary.total;
@@ -3321,98 +3569,117 @@ Object.keys(errorsBySubject || {}).forEach(k => {
     });
 
     // START TOUR LOGIC
-  function normalizeSubject(s) {
-  return String(s || '').trim().toLowerCase();
-}
-
 function diffRank(d) {
   const x = String(d || '').toLowerCase();
-  if (x === 'easy') return 1;
-  if (x === 'medium') return 2;
-  if (x === 'hard') return 3;
-  return 99;
+  if (x === 'easy') return 'easy';
+  if (x === 'medium') return 'medium';
+  if (x === 'hard') return 'hard';
+  return 'other';
 }
 
-function pickRandom(arr, n) {
-  const a = arr.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
+function getTourDifficultyMix(tourId) {
+  const id = Number(tourId);
+  const mixMap = {
+    1: { easy: 6, medium: 7, hard: 2 },
+    2: { easy: 6, medium: 7, hard: 2 },
+    3: { easy: 5, medium: 7, hard: 3 },
+    4: { easy: 5, medium: 7, hard: 3 },
+    5: { easy: 4, medium: 8, hard: 3 },
+    6: { easy: 3, medium: 8, hard: 4 },
+    7: { easy: 2, medium: 8, hard: 5 }
+  };
+  return mixMap[id] || { easy: 6, medium: 7, hard: 2 };
+}
+
+function pickNWithRepeats(arr, n) {
+  const list = Array.isArray(arr) ? arr.filter(Boolean) : [];
+  const target = Math.max(0, Number(n) || 0);
+  if (!list.length || target <= 0) return [];
+
+  const result = [];
+  while (result.length < target) {
+    const shuffled = list.slice();
+    shuffleArray(shuffled);
+    const remaining = target - result.length;
+    result.push(...shuffled.slice(0, Math.min(remaining, shuffled.length)));
+    if (shuffled.length >= remaining) break;
   }
-  return a.slice(0, n);
+  return result;
+}
+
+function getAnswerType(q) {
+  if (!q) return 'input';
+  const optionsText = typeof q.options_text === 'string' ? q.options_text.trim() : '';
+  const options = Array.isArray(q.options) ? q.options : [];
+  if (optionsText.length > 0 || options.length > 0) return 'choice';
+  return 'input';
+}
+
+function interleaveByAnswerType(list) {
+  const items = Array.isArray(list) ? list.slice() : [];
+  if (!items.length) return [];
+
+  const choice = [];
+  const input = [];
+  items.forEach(q => {
+    if (getAnswerType(q) === 'choice') choice.push(q);
+    else input.push(q);
+  });
+
+  if (!choice.length || !input.length) {
+    const shuffled = items.slice();
+    shuffleArray(shuffled);
+    return shuffled;
+  }
+
+  const choiceQueue = choice.slice();
+  const inputQueue = input.slice();
+  shuffleArray(choiceQueue);
+  shuffleArray(inputQueue);
+
+  const result = [];
+  let pickChoice = choiceQueue.length >= inputQueue.length;
+  while (choiceQueue.length || inputQueue.length) {
+    if (pickChoice && choiceQueue.length) {
+      result.push(choiceQueue.shift());
+    } else if (!pickChoice && inputQueue.length) {
+      result.push(inputQueue.shift());
+    } else if (choiceQueue.length) {
+      result.push(choiceQueue.shift());
+    } else if (inputQueue.length) {
+      result.push(inputQueue.shift());
+    }
+    pickChoice = !pickChoice;
+  }
+
+  return result;
 }
 
 function buildTourQuestions(allQuestions) {
   const pool = (allQuestions || []).filter(q => q && q.id);
+  const mix = getTourDifficultyMix(currentTourId);
 
-  // предмета 7: math, chem, bio, eco, it, sat, ielts
-  const SUBJECTS = ['math', 'chem', 'bio', 'eco', 'it', 'sat', 'ielts'];
+  const easyPool = pool.filter(q => diffRank(q.difficulty) === 'easy');
+  const mediumPool = pool.filter(q => diffRank(q.difficulty) === 'medium');
+  const hardPool = pool.filter(q => diffRank(q.difficulty) === 'hard');
 
-  // группируем по subject prefix (у тебя в UI используется startsWith(prefix))
-  const bySubj = {};
-  SUBJECTS.forEach(s => bySubj[s] = []);
-  pool.forEach(q => {
-    const subj = normalizeSubject(q.subject);
-    // берём по префиксам как у тебя в статистике: startsWith(prefix)
-    for (const p of SUBJECTS) {
-      if (subj.startsWith(p)) {
-        bySubj[p].push(q);
-        break;
-      }
-    }
-  });
+  const easyPicked = pickNWithRepeats(easyPool, mix.easy);
+  const mediumPicked = pickNWithRepeats(mediumPool, mix.medium);
+  const hardPicked = pickNWithRepeats(hardPool, mix.hard);
 
-  const selected = [];
-
-  // 1) Математика: строго 3 уровня
-  const mathAll = bySubj.math || [];
-  const mathEasy = mathAll.filter(q => String(q.difficulty) === 'Easy');
-  const mathMed  = mathAll.filter(q => String(q.difficulty) === 'Medium');
-  const mathHard = mathAll.filter(q => String(q.difficulty) === 'Hard');
-
-  // если вдруг какого-то уровня нет — мягкий fallback
-  const mE = (mathEasy[0] ? pickRandom(mathEasy, 1)[0] : pickRandom(mathAll, 1)[0]);
-  const mM = (mathMed[0]  ? pickRandom(mathMed, 1)[0]  : pickRandom(mathAll.filter(q=>q.id!==mE?.id), 1)[0]);
-  const mH = (mathHard[0] ? pickRandom(mathHard, 1)[0] : pickRandom(mathAll.filter(q=>q.id!==mE?.id && q.id!==mM?.id), 1)[0]);
-
-  if (mE) selected.push(mE);
-  if (mM) selected.push(mM);
-  if (mH) selected.push(mH);
-
-  // 2) Остальные предметы: по 2 вопроса (сложность рандом)
-  const others = ['chem', 'bio', 'eco', 'it', 'sat', 'ielts'];
-  others.forEach(s => {
-    const arr = (bySubj[s] || []).filter(q => !selected.some(x => x.id === q.id));
-    const picked = pickRandom(arr, 2);
-    picked.forEach(q => selected.push(q));
-  });
-
-  // 3) Проверка количества
-  if (selected.length !== 15) {
-    console.warn('[buildTourQuestions] expected 15, got', selected.length);
-
-    // если не хватило — добиваем любыми из пула, которых ещё нет
-    const rest = pool.filter(q => !selected.some(x => x.id === q.id));
-    const need = 15 - selected.length;
-    if (need > 0) pickRandom(rest, need).forEach(q => selected.push(q));
-
-    // если вдруг лишнее — обрезаем
-    if (selected.length > 15) selected.length = 15;
-  }
-
-  // 4) Лестенька: Easy -> Medium -> Hard, внутри уровня перемешать
-  const easy = selected.filter(q => diffRank(q.difficulty) === 1);
-  const med  = selected.filter(q => diffRank(q.difficulty) === 2);
-  const hard = selected.filter(q => diffRank(q.difficulty) === 3);
-  const other = selected.filter(q => diffRank(q.difficulty) === 99);
+  const easyBlock = interleaveByAnswerType(easyPicked);
+  const mediumBlock = interleaveByAnswerType(mediumPicked);
+  const hardBlock = interleaveByAnswerType(hardPicked);
 
   const ordered = []
-    .concat(pickRandom(easy, easy.length))
-    .concat(pickRandom(med, med.length))
-    .concat(pickRandom(hard, hard.length))
-    .concat(pickRandom(other, other.length));
+    .concat(easyBlock)
+    .concat(mediumBlock)
+    .concat(hardBlock);
 
-  // финально гарантируем 15
+  if (ordered.length !== 15) {
+    console.warn('[buildTourQuestions] expected 15, got', ordered.length);
+  }
+
   return ordered.slice(0, 15);
 }
   
@@ -3904,10 +4171,16 @@ if (questionTimerInterval) {
 
     // поясняющий текст (по твоему требованию: "берём максимум и объясняем")
     const resHint = document.getElementById('res-hint');
-    if (resHint) {
+     if (resHint) {
       resHint.textContent = 'Практика. Прогресс сохранён. Баллы в рейтинге за завершённый тур не учитываются.';
       resHint.classList.remove('hidden');
     }
+
+    const seenIds = loadPracticeSeenIds(practiceFilters.practiceTourId);
+    (questions || []).forEach(item => {
+      if (item && item.id != null) seenIds.add(String(item.id));
+    });
+    savePracticeSeenIds(practiceFilters.practiceTourId, seenIds);
 
     showScreen('result-screen');
     return;
@@ -4059,8 +4332,8 @@ if (resHint) {
   isTestActive = false;
 
   // можно ли продолжить?
-  const saved = loadPracticeSession();
-  const canContinue = !!(saved && String(saved.tourId || '') === String(currentTourId || ''));
+  const saved = loadPracticeSession(practiceFilters.practiceTourId);
+  const canContinue = !!saved;
 
   openPracticeConfigModal({ canContinue });
 }
@@ -4319,11 +4592,11 @@ safeAddListener('cancel-start', 'click', () => {
 safeAddListener('back-home', 'click', () => showScreen('home-screen'));
 safeAddListener('back-home-x', 'click', () => showScreen('home-screen'));
 
-safeAddListener('practice-start-btn', 'click', () => {
+safeAddListener('practice-start-btn', 'click', async () => {
   closePracticeConfigModal();
   const cfg = getPracticeConfigFromUI();
-  clearPracticeSession();     // новый запуск = чистим старый прогресс
-  beginPracticeNew(cfg);
+  clearPracticeSession(cfg.practiceTourId);     // новый запуск = чистим старый прогресс
+  await beginPracticeNew(cfg);
 });
 
 safeAddListener('practice-back-btn', 'click', () => {
@@ -4334,9 +4607,9 @@ safeAddListener('practice-close-btn', 'click', () => {
   closePracticeConfigModal();
 });
 
-safeAddListener('practice-continue-btn', 'click', () => {
+safeAddListener('practice-continue-btn', 'click', async () => {
   closePracticeConfigModal();
-  beginPracticeContinue();
+  await beginPracticeContinue();
 });
 
 safeAddListener('practice-exit-btn', 'click', () => {
@@ -4460,6 +4733,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
