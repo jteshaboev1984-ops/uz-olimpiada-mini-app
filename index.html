@@ -476,15 +476,14 @@
   </div>
 </div>
 
-
             <div class="resources-accordion" id="resources-accordion">
                 <button class="accordion-toggle" id="resources-accordion-toggle" type="button" aria-expanded="false" aria-controls="resources-accordion-content">
-                    <span>Ресурсы</span>
+                    <span data-i18n="home_resources">Ресурсы</span>
                     <i class="fa-solid fa-chevron-down"></i>
                 </button>
                 <div class="accordion-content" id="resources-accordion-content">
                     <div class="accordion-section">
-                        <h3>Материалы</h3>
+                        <h3 data-i18n="res_materials">Материалы</h3>
                         <div class="resources-list">
                             <div class="resource-card" onclick="openExternalLink('https://youtube.com')">
                                 <div class="res-icon youtube"><i class="fa-brands fa-youtube"></i></div>
@@ -502,19 +501,22 @@
                                 <i class="fa-solid fa-chevron-right arrow"></i>
                             </div>
                             <div class="resource-card" id="books-resource-card">
-                                <div class="res-icon pdf"><i class="fa-solid fa-book-open"></i></div>
-                                <div class="res-info"><h4>Книги</h4><p>PDF и материалы</p></div>
-                                <i class="fa-solid fa-chevron-right arrow"></i>
-                            </div>
+                          <div class="res-icon pdf"><i class="fa-solid fa-book-open"></i></div>
+                        <div class="res-info">
+                         <h4 data-i18n="res_books_title">Книги</h4>
+                          <p data-i18n="res_books_desc">PDF и материалы</p>
+                        </div>
+                      <i class="fa-solid fa-chevron-right arrow"></i>
+                    </div>
                         </div>
                     </div>
                 </div>
             </div>               
 
-            <div class="section-header" style="margin-top: 24px;"><h2>Ближайшее событие</h2></div>
+            <div class="section-header" style="margin-top: 24px;"><h2 data-i18n="next_event_title">Ближайшее событие</h2></div>
             <div class="next-event-card">
-                <span class="next-event-label">Следующий тур</span>
-                <div class="next-event-text" id="next-tour-text">Следующий тур скоро</div>
+                <span class="next-event-label" data-i18n="next_event_label">Следующий тур</span>
+                <div class="next-event-text" id="next-tour-text" data-i18n="next_event_soon">Следующий тур скоро</div>
             </div>
         </div> 
 
@@ -941,6 +943,7 @@
     <script src="./script.js?v=31" defer></script>
 </body>
 </html>
+
 
 
 
