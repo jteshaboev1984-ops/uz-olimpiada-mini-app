@@ -190,7 +190,6 @@ function normalizePracticeFilters(raw) {
   subjects = unique.includes('all') ? [] : unique;
 
   const difficulty = typeof f.difficulty === 'string' ? f.difficulty : 'all';
-  const difficulty = typeof f.difficulty === 'string' ? f.difficulty : 'all';
   let count = Number(f.count);
   if (!Number.isFinite(count) || count <= 0) count = 20;
   count = Math.max(5, Math.min(200, Math.floor(count)));
@@ -4733,6 +4732,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
