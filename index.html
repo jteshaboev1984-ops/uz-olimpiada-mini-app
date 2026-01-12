@@ -305,72 +305,85 @@
            <h1 class="greeting"><span data-i18n="greeting_hi">Salom</span>, <span id="home-user-name">Ishtirokchi</span>!</h1>
             <p class="subtitle" data-i18n="greeting_sub">Olimpiadaga xush kelibsiz.</p>
 
-            <div id="active-subject-card" class="active-subject-card">
-                <div class="active-subject-icon">
-                    <i class="fa-solid fa-star"></i>
-                </div>
-                <div class="active-subject-content">
-                    <span class="active-subject-label">Активный предмет</span>
-                    <div class="active-subject-title" id="active-subject-title">—</div>
-                    <div class="active-subject-meta">
-                        <span class="active-subject-tour" id="active-subject-tour">Тур — / 7</span>
-                        <span class="active-subject-status" id="active-subject-status">Следующий тур скоро</span>
-                    </div>
-                    <div class="active-subject-next" id="active-subject-next"></div>
-                </div>
-            </div>
-
             <div class="section-header"><h2 id="subjects-title" data-i18n="subjects_title">Fanlar</h2></div>
 
             <div class="subjects-grid">
                  <div class="subject-card" data-subject="math">
-                    <span class="percent-badge" id="math-percent">Tur ? / 7</span>
                     <div class="subject-top">
                         <div class="sub-icon blue"><i class="fa-solid fa-calculator"></i></div>
+                        <div class="tour-progress" aria-label="Тур прогресс">
+                            <div class="tour-dots"></div>
+                            <div class="tour-label"></div>
+                        </div>
                     </div>
-                    <h3 data-i18n="subj_math">Matematika</h3><div class="progress-line"><div id="math-bar" style="width: 0%"></div></div>
+                    <h3 data-i18n="subj_math">Matematika</h3>
+                    <div class="subject-inline hidden"></div>
                 </div>
                  <div class="subject-card" data-subject="chem">
-                    <span class="percent-badge" id="chem-percent">Tur ? / 7</span>
                     <div class="subject-top">
                         <div class="sub-icon teal"><i class="fa-solid fa-flask"></i></div>
+                        <div class="tour-progress" aria-label="Тур прогресс">
+                            <div class="tour-dots"></div>
+                            <div class="tour-label"></div>
+                        </div>
                     </div>
-                    <h3 data-i18n="subj_chem">Kimyo</h3><div class="progress-line"><div id="chem-bar" style="width: 0%"></div></div>
+                    <h3 data-i18n="subj_chem">Kimyo</h3>
+                    <div class="subject-inline hidden"></div>
                 </div>
                 <div class="subject-card" data-subject="bio">
-                    <span class="percent-badge" id="bio-percent">Tur ? / 7</span>
                     <div class="subject-top">
                         <div class="sub-icon green"><i class="fa-solid fa-leaf"></i></div>
+                        <div class="tour-progress" aria-label="Тур прогресс">
+                            <div class="tour-dots"></div>
+                            <div class="tour-label"></div>
+                        </div>
                     </div>
-                    <h3 data-i18n="subj_bio">Biologiya</h3><div class="progress-line"><div id="bio-bar" style="width: 0%"></div></div>
+                    <h3 data-i18n="subj_bio">Biologiya</h3>
+                    <div class="subject-inline hidden"></div>
                 </div>
                 <div class="subject-card" data-subject="it">
-                    <span class="percent-badge" id="it-percent">Tur ? / 7</span>
                     <div class="subject-top">
                         <div class="sub-icon cyan"><i class="fa-solid fa-laptop-code"></i></div>
+                        <div class="tour-progress" aria-label="Тур прогресс">
+                            <div class="tour-dots"></div>
+                            <div class="tour-label"></div>
+                        </div>
                     </div>
-                     <h3 data-i18n="subj_it">Informatika</h3><div class="progress-line"><div id="it-bar" style="width: 0%"></div></div>
+                     <h3 data-i18n="subj_it">Informatika</h3>
+                     <div class="subject-inline hidden"></div>
                 </div>
                  <div class="subject-card" data-subject="eco">
-                    <span class="percent-badge" id="eco-percent">Tur ? / 7</span>
                     <div class="subject-top">
                         <div class="sub-icon brown"><i class="fa-solid fa-chart-line"></i></div>
+                        <div class="tour-progress" aria-label="Тур прогресс">
+                            <div class="tour-dots"></div>
+                            <div class="tour-label"></div>
+                        </div>
                     </div>
-                    <h3 data-i18n="subj_eco">Iqtisodiyot</h3><div class="progress-line"><div id="eco-bar" style="width: 0%"></div></div>
+                    <h3 data-i18n="subj_eco">Iqtisodiyot</h3>
+                    <div class="subject-inline hidden"></div>
                 </div>
                 <div class="subject-card" data-subject="sat">
-                    <span class="percent-badge" id="sat-percent">Tur ? / 7</span>
                     <div class="subject-top">
                         <div class="sub-icon red"><i class="fa-solid fa-brain"></i></div>
+                        <div class="tour-progress" aria-label="Тур прогресс">
+                            <div class="tour-dots"></div>
+                            <div class="tour-label"></div>
+                        </div>
                     </div>
-                    <h3>SAT</h3><div class="progress-line"><div id="sat-bar" style="width: 0%"></div></div>
+                    <h3>SAT</h3>
+                    <div class="subject-inline hidden"></div>
                 </div>
                 <div class="subject-card" data-subject="ielts">
-                    <span class="percent-badge" id="ielts-percent">Tur ? / 7</span>
                     <div class="subject-top">
                         <div class="sub-icon red"><i class="fa-solid fa-graduation-cap"></i></div>
+                        <div class="tour-progress" aria-label="Тур прогресс">
+                            <div class="tour-dots"></div>
+                            <div class="tour-label"></div>
+                        </div>
                     </div>
-                    <h3>IELTS</h3><div class="progress-line"><div id="ielts-bar" style="width: 0%"></div></div>
+                    <h3>IELTS</h3>
+                    <div class="subject-inline hidden"></div>
                 </div>
 
                 </div>
@@ -410,29 +423,20 @@
                                 <div class="res-info"><h4 data-i18n="res_ch_title">Kanal</h4><p data-i18n="res_ch_desc">Yangiliklar</p></div>
                                 <i class="fa-solid fa-chevron-right arrow"></i>
                             </div>
-                            <div class="resource-card" onclick="openExternalLink('https://t.me/+yp3GKhnohKQxOTdi')">
+             <div class="resource-card" onclick="openExternalLink('https://t.me/+yp3GKhnohKQxOTdi')">
                                 <div class="res-icon group"><i class="fa-solid fa-users"></i></div>
                                 <div class="res-info"><h4 data-i18n="res_grp_title">Ishtirokchilar chati</h4><p data-i18n="res_grp_desc">Muhokama</p></div>
                                 <i class="fa-solid fa-chevron-right arrow"></i>
                             </div>
-                        </div>
-                    </div>
-                    <div class="accordion-section">
-                        <h3>Книги</h3>
-                        <div class="books-list">
-                            <button class="book-link" type="button" onclick="openExternalLink('https://example.com/books/math.pdf')">
-                                Математика • Сборник задач (PDF)
-                            </button>
-                            <button class="book-link" type="button" onclick="openExternalLink('https://example.com/books/chemistry.pdf')">
-                                Химия • Базовый курс (PDF)
-                            </button>
-                            <button class="book-link" type="button" onclick="openExternalLink('https://example.com/books/biology.pdf')">
-                                Биология • Конспекты (PDF)
-                            </button>
+                            <div class="resource-card" id="books-resource-card">
+                                <div class="res-icon pdf"><i class="fa-solid fa-book-open"></i></div>
+                                <div class="res-info"><h4>Книги</h4><p>PDF и материалы</p></div>
+                                <i class="fa-solid fa-chevron-right arrow"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </div>               
 
             <div class="section-header" style="margin-top: 24px;"><h2>Ближайшее событие</h2></div>
             <div class="next-event-card">
@@ -684,6 +688,19 @@
         </div>
     </div>
 
+    <div class="modal hidden" id="books-modal">
+        <div class="modal-card full-height books-modal-card">
+            <div class="modal-header-custom">
+                <h3>Книги</h3>
+                <div class="close-icon-btn" id="books-modal-close">
+                    <i class="fa-solid fa-times"></i>
+                </div>
+            </div>
+            <div id="books-list" class="books-modal-list"></div>
+            <button class="btn-secondary" id="books-modal-back">Назад</button>
+        </div>
+    </div>
+
     <div class="screen hidden" id="certificate-screen">
         <div class="header-simple sticky-header certificate-header">
             <button class="header-back-btn" id="certs-back-btn">
@@ -847,6 +864,7 @@
     <script src="./script.js?v=31" defer></script>
 </body>
 </html>
+
 
 
 
