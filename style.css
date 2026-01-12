@@ -148,10 +148,15 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .active-subject-status { font-weight: 600; color: #4A4A4A; }
 .active-subject-next { font-size: 12px; color: var(--text-sec); font-weight: 600; }
 .subjects-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-.subject-card { background: white; border-radius: 18px; padding: 18px; position: relative; box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05); transition: transform 0.12s, box-shadow 0.12s; cursor: pointer; border: 1px solid rgba(0,0,0,0.04); min-height: 108px; display: flex; flex-direction: column; justify-content: flex-start; gap: 10px; }
+.subject-card { background: white; border-radius: 18px; padding: 16px; position: relative; box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06); transition: transform 0.12s, box-shadow 0.12s; cursor: pointer; border: 1px solid #F2F2F7; min-height: 108px; display: flex; flex-direction: column; justify-content: flex-start; gap: 10px; }
 .subject-card.is-active { border-color: rgba(0,122,255,0.35); box-shadow: 0 10px 22px rgba(0,122,255,0.15); background: #F7FAFF; }
 .subject-card:active { transform: scale(0.97); }
 .subject-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tour-progress { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; min-width: 90px; }
+.tour-dots { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; width: 90px; }
+.tour-dot { height: 6px; border-radius: 999px; background: #E5E5EA; }
+.tour-dot.is-active { background: #5AC8FA; }
+.tour-label { font-size: 11px; font-weight: 600; color: var(--text-sec); }
 .sub-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
 .sub-icon.blue { background: #E6F2FF; color: var(--primary); }
 .sub-icon.violet { background: #F5F2FF; color: #5856D6; }
@@ -166,6 +171,12 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .subject-card h3 { font-size: 15px; font-weight: 700; margin: 0; }
 .progress-line { height: 4px; background: #F2F2F7; border-radius: 2px; overflow: hidden; }
 .progress-line div { height: 100%; background: var(--primary); border-radius: 2px; transition: width 0.5s; }
+.subject-inline { margin-top: 6px; padding-top: 12px; border-top: 1px solid #F2F2F7; display: flex; flex-direction: column; gap: 12px; max-height: 0; opacity: 0; overflow: hidden; transition: max-height 0.25s ease, opacity 0.25s ease; }
+.subject-card.is-expanded .subject-inline { max-height: 240px; opacity: 1; }
+.subject-inline-section { display: flex; flex-direction: column; gap: 6px; }
+.subject-inline-title { font-size: 13px; font-weight: 700; color: var(--text-main); }
+.subject-inline-row { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text-sec); }
+.subject-inline-row strong { color: var(--text-main); font-weight: 700; }
 @media (max-width: 640px) {
   .subjects-grid { grid-template-columns: 1fr; gap: 12px; }
 }
@@ -188,6 +199,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .res-icon.youtube { background: #FFEBEE; color: #FF3B30; }
 .res-icon.telegram { background: #E6F2FF; color: #2AABEE; }
 .res-icon.group { background: #E8F5E9; color: var(--success); }
+.res-icon.pdf { background: #FFF2F2; color: #FF3B30; }
 .res-info h4 { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
 .res-info p { font-size: 12px; color: var(--text-sec); }
 .resource-card .arrow { margin-left: auto; color: #C7C7CC; font-size: 14px; }
@@ -397,6 +409,8 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(5px); animation: fadeIn 0.2s; }
 .modal-card { background: white; width: 100%; max-width: 360px; padding: 24px; border-radius: 24px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.2); animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; }
 .modal-card.full-height { height: 90%; max-height: 800px; display: flex; flex-direction: column; }
+.books-modal-card { text-align: left; gap: 12px; }
+.books-modal-list { display: flex; flex-direction: column; gap: 10px; flex: 1; overflow-y: auto; padding-bottom: 10px; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes popUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 .modal-icon-big { width: 64px; height: 64px; background: #FFF9E6; color: #FFD60A; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 16px; position: relative; }
@@ -836,6 +850,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .practice-modal-actions .btn-text-simple{
   margin-bottom: 0;
 }
+
 
 
 
