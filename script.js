@@ -886,7 +886,7 @@ function exitPracticeToReturnScreen() {
             subj_phys: "Fizika",
             subj_chem: "Kimyo",
             subj_bio: "Biologiya",
-             subj_it: "Informatika",
+            subj_it: "Informatika",
             subj_eco: "Iqtisodiyot",
             cert_title: "Sertifikat",
             certs_title: "Sertifikat",
@@ -985,8 +985,8 @@ function exitPracticeToReturnScreen() {
             no_active_tour: "Faol turlar yo'q",
             tour_completed_btn: "Tur yakunlangan",
             start_tour_btn: "Turni boshlash",
-            main_btn_completed_hint: "Amaliyot va xatolar tahlili — profil bo'limida",
-            main_btn_completed_hint_locked: "Amaliyot tur yakunlangach profil bo'limida ochiladi",
+            main_btn_completed_hint: "Amaliyot va xatolar tahlili — «Amallar» bo‘limida",
+            main_btn_completed_hint_locked: "Amaliyot va xatolar tahlili tur yakunlangach mavjud bo‘ladi",
             main_btn_practice_hint: "Amaliyot yakunlangan turlar uchun mavjud",
             main_btn_start_hint: "Boshlash uchun bosing",
             practice_btn: "Amaliyot",
@@ -1051,6 +1051,11 @@ function exitPracticeToReturnScreen() {
             tour_status_locked: "Yopiq",
             lang_warning_reg: "Diqqat: Til va ma'lumotlar saqlangandan so'ng o'zgartirib bo'lmaydi!",
             lang_locked_reason: "Adolatli raqobat uchun tilni o'zgartirish imkoniyati o'chirilgan.",
+            overall_title: "Jami",
+            last_completed_tour: "Oxirgi yakunlangan tur",
+            home_subjects: "Fanlar",
+            home_actions: "Amallar",
+            home_resources: "Resurslar",
             cheat_title: "DIQQAT! QOIDABUZARLIK!",
             cheat_msg: "Ilovadan chiqish yoki oynani almashtirish taqiqlanadi. Yana takrorlansa, test avtomatik ravishda yakunlanadi!"
         },
@@ -1179,8 +1184,8 @@ function exitPracticeToReturnScreen() {
              no_active_tour: "Нет активных туров",
             tour_completed_btn: "Текущий тур пройден",
             start_tour_btn: "Начать тур",
-            main_btn_completed_hint: "Практика и разбор ошибок — в профиле",
-            main_btn_completed_hint_locked: "Практика в профиле откроется после завершения тура",
+            main_btn_completed_hint: "Практика и работа над ошибками — в разделе «Действия»",
+            main_btn_completed_hint_locked: "Практика и работа над ошибками будут доступны после завершения тура",
             main_btn_practice_hint: "Практика доступна после завершения тура",
             main_btn_start_hint: "Нажмите, чтобы начать текущий тур",
             practice_btn: "Практика",
@@ -1245,6 +1250,11 @@ function exitPracticeToReturnScreen() {
             tour_status_locked: "Заблокирован",
             lang_warning_reg: "Внимание: Язык и данные профиля нельзя будет изменить после сохранения!",
             lang_locked_reason: "Смена языка отключена для обеспечения честной конкуренции.",
+            overall_title: "Итого",
+            last_completed_tour: "Последний завершённый тур",
+            home_subjects: "Предметы",
+            home_actions: "Действия",
+            home_resources: "Ресурсы",
             cheat_title: "НАРУШЕНИЕ!",
             cheat_msg: "Покидать приложение во время теста запрещено! При повторном нарушении тест будет завершен принудительно."
         },
@@ -1373,8 +1383,8 @@ function exitPracticeToReturnScreen() {
              no_active_tour: "No Active Tours",
             tour_completed_btn: "Tour Completed",
             start_tour_btn: "Start Tour",
-            main_btn_completed_hint: "Practice and mistake review are in your profile",
-            main_btn_completed_hint_locked: "Practice opens in your profile after the tour ends",
+            main_btn_completed_hint: "Practice and mistake review are in the Actions section",
+            main_btn_completed_hint_locked: "Practice and mistake review become available after the tour ends",
             main_btn_practice_hint: "Practice is available after the tour ends",
             main_btn_start_hint: "Tap to start the current tour",
             practice_btn: "Practice",
@@ -1439,6 +1449,11 @@ function exitPracticeToReturnScreen() {
             tour_status_locked: "Locked",
             lang_warning_reg: "Attention: Language and profile data cannot be changed after saving!",
             lang_locked_reason: "Language changing is disabled to ensure fair competition.",
+            overall_title: "Overall",
+            last_completed_tour: "Last completed tour",
+            home_subjects: "Subjects",
+            home_actions: "Actions",
+            home_resources: "Resources",
             cheat_title: "VIOLATION!",
             cheat_msg: "Leaving the app is prohibited! Next time the test will be terminated automatically."
         }
@@ -2031,48 +2046,72 @@ function fillProfileForm(data) {
   return { total: subjectQuestions.length, correct };
 }
 
-    function renderSubjectInlineStats(card, prefix) {
-        if (!card) return;
-        const inlineEl = card.querySelector('.subject-inline');
-        if (!inlineEl) return;
-        inlineEl.classList.remove('hidden');
-        const totalStats = calculateSubjectStats(prefix);
-        const tourStats = calculateSubjectStats(prefix);
-        const totalQuestions = totalStats.total || 0;
-        const totalCorrect = totalStats.correct || 0;
-        const tourLabelBase = tSafe('tour_label', 'Тур');
-        const currentTourLabel = tSafe('curr_tour', 'Текущий тур');
-        const tourNumber = getCurrentTourNumber();
-        const isCompleted = !!tourCompleted;
-        const completedLabel = `Последний завершённый тур${Number.isFinite(tourNumber) ? ` (${tourLabelBase} ${tourNumber})` : ''}`;
-        const tourLabel = isCompleted ? completedLabel : currentTourLabel;
-        const statsTotal = tourStats.total || 0;
-        const statsCorrect = tourStats.correct || 0;
-        inlineEl.innerHTML = `
-            <div class="subject-inline-section">
-                <div class="subject-inline-title">Всего</div>
-                <div class="subject-inline-row">
-                    <span>${tSafe('total_q', 'Всего вопросов')}</span>
-                    <strong>${totalQuestions}</strong>
-                </div>
-                <div class="subject-inline-row">
-                    <span>${tSafe('correct_txt', 'Верно')}</span>
-                    <strong>${totalCorrect}</strong>
-                </div>
-            </div>
-            <div class="subject-inline-section">
-                <div class="subject-inline-title">${tourLabel}</div>
-                <div class="subject-inline-row">
-                    <span>${tSafe('total_q', 'Всего вопросов')}</span>
-                    <strong>${statsTotal}</strong>
-                </div>
-                <div class="subject-inline-row">
-                    <span>${tSafe('correct_txt', 'Верно')}</span>
-                    <strong>${statsCorrect}</strong>
-                </div>
-            </div>
-        `;
-    }
+   function renderSubjectInlineStats(card, prefix) {
+  if (!card) return;
+  const inlineEl = card.querySelector('.subject-inline');
+  if (!inlineEl) return;
+
+  inlineEl.classList.remove('hidden');
+
+  const key = String(prefix || '').toLowerCase();
+
+  // Общая статистика по всем турам (по тем вопросам, которые загружены в tourQuestionsAllCache)
+  const allQs = (tourQuestionsAllCache || []).filter(q =>
+    q?.subject && String(q.subject).toLowerCase().startsWith(key)
+  );
+
+  const allIds = new Set(allQs.map(q => q.id));
+  const allAns = (userAnswersCache || []).filter(a => allIds.has(a.question_id));
+
+  const allTotal = allQs.length;
+  const allCorrect = allAns.filter(a => !!a.is_correct).length;
+
+  // Статистика по текущему туру (или по последнему завершённому — это тот же номер/тур в UI)
+  const currentTourIdNum = Number(currentTourId);
+  const tourQs = allQs.filter(q => Number(q.tour_id) === currentTourIdNum);
+  const tourIds = new Set(tourQs.map(q => q.id));
+  const tourAns = (userAnswersCache || []).filter(a => tourIds.has(a.question_id));
+  const tourTotal = tourQs.length;
+  const tourCorrect = tourAns.filter(a => !!a.is_correct).length;
+
+  const tourLabelBase = tSafe('tour_label', 'Тур');
+  const currentTourLabel = tSafe('curr_tour', 'Текущий тур');
+  const tourNumber = getCurrentTourNumber();
+  const isCompleted = !!tourCompleted;
+
+  const completedLabel = `${tSafe('last_completed_tour', 'Последний завершённый тур')}${
+    Number.isFinite(tourNumber) ? ` (${tourLabelBase} ${tourNumber})` : ''
+  }`;
+
+  const tourLabel = isCompleted ? completedLabel : currentTourLabel;
+
+  inlineEl.innerHTML = `
+    <div class="subject-inline-section">
+      <div class="subject-inline-title">${tSafe('overall_title', 'Итого')}</div>
+      <div class="subject-inline-row">
+        <span>${tSafe('total_q', 'Всего вопросов')}</span>
+        <strong>${allTotal}</strong>
+      </div>
+      <div class="subject-inline-row">
+        <span>${tSafe('correct_txt', 'Верно')}</span>
+        <strong>${allCorrect}</strong>
+      </div>
+    </div>
+
+    <div class="subject-inline-section">
+      <div class="subject-inline-title">${tourLabel}</div>
+      <div class="subject-inline-row">
+        <span>${tSafe('total_q', 'Всего вопросов')}</span>
+        <strong>${tourTotal}</strong>
+      </div>
+      <div class="subject-inline-row">
+        <span>${tSafe('correct_txt', 'Верно')}</span>
+        <strong>${tourCorrect}</strong>
+      </div>
+    </div>
+  `;
+}
+ 
 
     window.openSubjectStats = function(prefix) {
         const modal = document.getElementById('subject-details-modal');
@@ -2901,8 +2940,25 @@ function fillProfileForm(data) {
             if (bIndex === -1) return -1;
             return aIndex - bIndex;
         });
+        // Оставляем только выбранные предметы (и исключаем sat/ielts пока скрыты)
+const selected = (typeof getSelectedSubjects === 'function') ? getSelectedSubjects() : [];
+const allowed = new Set(
+  (selected.length ? selected : ['math','chem','bio','it','eco'])
+    .map(s => String(s).toLowerCase())
+    .filter(s => !['sat','ielts'].includes(s))
+);
 
-        return { subjectStats, errorsBySubject, total, correct };
+const filteredStats = subjectStats.filter(s => allowed.has(String(s.key).toLowerCase()));
+
+const filteredErrors = {};
+Object.keys(errorsBySubject || {}).forEach(k => {
+  const kk = String(k).toLowerCase();
+  if (allowed.has(kk)) filteredErrors[kk] = errorsBySubject[k];
+});
+
+// дальше используем filteredStats/filteredErrors вместо subjectStats/errorsBySubject
+
+        return { subjectStats: filteredStats, errorsBySubject: filteredErrors, total, correct };
     }
 
     function renderReviewResults() {
@@ -4339,6 +4395,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
