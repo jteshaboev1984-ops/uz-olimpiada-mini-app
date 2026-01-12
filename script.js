@@ -97,7 +97,7 @@ async function startApp() {
 // PRACTICE MODE STATE
 // =====================
 let practiceMode = false;
-let practiceAnswers = {}; // { [questionId]: answerString }
+let practiceAnswers = {}; // { [questionId]: { answer: string, isCorrect: boolean } }
 let practiceFilters = normalizePracticeFilters({ subjects: [], difficulty: 'all', count: 20 });
 let practiceElapsedSec = 0;
 let practiceStopwatchInterval = null;
@@ -283,8 +283,7 @@ function normalizeSubjectKey(raw) {
   return base;
 }
 
-function escapeHTML(value) {
-  function sanitizeText(s) {
+function sanitizeText(s) {
   return String(s || '')
     .replace(/[\u0000-\u001F\u007F]/g, '')   // control chars
     .replace(/[<>"]/g, '')                  // главный мусор: < > "
@@ -297,6 +296,8 @@ function safeUrl(u) {
     .replace(/[\s<>"']/g, '')
     .trim();
 }
+
+function escapeHTML(value) {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -456,12 +457,6 @@ function initSubjectSelectionFlow() {
     openSubjectSelectModal();
     return;
   }
-}
-
-// t() может вернуть ключ, если перевода нет — тогда используем fallback (для практики)
-function tSafe(key, fallback) {
-  const v = typeof t === 'function' ? t(key) : '';
-  return (v && v !== key) ? v : fallback;
 }
 
 function getSubjectsFromCache() {
@@ -3761,12 +3756,13 @@ questionTimerInterval = setInterval(() => {
         
         selectedAnswer = null;
         // PRACTICE: восстановим выбранный ответ, если уже отвечали
-if (practiceMode) {
-  const qNow = questions[currentQuestionIndex];
-  if (qNow && practiceAnswers && practiceAnswers[qNow.id]) {
-    selectedAnswer = practiceAnswers[qNow.id];
-  }
-}
+        if (practiceMode) {
+         const qNow = questions[currentQuestionIndex];
+         const saved = qNow ? practiceAnswers[String(qNow.id)] : null;
+        if (saved && typeof saved === 'object' && saved.answer != null) {
+           selectedAnswer = String(saved.answer);
+          }
+        }
 
         const optionsText = (q.options_text || '').trim();
         if (optionsText !== '') {
@@ -4464,6 +4460,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
