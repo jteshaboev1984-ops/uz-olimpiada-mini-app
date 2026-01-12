@@ -2527,13 +2527,22 @@ function fillProfileForm(data) {
 
                 const metaLine = metaParts.join(' • ');
 
-                            📍 ${shortLoc}<br>🏫 №${safeSchool}
+                const html = `
+                    <div class="winner ${ranks[i]}">
+                        <div class="winner-rk ${rkClasses[i]}">${realRanks[i]}</div>
+                        ${avatarHtml}
+                        <div class="winner-name">${safeDisplayName}</div>
+
+                        <div class="winner-class" style="font-size:10px; opacity:0.8; line-height:1.2; margin-top:4px; text-align:left;">
+                            ${metaLine ? metaLine : ''}
                         </div>
+
                         <div class="winner-score">${player.score}</div>
                     </div>
-                `;  
-      podiumEl.insertAdjacentHTML('beforeend', html);
-            } else {
+                `;
+
+                podiumEl.insertAdjacentHTML('beforeend', html);
+                           
                 podiumEl.insertAdjacentHTML('beforeend', `<div class="winner ${ranks[i]}" style="opacity:0"></div>`);
             }
         });
@@ -4439,6 +4448,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
