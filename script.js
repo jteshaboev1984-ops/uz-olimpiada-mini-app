@@ -284,6 +284,19 @@ function normalizeSubjectKey(raw) {
 }
 
 function escapeHTML(value) {
+  function sanitizeText(s) {
+  return String(s || '')
+    .replace(/[\u0000-\u001F\u007F]/g, '')   // control chars
+    .replace(/[<>"]/g, '')                  // главный мусор: < > "
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function safeUrl(u) {
+  return String(u || '')
+    .replace(/[\s<>"']/g, '')
+    .trim();
+}
   return String(value ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -2503,31 +2516,24 @@ function fillProfileForm(data) {
 
       top3.forEach((player, i) => {
   if (player) {
-    const rawName = String(player.name || '').trim() || t('anonymous');
+    const rawName = sanitizeText(player.name) || t('anonymous');
     const displayName = rawName.split(/\s+/).slice(0, 2).join(' ');
     const safeDisplayName = escapeHTML(displayName);
     const initial = escapeHTML(rawName.charAt(0) || '?');
 
-    const safeAvatarUrl = escapeHTML(String(player.avatarUrl || ''));
+    const safeAvatarUrl = escapeHTML(safeUrl(player.avatarUrl));
+
     const avatarHtml = safeAvatarUrl
       ? `<img src="${safeAvatarUrl}" class="winner-img" onerror="this.onerror=null;this.src='${defaultAvatar}';">`
       : `<div class="winner-img" style="background:#E1E1E6; display:flex; align-items:center; justify-content:center; font-size:24px; color:#666;">${initial}</div>`;
 
-    const shortRegion = (player.region || "")
-      .replace(" viloyati", "")
-      .replace(" shahri", "")
-      .replace(" vil", "")
-      .trim();
-
-    const shortDistrict = (player.district || "")
-      .replace(" tumani", "")
-      .replace(" района", "")
-      .trim();
+    const shortRegion = sanitizeText(player.region).replace(" viloyati", "").replace(" shahri", "").replace(" vil", "").trim();
+    const shortDistrict = sanitizeText(player.district).replace(" tumani", "").replace(" района", "").trim();
 
     const locParts = [shortRegion, shortDistrict].filter(Boolean);
     const shortLoc = escapeHTML(locParts.join(', '));
 
-    let schoolRaw = String(player.school || '').trim();
+    let schoolRaw = sanitizeText(player.school);
     if (schoolRaw && !/^№/i.test(schoolRaw)) schoolRaw = `№${schoolRaw}`;
     const safeSchool = escapeHTML(schoolRaw);
 
@@ -2558,7 +2564,8 @@ function fillProfileForm(data) {
 
         list.slice(3).forEach((player, index) => {
             const realRank = index + 4;
-            const safeAvatarUrl = escapeHTML(String(player.avatarUrl || ''));
+            const safeName = escapeHTML(sanitizeText(player.name) || t('anonymous'));
+            const safeAvatarUrl = escapeHTML(safeUrl(player.avatarUrl));
             const avatarHtml = safeAvatarUrl
             ? `<img src="${safeAvatarUrl}" onerror="this.onerror=null;this.src='${defaultAvatar}';">`
             : '';
@@ -4457,6 +4464,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
