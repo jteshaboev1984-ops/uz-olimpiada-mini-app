@@ -308,6 +308,23 @@ function subjectDisplayName(key) {
 }  
 const SUBJECTS_STORAGE_KEY = 'olympiad_subjects';
 const SUBJECTS_LOCK_KEY = 'olympiad_subjects_locked';
+const BOOKS = [
+  {
+    title: 'Математика • Сборник задач',
+    subtitle: 'PDF',
+    url: '#' // TODO: заменить на реальный путь PDF (например ./books/math.pdf)
+  },
+  {
+    title: 'Химия • Базовый курс',
+    subtitle: 'PDF',
+    url: '#' // TODO: заменить на реальный путь PDF (например ./books/chemistry.pdf)
+  },
+  {
+    title: 'Биология • Конспекты',
+    subtitle: 'PDF',
+    url: '#' // TODO: заменить на реальный путь PDF (например ./books/biology.pdf)
+  }
+];
 
 function getAvailableSubjectKeys() {
   const cards = Array.from(document.querySelectorAll('.subject-card[data-subject]'));
@@ -2014,6 +2031,49 @@ function fillProfileForm(data) {
   return { total: subjectQuestions.length, correct };
 }
 
+    function renderSubjectInlineStats(card, prefix) {
+        if (!card) return;
+        const inlineEl = card.querySelector('.subject-inline');
+        if (!inlineEl) return;
+        inlineEl.classList.remove('hidden');
+        const totalStats = calculateSubjectStats(prefix);
+        const tourStats = calculateSubjectStats(prefix);
+        const totalQuestions = totalStats.total || 0;
+        const totalCorrect = totalStats.correct || 0;
+        const tourLabelBase = tSafe('tour_label', 'Тур');
+        const currentTourLabel = tSafe('curr_tour', 'Текущий тур');
+        const tourNumber = getCurrentTourNumber();
+        const isCompleted = !!tourCompleted;
+        const completedLabel = `Последний завершённый тур${Number.isFinite(tourNumber) ? ` (${tourLabelBase} ${tourNumber})` : ''}`;
+        const tourLabel = isCompleted ? completedLabel : currentTourLabel;
+        const statsTotal = tourStats.total || 0;
+        const statsCorrect = tourStats.correct || 0;
+        inlineEl.innerHTML = `
+            <div class="subject-inline-section">
+                <div class="subject-inline-title">Всего</div>
+                <div class="subject-inline-row">
+                    <span>${tSafe('total_q', 'Всего вопросов')}</span>
+                    <strong>${totalQuestions}</strong>
+                </div>
+                <div class="subject-inline-row">
+                    <span>${tSafe('correct_txt', 'Верно')}</span>
+                    <strong>${totalCorrect}</strong>
+                </div>
+            </div>
+            <div class="subject-inline-section">
+                <div class="subject-inline-title">${tourLabel}</div>
+                <div class="subject-inline-row">
+                    <span>${tSafe('total_q', 'Всего вопросов')}</span>
+                    <strong>${statsTotal}</strong>
+                </div>
+                <div class="subject-inline-row">
+                    <span>${tSafe('correct_txt', 'Верно')}</span>
+                    <strong>${statsCorrect}</strong>
+                </div>
+            </div>
+        `;
+    }
+
     window.openSubjectStats = function(prefix) {
         const modal = document.getElementById('subject-details-modal');
         const content = document.getElementById('sd-content');
@@ -2068,44 +2128,7 @@ function fillProfileForm(data) {
         });
     }
     function renderHomeContextUI() {
-        renderActiveSubjectCard();
         renderNextEventCard();
-    }
-
-    function renderActiveSubjectCard() {
-        const titleEl = document.getElementById('active-subject-title');
-        const tourEl = document.getElementById('active-subject-tour');
-        const statusEl = document.getElementById('active-subject-status');
-        const nextEl = document.getElementById('active-subject-next');
-        if (!titleEl && !tourEl && !statusEl && !nextEl) return;
-
-        const subjectName = subjectDisplayName(activeSubject) || '—';
-        if (titleEl) titleEl.textContent = subjectName;
-
-        const totalTours = 7;
-        const currentNumber = getCurrentTourNumber();
-        const isValidTour = Number.isFinite(currentNumber) && currentNumber > 0;
-        if (tourEl) {
-            tourEl.textContent = isValidTour
-                ? `Тур ${currentNumber} / ${totalTours}`
-                : `Тур — / ${totalTours}`;
-        }
-
-        if (statusEl) {
-            statusEl.textContent = isValidTour
-                ? 'Текущий тур активен'
-                : 'Следующий тур скоро';
-        }
-
-        if (nextEl) {
-            if (isValidTour && currentNumber < totalTours) {
-                nextEl.textContent = 'Следующий тур скоро';
-                nextEl.classList.remove('hidden');
-            } else {
-                nextEl.textContent = '';
-                nextEl.classList.add('hidden');
-            }
-        }
     }
 
     function renderNextEventCard() {
@@ -2168,23 +2191,32 @@ function fillProfileForm(data) {
         return (userAnswersCache || []).some(a => ids.has(a.question_id));
     }
 
-    function renderSubjectCardProgress(prefix) {
-        const percentEl = document.getElementById(`${prefix}-percent`);
-        const barEl = document.getElementById(`${prefix}-bar`);
-        if (!percentEl && !barEl) return;
+    function renderSubjectCardProgress(prefix, cardEl) {
+        const card = cardEl || document.querySelector(`.subject-card[data-subject="${prefix}"]`);
+        if (!card) return;
+        const dotsEl = card.querySelector('.tour-dots');
+        const labelEl = card.querySelector('.tour-label');
+        if (!dotsEl && !labelEl) return;
         const totalTours = 7;
         const tourNumber = getCurrentTourNumber();
-        const safeTour = Number.isFinite(tourNumber)
-            ? Math.max(0, Math.min(totalTours, tourNumber))
-            : null;
-        const progressValue = safeTour ? Math.round((safeTour / totalTours) * 100) : 0;
-        if (percentEl) percentEl.textContent = `Tur ${safeTour ?? '?'} / ${totalTours}`;
-        if (barEl) barEl.style.width = `${progressValue}%`;
+        const isValidTour = Number.isFinite(tourNumber) && tourNumber > 0;
+        const activeCount = isValidTour ? Math.min(totalTours, tourNumber) : 0;
+        const tourLabel = tSafe('tour_label', 'Тур');
+        if (labelEl) {
+            labelEl.textContent = isValidTour
+                ? `${tourLabel} ${activeCount} / ${totalTours}`
+                : `${tourLabel} — / ${totalTours}`;
+        }
+        if (dotsEl) {
+            dotsEl.innerHTML = Array.from({ length: totalTours }, (_, index) => (
+                `<span class="tour-dot${index < activeCount ? ' is-active' : ''}"></span>`
+            )).join('');
+        }
     }
 
     function renderAllSubjectCardProgress() {
         document.querySelectorAll('.subject-card[data-subject]').forEach(card => {
-            renderSubjectCardProgress(card.dataset.subject);
+            renderSubjectCardProgress(card.dataset.subject, card);
         });
     }
 
@@ -3990,7 +4022,16 @@ if (subjectsGrid) {
       const subject = normalizeSubjectKey(card.dataset.subject);
       if (!subject) return;
       setActiveSubject(subject);
-      window.openSubjectStats?.(subject);
+      const shouldExpand = !card.classList.contains('is-expanded');
+      document.querySelectorAll('.subject-card[data-subject].is-expanded').forEach(other => {
+        if (other !== card) other.classList.remove('is-expanded');
+      });
+      if (shouldExpand) {
+        card.classList.add('is-expanded');
+        renderSubjectInlineStats(card, subject);
+      } else {
+        card.classList.remove('is-expanded');
+      }
     }
   });
 }
@@ -4002,6 +4043,55 @@ if (resourcesAccordion && resourcesToggle && resourcesContent) {
   resourcesToggle.addEventListener('click', () => {
     const isOpen = resourcesAccordion.classList.toggle('is-open');
     resourcesToggle.setAttribute('aria-expanded', String(isOpen));
+  });
+}
+
+function renderBooksList() {
+  const listEl = document.getElementById('books-list');
+  if (!listEl) return;
+  const items = BOOKS.map((book, index) => {
+    const safeTitle = escapeHTML(book.title);
+    const safeSubtitle = escapeHTML(book.subtitle);
+    const safeUrl = escapeHTML(book.url);
+    return `
+      <div class="resource-card book-resource" data-url="${safeUrl}" data-index="${index}">
+        <div class="res-icon pdf"><i class="fa-solid fa-file-pdf"></i></div>
+        <div class="res-info"><h4>${safeTitle}</h4><p>${safeSubtitle}</p></div>
+        <i class="fa-solid fa-chevron-right arrow"></i>
+      </div>
+    `;
+  }).join('');
+  listEl.innerHTML = items;
+}
+
+function openBooksModal() {
+  const modal = document.getElementById('books-modal');
+  if (!modal) return;
+  renderBooksList();
+  modal.classList.remove('hidden');
+}
+
+function closeBooksModal() {
+  const modal = document.getElementById('books-modal');
+  if (!modal) return;
+  modal.classList.add('hidden');
+}
+
+safeAddListener('books-resource-card', 'click', openBooksModal);
+safeAddListener('books-modal-close', 'click', closeBooksModal);
+safeAddListener('books-modal-back', 'click', closeBooksModal);
+
+const booksList = document.getElementById('books-list');
+if (booksList) {
+  booksList.addEventListener('click', (event) => {
+    const item = event.target.closest('.book-resource');
+    if (!item) return;
+    const url = item.dataset.url;
+    if (url && url !== '#') {
+      openExternalLink(url);
+      return;
+    }
+    alert('Файл будет добавлен позже');
   });
 }
 safeAddListener('open-cabinet-btn', 'click', () => { 
@@ -4212,6 +4302,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
