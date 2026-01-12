@@ -722,19 +722,23 @@
 
     <div class="modal hidden" id="subject-select-modal">
         <div class="modal-card">
-            <h2>Выберите предметы</h2>
-            <p class="modal-subtitle">Можно выбрать от 1 до 3 предметов.<br>После подтверждения изменить нельзя до конца 7 туров.</p>
+            <h2 data-i18n="subject_select_title">Выберите предметы</h2>
+            <p class="modal-subtitle" data-i18n="subject_select_subtitle">
+  Можно выбрать от 1 до 3 предметов.<br>После подтверждения изменить нельзя до конца 7 туров.
+</p>
             <div id="subject-select-list" class="subject-select-list"></div>
-            <div id="subject-select-warning" class="subject-select-warning is-hidden">Не более 3 предметов.</div>
-            <button id="subject-select-next" class="btn-primary" disabled>Продолжить</button>
+            <div id="subject-select-warning" class="subject-select-warning is-hidden" data-i18n="subject_select_warning">Не более 3 предметов.</div>
+            <button id="subject-select-next" class="btn-primary" disabled data-i18n="subject_select_next">Продолжить</button>
         </div>
     </div>
 
     <div class="modal hidden" id="subject-confirm-modal">
         <div class="modal-card">
-            <h2>Подтвердить выбор?</h2>
-            <p id="subject-confirm-text">Вы выбрали: ...</p>
-            <p class="modal-subtitle">После подтверждения изменить предметы нельзя до завершения всех 7 туров.</p>
+            <h2 data-i18n="subject_confirm_title">Подтвердить выбор?</h2>
+            <p id="subject-confirm-text" data-i18n="subject_confirm_you_selected">Вы выбрали:</p>
+            <p class="modal-subtitle">
+            <span data-i18n="subject_confirm_subtitle">После подтверждения изменить предметы нельзя до завершения всех 7 туров.</span>
+</p>
             <button id="subject-confirm-yes" class="btn-primary">Подтвердить</button>
             <button id="subject-confirm-back" class="btn-secondary">Вернуться</button>
         </div>
@@ -824,10 +828,10 @@
             <div class="modal-icon-big" style="color:var(--success); background:#e8f8ec;"><i class="fa-solid fa-calendar-check"></i></div>
             <h2 data-i18n="tour_passed_title">Tur yakunlangan!</h2>
             <p style="color:#666; font-size:14px; margin-bottom:15px;" data-i18n="tour_passed_msg">Siz ushbu bosqich javoblarini topshirgansiz. Natijalar Reyting bo'limida.</p>
-            <button class="btn-primary" onclick="openExternalLink('https://t.me/your_channel')" style="margin-top:15px;">
-                <i class="fa-brands fa-telegram"></i> <span data-i18n="btn_channel">Kanalga o'tish</span>
+            <button class="btn-primary" id="tour-info-primary">
+              <span data-i18n="btn_understood">Понятно</span>
             </button>
-            <button class="btn-text-simple" onclick="document.getElementById('tour-info-modal').classList.add('hidden')" data-i18n="btn_close">Yopish</button>
+              <button class="btn-text-simple hidden" id="tour-info-secondary" data-i18n="btn_understood">Понятно</button>
         </div>
     </div>
 
@@ -937,6 +941,7 @@
     <script src="./script.js?v=31" defer></script>
 </body>
 </html>
+
 
 
 
