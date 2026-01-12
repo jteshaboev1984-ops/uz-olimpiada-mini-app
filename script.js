@@ -2502,50 +2502,59 @@ function fillProfileForm(data) {
         const defaultAvatar = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%23E1E1E6"/><text x="50" y="60" font-size="40" text-anchor="middle" fill="%23666">?</text></svg>';
 
       top3.forEach((player, i) => {
-            if (player) {
-                const rawName = String(player.name || '').trim() || t('anonymous');
-                const displayName = rawName.split(/\s+/).slice(0, 2).join(' ');
-                const safeDisplayName = escapeHTML(displayName);
-                const initial = escapeHTML(rawName.charAt(0) || '?');
-                const safeAvatarUrl = escapeHTML(String(player.avatarUrl || ''));
-                const avatarHtml = safeAvatarUrl
-                    ? `<img src="${safeAvatarUrl}" class="winner-img" onerror="this.src='${defaultAvatar}'">`
-                    : `<div class="winner-img" style="background:#E1E1E6; display:flex; align-items:center; justify-content:center; font-size:24px; color:#666;">${initial}</div>`;
+  if (player) {
+    const rawName = String(player.name || '').trim() || t('anonymous');
+    const displayName = rawName.split(/\s+/).slice(0, 2).join(' ');
+    const safeDisplayName = escapeHTML(displayName);
+    const initial = escapeHTML(rawName.charAt(0) || '?');
 
-                const shortRegion = (player.region || "").replace(" viloyati", "").replace(" shahri", "").replace(" vil", "").trim();
-                const shortDistrict = (player.district || "").replace(" tumani", "").replace(" района", "").trim();
+    const safeAvatarUrl = escapeHTML(String(player.avatarUrl || ''));
+    const avatarHtml = safeAvatarUrl
+      ? `<img src="${safeAvatarUrl}" class="winner-img" onerror="this.onerror=null;this.src='${defaultAvatar}';">`
+      : `<div class="winner-img" style="background:#E1E1E6; display:flex; align-items:center; justify-content:center; font-size:24px; color:#666;">${initial}</div>`;
 
-                const locParts = [shortRegion, shortDistrict].filter(Boolean);
-                const shortLoc = escapeHTML(locParts.join(', '));
+    const shortRegion = (player.region || "")
+      .replace(" viloyati", "")
+      .replace(" shahri", "")
+      .replace(" vil", "")
+      .trim();
 
-                const schoolRaw = String(player.school || '').trim();
-                const safeSchool = escapeHTML(schoolRaw);
+    const shortDistrict = (player.district || "")
+      .replace(" tumani", "")
+      .replace(" района", "")
+      .trim();
 
-                const metaParts = [];
-                if (shortLoc) metaParts.push(shortLoc);
-                if (safeSchool) metaParts.push(safeSchool);
+    const locParts = [shortRegion, shortDistrict].filter(Boolean);
+    const shortLoc = escapeHTML(locParts.join(', '));
 
-                const metaLine = metaParts.join(' • ');
+    let schoolRaw = String(player.school || '').trim();
+    if (schoolRaw && !/^№/i.test(schoolRaw)) schoolRaw = `№${schoolRaw}`;
+    const safeSchool = escapeHTML(schoolRaw);
 
-                const html = `
-                    <div class="winner ${ranks[i]}">
-                        <div class="winner-rk ${rkClasses[i]}">${realRanks[i]}</div>
-                        ${avatarHtml}
-                        <div class="winner-name">${safeDisplayName}</div>
+    const metaParts = [];
+    if (shortLoc) metaParts.push(shortLoc);
+    if (safeSchool) metaParts.push(safeSchool);
+    const metaLine = metaParts.join(' • ');
 
-                        <div class="winner-class" style="font-size:10px; opacity:0.8; line-height:1.2; margin-top:4px; text-align:left;">
-                            ${metaLine ? metaLine : ''}
-                        </div>
+    const html = `
+      <div class="winner ${ranks[i]}">
+        <div class="avatar-wrapper">
+          ${avatarHtml}
+          <div class="rank-circle ${rkClasses[i]}">${realRanks[i]}</div>
+        </div>
 
-                        <div class="winner-score">${player.score}</div>
-                    </div>
-                `;
+        <div class="winner-name">${safeDisplayName}</div>
+        <div class="winner-class">${metaLine ? metaLine : ''}</div>
+        <div class="winner-score">${player.score}</div>
+      </div>
+    `;
 
-                podiumEl.insertAdjacentHTML('beforeend', html);
-                           
-                podiumEl.insertAdjacentHTML('beforeend', `<div class="winner ${ranks[i]}" style="opacity:0"></div>`);
-            }
-        });
+    podiumEl.insertAdjacentHTML('beforeend', html);
+  } else {
+    // Плейсхолдер только когда реально нет игрока
+    podiumEl.insertAdjacentHTML('beforeend', `<div class="winner ${ranks[i]}" style="opacity:0"></div>`);
+  }
+});
 
         list.slice(3).forEach((player, index) => {
             const realRank = index + 4;
@@ -4448,6 +4457,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
