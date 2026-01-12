@@ -907,6 +907,13 @@ function exitPracticeToReturnScreen() {
             res_ch_desc: "Yangiliklar",
             res_grp_title: "Ishtirokchilar chati",
             res_grp_desc: "Muhokama",
+            res_materials: "Materiallar",
+            res_books_title: "Kitoblar",
+            res_books_desc: "PDF va materiallar",
+            next_event_title: "Yaqin tadbir",
+            next_event_label: "Keyingi tur",
+            next_event_soon: "Keyingi tur tez orada",
+            lb_title: "Reyting",
             loading: "Yuklanmoqda...",
             btn_exit: "Chiqish",
             btn_next: "Keyingi",
@@ -1113,6 +1120,13 @@ function exitPracticeToReturnScreen() {
             res_ch_desc: "Новости",
             res_grp_title: "Чат участников",
             res_grp_desc: "Обсуждение",
+            res_materials: "Материалы",
+            res_books_title: "Книги",
+            res_books_desc: "PDF и материалы",
+            next_event_title: "Ближайшее событие",
+            next_event_label: "Следующий тур",
+            next_event_soon: "Следующий тур скоро",
+            lb_title: "Рейтинг",
             loading: "Загрузка...",
             btn_exit: "Выход",
             btn_next: "Далее",
@@ -1319,6 +1333,13 @@ function exitPracticeToReturnScreen() {
             res_ch_desc: "News",
             res_grp_title: "Chat Group",
             res_grp_desc: "Discussion",
+            res_materials: "Materials",
+            res_books_title: "Books",
+            res_books_desc: "PDFs and materials",
+            next_event_title: "Upcoming event",
+            next_event_label: "Next tour",
+            next_event_soon: "Next tour soon",
+            lb_title: "Leaderboard",
             loading: "Loading...",
             btn_exit: "Exit",
             btn_next: "Next",
@@ -2491,19 +2512,21 @@ function fillProfileForm(data) {
                     ? `<img src="${safeAvatarUrl}" class="winner-img" onerror="this.src='${defaultAvatar}'">`
                     : `<div class="winner-img" style="background:#E1E1E6; display:flex; align-items:center; justify-content:center; font-size:24px; color:#666;">${initial}</div>`;
 
-                const shortRegion = (player.region || "").split(' ')[0];
-                const shortDistrict = (player.district || "").replace(' tumani', '').replace(' района', '');
-                const shortLoc = `${escapeHTML(shortRegion)}${shortRegion || shortDistrict ? ", " : ""}${escapeHTML(shortDistrict)}`;
-                const safeSchool = escapeHTML(player.school || '?');
+                const shortRegion = (player.region || "").replace(" viloyati", "").replace(" shahri", "").replace(" vil", "").trim();
+                const shortDistrict = (player.district || "").replace(" tumani", "").replace(" района", "").trim();
 
-                const html = `
-                    <div class="winner ${ranks[i]}">
-                        <div class="avatar-wrapper">
-                            ${avatarHtml}
-                            <div class="rank-circle ${rkClasses[i]}">${realRanks[i]}</div>
-                        </div>
-                        <div class="winner-name">${safeDisplayName}</div>
-                        <div class="winner-class" style="font-size:10px; opacity:0.8; line-height:1.2; margin-top:3px;">
+                const locParts = [shortRegion, shortDistrict].filter(Boolean);
+                const shortLoc = escapeHTML(locParts.join(', '));
+
+                const schoolRaw = String(player.school || '').trim();
+                const safeSchool = escapeHTML(schoolRaw);
+
+                const metaParts = [];
+                if (shortLoc) metaParts.push(shortLoc);
+                if (safeSchool) metaParts.push(safeSchool);
+
+                const metaLine = metaParts.join(' • ');
+
                             📍 ${shortLoc}<br>🏫 №${safeSchool}
                         </div>
                         <div class="winner-score">${player.score}</div>
@@ -2519,8 +2542,8 @@ function fillProfileForm(data) {
             const realRank = index + 4;
             const safeAvatarUrl = escapeHTML(String(player.avatarUrl || ''));
             const avatarHtml = safeAvatarUrl
-                ? `<img src="${player.avatarUrl}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
-                : '';
+            ? `<img src="${safeAvatarUrl}" onerror="this.onerror=null;this.src='${defaultAvatar}';">`
+            : '';
             const rawName = String(player.name || '').trim() || t('anonymous');
             const displayName = rawName.split(/\s+/).slice(0, 2).join(' ');
             const safeDisplayName = escapeHTML(displayName);
@@ -4416,6 +4439,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
