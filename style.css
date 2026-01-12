@@ -159,7 +159,9 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
   align-items:center;
   gap:10px;
   min-width:0;
+  flex-wrap:nowrap;
 }
+.subject-head .sub-icon{ flex:0 0 auto; }
 
 .subject-head h3{
   margin:0;
@@ -893,19 +895,5 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
   margin-bottom: 0;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* HOME: spacing between subject cards and actions */
+.section-header{ margin-top: 18px; margin-bottom: 10px; }
