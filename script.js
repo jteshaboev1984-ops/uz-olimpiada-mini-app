@@ -226,10 +226,6 @@ const storedTourId = getPracticeTourIdValue(obj.practiceTourId);
 const wantTourId = getPracticeTourIdValue(practiceTourId);
 if (wantTourId && String(storedTourId) !== String(wantTourId)) return null;
 
-    const storedTourId = getPracticeTourIdValue(obj.practiceTourId);
-    if (getPracticeTourIdValue(practiceTourId) && String(storedTourId) !== String(getPracticeTourIdValue(practiceTourId))) {
-      return null;
-    }
     return obj;
   } catch (e) {
     console.warn('[practice] load failed', e);
@@ -974,26 +970,30 @@ async function beginPracticeNew(filters) {
     pool = pool.filter(q => String(q.difficulty || '').toLowerCase() === want);
   }
 
-   const seenIds = loadPracticeSeenIds(practiceTourId);
-  const unseen = pool.filter(q => !seenIds.has(String(q.id)));
-  const targetCount = practiceFilters.count || 20;
-  const sourcePool = unseen.length >= targetCount ? unseen : pool;
-  let limited = [];
-const shuffledUnseen = unseen.slice();
-shuffleArray(shuffledUnseen);
-limited = shuffledUnseen.slice(0, Math.min(targetCount, shuffledUnseen.length));
+const seenIds = loadPracticeSeenIds(practiceTourId);
+const unseen = pool.filter(q => !seenIds.has(String(q.id)));
+const targetCount = practiceFilters.count || 20;
 
-const remaining = targetCount - limited.length;
-if (remaining > 0) {
-  // добор из полного пула (могут быть повторы)
-  limited = limited.concat(pickNWithRepeats(pool, remaining));
+let limited = [];
+
+if (unseen.length >= targetCount) {
+  const shuffledUnseen = unseen.slice();
+  shuffleArray(shuffledUnseen);
+  limited = shuffledUnseen.slice(0, targetCount);
+} else {
+  const shuffledUnseen = unseen.slice();
+  shuffleArray(shuffledUnseen);
+  limited = shuffledUnseen.slice(); // все новые, что есть
+
+  const remaining = targetCount - limited.length;
+  if (remaining > 0) {
+    // добор из полного пула (повторы разрешены, если новых не хватило)
+    limited = limited.concat(pickNWithRepeats(pool, remaining));
+  }
 }
 
-// можно перемешать limited, если хотите, но НЕ обязательно
-
-  } else {
-    limited = pickNWithRepeats(sourcePool, targetCount);
-  }
+// опционально перемешать итоговый список
+shuffleArray(limited);
 
   practiceQuestionOrder = limited.map(q => q.id);
   
@@ -4732,6 +4732,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
