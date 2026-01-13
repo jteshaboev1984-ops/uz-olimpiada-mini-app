@@ -1,4 +1,6 @@
 const APP_VERSION = '1.0';
+// TEMP: режим теста (показывать все направления)
+const DEV_UNLOCK_ALL_DIRECTIONS = true;
 
 document.addEventListener('DOMContentLoaded', function () {
 
@@ -5289,6 +5291,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
