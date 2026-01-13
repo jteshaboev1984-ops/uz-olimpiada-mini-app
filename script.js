@@ -2251,49 +2251,71 @@ function fillProfileForm(data) {
 
     // FIX #5: Исправленная статистика - получаем данные по текущему языку пользователя
     async function fetchStatsData() {
-  if (!currentTourId || !internalDbId) return;
+  if (!internalDbId) return;
 
-  // 1) Вопросы текущего тура на текущем языке — для статистики
+  // Для карточек предметов нужны данные "не только текущего тура":
+  // берём все завершённые туры пользователя + текущий (если есть), чтобы:
+  //  - "Нет данных" исчезало (есть ответы из прошлых туров)
+  //  - прогресс/точность считались стабильно
+  let tourIds = [];
+
+  try {
+    const { data: progressData, error: progressErr } = await supabaseClient
+      .from('tour_progress')
+      .select('tour_id, score')
+      .eq('user_id', internalDbId);
+
+    if (progressErr) console.error('[fetchStatsData] tour_progress error:', progressErr);
+
+    const completed = new Set(
+      (progressData || [])
+        .filter(row => row && row.score !== null && row.score !== undefined)
+        .map(row => String(row.tour_id))
+    );
+
+    tourIds = Array.from(completed);
+
+    if (currentTourId) tourIds.push(String(currentTourId));
+    tourIds = Array.from(new Set(tourIds)).filter(Boolean);
+  } catch (e) {
+    console.warn('[fetchStatsData] tour_progress fetch failed', e);
+    if (currentTourId) tourIds = [String(currentTourId)];
+  }
+
+  if (!tourIds.length) return;
+
+  // 1) Вопросы по выбранным турам на текущем языке — для статистики
   const { data: qData, error: qErr } = await supabaseClient
     .from('questions')
     .select('id, subject, topic, difficulty, tour_id, language')
-    .eq('tour_id', currentTourId)
+    .in('tour_id', tourIds.map(id => Number(id)).filter(Number.isFinite))
     .eq('language', currentLang);
 
   if (qErr) console.error('[fetchStatsData] questions error:', qErr);
   tourQuestionsAllCache = qData || [];
 
-  // 2) Ответы пользователя ТОЛЬКО по вопросам текущего тура и языка
-  // Важно: это делаем через JOIN к questions (нужна связь question_id -> questions.id)
+  // 2) Ответы пользователя по этим вопросам (JOIN к questions)
   const { data: ansData, error: aErr } = await supabaseClient
     .from('user_answers')
-    .select(`
-      question_id,
-      is_correct,
-      questions!inner (
-        id,
-        tour_id,
-        language
-      )
-    `)
+    .select('question_id, is_correct, questions!inner(id, tour_id, language)')
     .eq('user_id', internalDbId)
-    .eq('questions.tour_id', currentTourId)
-    .eq('questions.language', currentLang);
+    .eq('questions.language', currentLang)
+    .in('questions.tour_id', tourIds.map(id => Number(id)).filter(Number.isFinite));
 
+  // Если JOIN не сработал — fallback: берём ответы без JOIN и фильтруем по allowedIds
   if (aErr) {
-    console.error('[fetchStatsData] answers error:', aErr);
+    console.error('[fetchStatsData] answers join error:', aErr);
 
-    // fallback (на случай если имя связи в БД не "questions")
-    // тогда статистика будет по текущему туру, но фильтр сделаем вручную:
     const { data: rawAns, error: rawErr } = await supabaseClient
       .from('user_answers')
       .select('question_id, is_correct')
       .eq('user_id', internalDbId);
 
-     if (rawErr) console.error('[fetchStatsData] fallback answers error:', rawErr);
+    if (rawErr) console.error('[fetchStatsData] fallback answers error:', rawErr);
 
-    const allowedIds = new Set(tourQuestionsAllCache.map(q => q.id));
-     userAnswersCache = (rawAns || []).filter(a => allowedIds.has(a.question_id));
+    const allowedIds = new Set((tourQuestionsAllCache || []).map(q => q.id));
+    userAnswersCache = (rawAns || []).filter(a => allowedIds.has(a.question_id));
+
     refreshCabinetAccessUI();
     renderAllSubjectCardProgress();
     renderHomeContextUI();
@@ -2304,6 +2326,7 @@ function fillProfileForm(data) {
     question_id: a.question_id,
     is_correct: a.is_correct
   }));
+
   refreshCabinetAccessUI();
   renderAllSubjectCardProgress();
   renderHomeContextUI();
@@ -2434,8 +2457,15 @@ function fillProfileForm(data) {
     }
 
      function initActiveSubject() {
-        ensureActiveSubjectValid(getSelectedSubjects());
-    }
+  ensureActiveSubjectValid(getSelectedSubjects());
+  // На старте нужно сразу “разбудить” карточки:
+  // - подсветка активного предмета
+  // - прогресс тура (dots + label)
+  // - preinfo ("Верно x/y"), без ожидания клика
+  renderSubjectTabsUI();
+  renderAllSubjectCardProgress();
+  renderHomeContextUI();
+}
 
     function renderSubjectTabsUI() {
         document.querySelectorAll('.subject-card[data-subject]').forEach(card => {
@@ -4732,6 +4762,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
