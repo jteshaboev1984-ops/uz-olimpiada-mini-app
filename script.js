@@ -4643,12 +4643,18 @@ if (questionTimerInterval) {
   if (finalIsCorrect) correctCount++;
 
   try {
-    const { error } = await supabaseClient.from('user_answers').upsert({
-      user_id: internalDbId,
-      question_id: q.id,
-      answer: selectedAnswer,
-      is_correct: finalIsCorrect
-    }, { onConflict: 'user_id,question_id' });
+  const { error } = await supabaseClient.from('user_answers').upsert({
+  user_id: internalDbId,
+  mode: 'tour',
+  tour_id: Number(currentTourId),
+  question_id: Number(q.id),
+  answer: selectedAnswer,
+  selected_option: selectedAnswer,
+  is_correct: finalIsCorrect,
+  language: currentLang,
+  time_taken_ms: Math.max(0, Math.floor((questionTimeSec || 0) * 1000))
+}, { onConflict: 'user_id,mode,tour_id,question_id' });
+
 
     if (error) throw error;
 
@@ -5191,6 +5197,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
