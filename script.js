@@ -24,6 +24,11 @@ document.addEventListener('DOMContentLoaded', function () {
   let tourEnded = false;
   let tourTaken = false;
   let activeSubject = null;
+  let directionsMeta = [];
+  let directionSubjectsMap = {};
+  let unlockedDirectionKeys = [];
+  let selectedDirectionKey = null;
+  let pendingDirectionModal = false;
   let reviewState = {
     tours: [],
     progressByTourId: {},
@@ -196,6 +201,209 @@ function normalizePracticeFilters(raw) {
   count = Math.max(1, Math.min(200, Math.floor(count)));
   const practiceTourId = getPracticeTourIdValue(f.practiceTourId);
   return { subjects, difficulty, count, practiceTourId };
+}
+
+async function fetchDirectionsMetaAndSubjects() {
+  const { data: directionsData, error: directionsError } = await supabaseClient
+    .from('directions')
+    .select('id, key, title_ru, title_uz, title_en, sort, is_active')
+    .eq('is_active', true)
+    .order('sort', { ascending: true });
+
+  if (directionsError) {
+    console.error('[directions] meta fetch error:', directionsError);
+    directionsMeta = [];
+  } else {
+    directionsMeta = directionsData || [];
+  }
+
+  const { data: subjectsData, error: subjectsError } = await supabaseClient
+    .from('direction_subjects')
+    .select('direction_id, subject_key, sort, is_active')
+    .eq('is_active', true)
+    .order('direction_id', { ascending: true })
+    .order('sort', { ascending: true });
+
+  if (subjectsError) {
+    console.error('[directions] subjects fetch error:', subjectsError);
+    directionSubjectsMap = {};
+    return { directionsMeta, directionSubjectsMap };
+  }
+
+  const idToKey = new Map((directionsMeta || []).map(item => [String(item.id), String(item.key)]));
+  const map = {};
+  (subjectsData || []).forEach(row => {
+    const directionKey = idToKey.get(String(row.direction_id));
+    if (!directionKey) return;
+    if (!map[directionKey]) map[directionKey] = [];
+    map[directionKey].push(row.subject_key);
+  });
+  directionSubjectsMap = map;
+  return { directionsMeta, directionSubjectsMap };
+}
+
+async function fetchUserDirections(force = false) {
+  if (!internalDbId) return { unlocked: [], selected: null };
+  let unlocked = currentUserData?.unlocked_direction_keys;
+  let selected = currentUserData?.direction_selected_key;
+
+  const needsFetch =
+    force ||
+    !Array.isArray(unlocked) ||
+    (selected !== null && selected !== undefined && typeof selected !== 'string');
+
+  if (needsFetch) {
+    const { data, error } = await supabaseClient
+      .from('users')
+      .select('unlocked_direction_keys, direction_selected_key')
+      .eq('id', internalDbId)
+      .maybeSingle();
+    if (error) {
+      console.error('[directions] user fetch error:', error);
+    } else if (data) {
+      currentUserData = { ...currentUserData, ...data };
+      unlocked = data.unlocked_direction_keys;
+      selected = data.direction_selected_key;
+    }
+  }
+
+  unlockedDirectionKeys = Array.isArray(unlocked) ? unlocked.map(item => String(item)) : [];
+  selectedDirectionKey = selected ? String(selected) : null;
+  return { unlocked: unlockedDirectionKeys, selected: selectedDirectionKey };
+}
+
+function getAvailableDirectionsForUser() {
+  const unlocked = new Set((unlockedDirectionKeys || []).map(item => String(item)));
+  return (directionsMeta || []).filter(item => unlocked.has(String(item.key)));
+}
+
+function getDirectionTitle(direction) {
+  if (!direction) return '';
+  const lang = currentLang || 'uz';
+  const fallback = direction.title_ru || direction.title_en || direction.title_uz || direction.key || '';
+  if (lang === 'ru') return direction.title_ru || fallback;
+  if (lang === 'en') return direction.title_en || fallback;
+  return direction.title_uz || fallback;
+}
+
+function normalizeSelectedDirection() {
+  const available = getAvailableDirectionsForUser();
+  const availableKeys = new Set(available.map(item => String(item.key)));
+  if (selectedDirectionKey && !availableKeys.has(String(selectedDirectionKey))) {
+    selectedDirectionKey = null;
+  }
+  if (selectedDirectionKey && !getAllowedSubjectsByDirection(selectedDirectionKey).length) {
+    selectedDirectionKey = null;
+  }
+  if (!selectedDirectionKey && available.length === 1) {
+    selectedDirectionKey = String(available[0].key);
+  }
+}
+
+function shouldOpenDirectionModal() {
+  const available = getAvailableDirectionsForUser();
+  if (available.length <= 1) return false;
+  normalizeSelectedDirection();
+  const hasSubjects = getAllowedSubjectsByDirection(selectedDirectionKey).length > 0;
+  return !selectedDirectionKey || !hasSubjects;
+}
+
+function openDirectionSelectModal({ force = false } = {}) {
+  const modal = document.getElementById('direction-select-modal');
+  const listEl = document.getElementById('direction-list');
+  const saveBtn = document.getElementById('direction-save-btn');
+  const closeBtn = document.getElementById('direction-close-btn');
+  if (!modal || !listEl) return;
+
+  const available = getAvailableDirectionsForUser();
+  if (!available.length) return;
+
+  listEl.innerHTML = '';
+  const selectedKey = selectedDirectionKey;
+  available.forEach(direction => {
+    const key = String(direction.key);
+    const subjects = getAllowedSubjectsByDirection(key);
+    const label = document.createElement('label');
+    label.className = 'direction-item';
+    label.innerHTML = `
+      <input type="radio" name="direction-radio" value="${escapeHTML(key)}" ${selectedKey === key ? 'checked' : ''}>
+      <div>
+        <div class="direction-item-title">${escapeHTML(getDirectionTitle(direction))}</div>
+        <div class="direction-item-sub">${escapeHTML(subjects.map(subjectDisplayName).join(', '))}</div>
+      </div>
+    `;
+    listEl.appendChild(label);
+  });
+
+  const required = force || shouldOpenDirectionModal();
+  if (closeBtn) closeBtn.classList.toggle('hidden', required);
+  if (saveBtn) saveBtn.disabled = !selectedDirectionKey && required;
+
+  modal.classList.remove('hidden');
+}
+
+async function saveSelectedDirectionFromModal() {
+  const modal = document.getElementById('direction-select-modal');
+  const listEl = document.getElementById('direction-list');
+  if (!modal || !listEl) return;
+
+  const selectedInput = listEl.querySelector('input[name="direction-radio"]:checked');
+  const nextKey = selectedInput ? String(selectedInput.value) : '';
+  if (!nextKey) return;
+
+  try {
+    const { data, error } = await supabaseClient
+      .from('users')
+      .update({ direction_selected_key: nextKey })
+      .eq('id', internalDbId)
+      .select('direction_selected_key, unlocked_direction_keys')
+      .maybeSingle();
+
+    if (error) throw error;
+    if (data) {
+      currentUserData = { ...currentUserData, ...data };
+    }
+  } catch (e) {
+    console.error('[directions] save failed', e);
+  }
+
+  selectedDirectionKey = nextKey;
+  modal.classList.add('hidden');
+
+  const allowedSubjects = getAllowedSubjectsByDirection(selectedDirectionKey);
+  if (allowedSubjects.length) {
+    applyDirectionSubjectsToHomeUI(allowedSubjects);
+    ensureActiveSubjectValid(allowedSubjects);
+  } else {
+    initSubjectSelectionFlow();
+  }
+}
+
+async function syncDirectionState({ forceModal = false } = {}) {
+  await fetchDirectionsMetaAndSubjects();
+  await fetchUserDirections(true);
+  normalizeSelectedDirection();
+  if (
+    selectedDirectionKey &&
+    currentUserData &&
+    String(currentUserData.direction_selected_key || '') !== String(selectedDirectionKey)
+  ) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('users')
+        .update({ direction_selected_key: selectedDirectionKey })
+        .eq('id', internalDbId)
+        .select('direction_selected_key')
+        .maybeSingle();
+      if (error) throw error;
+      if (data) currentUserData = { ...currentUserData, ...data };
+    } catch (e) {
+      console.error('[directions] auto-select save failed', e);
+    }
+  }
+  if (forceModal && shouldOpenDirectionModal()) {
+    openDirectionSelectModal({ force: true });
+  }
 }
 
 function stopPracticeStopwatch() {
@@ -376,13 +584,19 @@ function normalizeSubjectKey(raw) {
   // 3) Маппинг вариантов написания в единые ключи
   const map = {
     math: ['matematika', 'математика', 'math', 'mathematics'],
+    physics: ['fizika', 'физика', 'physics', 'phys'],
     chem: ['kimyo', 'химия', 'chem', 'chemistry'],
     bio:  ['biologiya', 'биология', 'bio', 'biology'],
-    it:   ['informatika', 'информатика', 'it', 'computer science', 'cs'],
-    eco:  ['iqtisodiyot', 'экономика', 'eco', 'economics'],
+    it:   ['informatika', 'информатика', 'it', 'computer science', 'cs', 'computer_science'],
+    thinking_skills: ['thinking_skills', 'thinking skills', 'мышление', 'логика', 'critical thinking'],
+    global_perspectives: ['global_perspectives', 'global perspectives', 'global', 'perspectives'],
+    business: ['business', 'biznes', 'бизнес'],
+    accounting: ['accounting', 'buxgalteriya', 'бухгалтерия'],
+    eco:  ['iqtisodiyot', 'экономика', 'eco', 'economics', 'economy'],
     sat:  ['sat'],
     ielts:['ielts']
   };
+
 
   for (const [key, arr] of Object.entries(map)) {
     if (arr.includes(base)) return key;
@@ -420,9 +634,15 @@ function subjectDisplayName(key) {
   const k = String(key || '').toLowerCase();
   const map = {
     math: t('subj_math'),
+    physics: t('subj_phys'),
     chem: t('subj_chem'),
     bio: t('subj_bio'),
     it: t('subj_it'),
+    computer_science: t('subj_it'),
+    thinking_skills: t('subj_thinking'),
+    global_perspectives: t('subj_global'),
+    business: t('subj_business'),
+    accounting: t('subj_accounting'),
     eco: t('subj_eco'),
     sat: 'SAT',
     ielts: 'IELTS'
@@ -449,14 +669,57 @@ const BOOKS = [
   }
 ];
 
-function getAvailableSubjectKeys() {
-  const cards = Array.from(document.querySelectorAll('.subject-card[data-subject]'));
-  return cards
+function getDirectionSubjectFallback(directionKey) {
+  const fallback = {
+    dir_stem: ['math', 'physics', 'computer_science', 'thinking_skills'],
+    dir_life: ['biology', 'chemistry', 'global_perspectives'],
+    dir_econ: ['economics', 'business', 'accounting', 'global_perspectives']
+  };
+  const list = fallback[String(directionKey || '').toLowerCase()] || [];
+  return list.map(key => normalizeSubjectKey(key)).filter(Boolean);
+}
+
+function getAllowedSubjectsByDirection(directionKey) {
+  const key = String(directionKey || '').trim();
+  if (!key) return [];
+  const list = directionSubjectsMap[key];
+  const normalized = Array.isArray(list)
+    ? list.map(item => normalizeSubjectKey(item)).filter(Boolean)
+    : [];
+  if (normalized.length) return Array.from(new Set(normalized));
+  return Array.from(new Set(getDirectionSubjectFallback(key)));
+}
+
+function isDirectionTourMode() {
+  const allowed = getAllowedSubjectsByDirection(selectedDirectionKey);
+  return Array.isArray(allowed) && allowed.length > 0;
+}
+
+function getSubjectCards({ includeHidden = true, includeDirectionOnly = isDirectionTourMode() } = {}) {
+  return Array.from(document.querySelectorAll('.subject-card[data-subject]')).filter(card => {
+    if (!includeHidden && card.classList.contains('is-hidden')) return false;
+    const isDirectionOnly = card.dataset.directionOnly === 'true';
+    if (!includeDirectionOnly && isDirectionOnly) return false;
+    return true;
+  });
+}
+
+function getAvailableSubjectKeys(options = {}) {
+  const { includeHidden = true, includeDirectionOnly = isDirectionTourMode() } = options;
+  return getSubjectCards({ includeHidden, includeDirectionOnly })
     .map(card => normalizeSubjectKey(card.dataset.subject))
     .filter(Boolean);
 }
 
+function getSubjectOrderForCurrentMode() {
+  if (isDirectionTourMode()) {
+    return getAllowedSubjectsByDirection(selectedDirectionKey);
+  }
+  return ['math', 'chem', 'bio', 'it', 'eco', 'sat', 'ielts'];
+}
+
 function getSelectedSubjects() {
+  if (isDirectionTourMode()) return [];
   let raw = null;
   try {
     raw = localStorage.getItem(SUBJECTS_STORAGE_KEY);
@@ -472,7 +735,7 @@ function getSelectedSubjects() {
     list = [];
   }
 
-  const available = new Set(getAvailableSubjectKeys());
+  const available = new Set(getAvailableSubjectKeys({ includeHidden: true, includeDirectionOnly: false }));
   const normalized = list
     .map(item => normalizeSubjectKey(item))
     .filter(Boolean)
@@ -506,9 +769,10 @@ function clearSubjectsLock() {
 }
 
 function ensureActiveSubjectValid(selected) {
+  const directionList = isDirectionTourMode() ? getAllowedSubjectsByDirection(selectedDirectionKey) : [];
   const list = Array.isArray(selected) && selected.length
     ? selected
-    : getAvailableSubjectKeys();
+    : (directionList.length ? directionList : getAvailableSubjectKeys({ includeHidden: false, includeDirectionOnly: isDirectionTourMode() }));
   if (!list.length) return;
 
   let saved = null;
@@ -526,10 +790,13 @@ function ensureActiveSubjectValid(selected) {
 function applySelectedSubjectsToHomeUI(selected) {
   const list = Array.isArray(selected) ? selected : [];
   const allowed = new Set(list);
+  const isDirectionMode = isDirectionTourMode();
   document.querySelectorAll('.subject-card[data-subject]').forEach(card => {
     const key = normalizeSubjectKey(card.dataset.subject);
+    const isDirectionOnly = card.dataset.directionOnly === 'true';
     if (!list.length) {
-      card.classList.remove('is-hidden');
+      const shouldShow = isDirectionMode ? !isDirectionOnly : !isDirectionOnly;
+      card.classList.toggle('is-hidden', !shouldShow);
     } else {
       card.classList.toggle('is-hidden', !allowed.has(key));
     }
@@ -537,11 +804,33 @@ function applySelectedSubjectsToHomeUI(selected) {
   renderSubjectTabsUI();
 }
 
+function applyDirectionSubjectsToHomeUI(subjects) {
+  const list = Array.isArray(subjects) ? subjects.map(s => normalizeSubjectKey(s)).filter(Boolean) : [];
+  const allowed = new Set(list);
+  document.querySelectorAll('.subject-card[data-subject]').forEach(card => {
+    const key = normalizeSubjectKey(card.dataset.subject);
+    card.classList.toggle('is-hidden', !allowed.has(key));
+  });
+  renderSubjectTabsUI();
+  renderAllSubjectCardProgress();
+  renderHomeContextUI();
+}
+
 function isSelectedSubjectsValid(list) {
   return Array.isArray(list) && list.length >= 1 && list.length <= 3;
 }
 
 function initSubjectSelectionFlow() {
+  if (shouldOpenDirectionModal()) {
+    openDirectionSelectModal({ force: true });
+    return;
+  }
+  if (isDirectionTourMode()) {
+    const subjects = getAllowedSubjectsByDirection(selectedDirectionKey);
+    applyDirectionSubjectsToHomeUI(subjects);
+    ensureActiveSubjectValid(subjects);
+    return;
+  }
   const selected = getSelectedSubjects();
   const locked = isSubjectsLocked();
 
@@ -625,7 +914,20 @@ function applyPracticeModalTranslations() {
 
 function getPracticeSubjectOptions() {
   const subjects = getSubjectsFromCache();
-  const allowedSubjects = ['math', 'chem', 'bio', 'it', 'eco', 'sat', 'ielts'];
+  const allowedSubjects = [
+    'math',
+    'physics',
+    'chem',
+    'bio',
+    'it',
+    'thinking_skills',
+    'eco',
+    'business',
+    'accounting',
+    'global_perspectives',
+    'sat',
+    'ielts'
+  ];
   const available = new Set(subjects.map(s => normalizeSubjectKey(s)));
   const list = allowedSubjects.filter(key => available.has(key));
   const subjectList = list.length ? list : allowedSubjects.slice();
@@ -1121,6 +1423,12 @@ function exitPracticeToReturnScreen() {
             subj_bio: "Biologiya",
             subj_it: "Informatika",
             subj_eco: "Iqtisodiyot",
+            subj_thinking: "Thinking Skills",
+            subj_global: "Global Perspectives",
+            subj_business: "Biznes",
+            subj_accounting: "Buxgalteriya",
+            direction_title: "Yo'nalish",
+            direction_subtitle: "Yo'nalishni tanlang. Mavjud yo'nalishlar turlar natijalariga ko'ra ochiladi.",
             cert_title: "Sertifikat",
             certs_title: "Sertifikat",
             cert_subtitle: "Fanlar olimpiadasi ishtirokchisi",
@@ -1335,6 +1643,12 @@ function exitPracticeToReturnScreen() {
             subj_bio: "Биология",
             subj_it: "Информатика",
             subj_eco: "Экономика",
+            subj_thinking: "Thinking Skills",
+            subj_global: "Global Perspectives",
+            subj_business: "Бизнес",
+            subj_accounting: "Бухгалтерия",
+            direction_title: "Направление",
+            direction_subtitle: "Выберите направление. Доступные направления открываются по результатам туров.",
             cert_title: "Сертификат",
             certs_title: "Сертификат",
             cert_subtitle: "Участник предметной олимпиады",
@@ -1549,6 +1863,12 @@ function exitPracticeToReturnScreen() {
             subj_bio: "Biology",
             subj_it: "Computer Science",
             subj_eco: "Economics",
+            subj_thinking: "Thinking Skills",
+            subj_global: "Global Perspectives",
+            subj_business: "Business",
+            subj_accounting: "Accounting",
+            direction_title: "Direction",
+            direction_subtitle: "Choose a direction. Available directions open based on tour results.",
             cert_title: "Certificate",
             certs_title: "Certificate",
             cert_subtitle: "Subject olympiad participant",
@@ -2044,9 +2364,11 @@ if (!isInitialized) {
       cabLang.style.opacity = '0.5';
       cabLang.style.cursor = 'not-allowed';
     }
-  } else {
+   } else {
     initializeLanguage(null);
   }
+
+  await syncDirectionState();
 
   // профиль
   const isComplete = isProfileComplete(authData);
@@ -2338,10 +2660,12 @@ function fillProfileForm(data) {
   renderHomeContextUI();
 }
 
-    function calculateSubjectStats(prefix) {
-  const subjectQuestions = (tourQuestionsAllCache || []).filter(q =>
-    q.subject && String(q.subject).toLowerCase().startsWith(String(prefix).toLowerCase())
-  );
+ function calculateSubjectStats(prefix) {
+  const normalizedPrefix = normalizeSubjectKey(prefix);
+  const subjectQuestions = (tourQuestionsAllCache || []).filter(q => {
+    const normalizedSubject = normalizeSubjectKey(q.subject);
+    return normalizedSubject && normalizedSubject === normalizedPrefix;
+  });   
 
   let correct = 0;
   subjectQuestions.forEach(q => {
@@ -2352,19 +2676,20 @@ function fillProfileForm(data) {
   return { total: subjectQuestions.length, correct };
 }
 
-   function renderSubjectInlineStats(card, prefix) {
+  function renderSubjectInlineStats(card, prefix) {
   if (!card) return;
   const inlineEl = card.querySelector('.subject-inline');
   if (!inlineEl) return;
 
   inlineEl.classList.remove('hidden');
 
-  const key = String(prefix || '').toLowerCase();
+  const key = normalizeSubjectKey(prefix);
 
   // Общая статистика по всем турам (по тем вопросам, которые загружены в tourQuestionsAllCache)
-  const allQs = (tourQuestionsAllCache || []).filter(q =>
-    q?.subject && String(q.subject).toLowerCase().startsWith(key)
-  );
+  const allQs = (tourQuestionsAllCache || []).filter(q => {
+    const normalizedSubject = normalizeSubjectKey(q?.subject);
+    return normalizedSubject && normalizedSubject === key;
+  }); 
 
   const allIds = new Set(allQs.map(q => q.id));
   const allAns = (userAnswersCache || []).filter(a => allIds.has(a.question_id));
@@ -2449,7 +2774,9 @@ function fillProfileForm(data) {
     function setActiveSubject(prefix) {
         const normalized = normalizeSubjectKey(prefix);
         if (!normalized) return;
-        const selected = getSelectedSubjects();
+        const selected = isDirectionTourMode()
+          ? getAllowedSubjectsByDirection(selectedDirectionKey)
+          : getSelectedSubjects();
         if (selected.length && !selected.includes(normalized)) return;
         activeSubject = normalized;
         try {
@@ -2601,8 +2928,7 @@ function fillProfileForm(data) {
         if (!listEl) return;
         listEl.innerHTML = '';
         const list = Array.isArray(selected) ? selected : [];
-        const subjects = getAvailableSubjectKeys();
-
+        const subjects = getAvailableSubjectKeys({ includeHidden: true, includeDirectionOnly: false });
         subjects.forEach(key => {
             const item = document.createElement('label');
             item.className = 'subject-select-item';
@@ -2643,6 +2969,7 @@ function fillProfileForm(data) {
     }
 
     function openSubjectSelectModal(options = {}) {
+        if (isDirectionTourMode()) return;
         if (isSubjectsLocked()) return;
         const modal = document.getElementById('subject-select-modal');
         if (!modal) return;
@@ -3001,6 +3328,7 @@ function fillProfileForm(data) {
                     } catch (e) { console.warn(e); }
                     
                    showScreen('home-screen');
+                    await syncDirectionState({ forceModal: true });
                     initSubjectSelectionFlow();
                     await fetchStatsData();
                 } else {
@@ -3261,7 +3589,7 @@ function fillProfileForm(data) {
             percent: stat.total ? Math.round((stat.correct / stat.total) * 100) : 0
         }));
 
-        const order = ['math', 'chem', 'bio', 'it', 'eco', 'sat', 'ielts'];
+         const order = getSubjectOrderForCurrentMode();
         subjectStats.sort((a, b) => {
             const aIndex = order.indexOf(a.key);
             const bIndex = order.indexOf(b.key);
@@ -3271,11 +3599,13 @@ function fillProfileForm(data) {
             return aIndex - bIndex;
         });
         // Оставляем только выбранные предметы (и исключаем sat/ielts пока скрыты)
-const selected = (typeof getSelectedSubjects === 'function') ? getSelectedSubjects() : [];
+const selected = isDirectionTourMode()
+  ? getAllowedSubjectsByDirection(selectedDirectionKey)
+  : ((typeof getSelectedSubjects === 'function') ? getSelectedSubjects() : []);
 const allowed = new Set(
-  (selected.length ? selected : ['math','chem','bio','it','eco'])
+  (selected.length ? selected : ['math', 'chem', 'bio', 'it', 'eco'])
     .map(s => String(s).toLowerCase())
-    .filter(s => !['sat','ielts'].includes(s))
+    .filter(s => !['sat', 'ielts'].includes(s))
 );
 
 const filteredStats = subjectStats.filter(s => allowed.has(String(s.key).toLowerCase()));
@@ -3690,6 +4020,67 @@ function interleaveByAnswerType(list) {
   return result;
 }
 
+function distributeRoundRobin(subjects, need) {
+  const list = Array.isArray(subjects) ? subjects.filter(Boolean) : [];
+  const target = Math.max(0, Number(need) || 0);
+  if (!list.length || target <= 0) return [];
+  const counts = new Map(list.map(subject => [subject, 0]));
+  for (let i = 0; i < target; i += 1) {
+    const subject = list[i % list.length];
+    counts.set(subject, (counts.get(subject) || 0) + 1);
+  }
+  return list.map(subject => ({ subject, count: counts.get(subject) || 0 }));
+}
+
+function buildDirectionDifficultyBlock(pool, subjects, need, difficulty) {
+  const diffPool = (pool || []).filter(q => diffRank(q.difficulty) === difficulty);
+  if (!diffPool.length || need <= 0) return [];
+
+  const plan = distributeRoundRobin(subjects, need);
+  let picked = [];
+
+  plan.forEach(({ subject, count }) => {
+    if (count <= 0) return;
+    const subjectPool = diffPool.filter(q => normalizeSubjectKey(q.subject) === subject);
+    picked = picked.concat(pickNWithRepeats(subjectPool, count));
+  });
+
+  if (picked.length < need) {
+    const remaining = need - picked.length;
+    const fallbackPool = diffPool.filter(q => subjects.includes(normalizeSubjectKey(q.subject)));
+    picked = picked.concat(pickNWithRepeats(fallbackPool, remaining));
+  }
+
+  if (picked.length > need) picked = picked.slice(0, need);
+  return interleaveByAnswerType(picked);
+}
+
+function buildDirectionTourQuestions(allQuestions, directionKey) {
+  const subjects = getAllowedSubjectsByDirection(directionKey);
+  const normalizedSubjects = subjects.map(s => normalizeSubjectKey(s)).filter(Boolean);
+  if (!normalizedSubjects.length) {
+    return buildTourQuestions(allQuestions);
+  }
+
+  const pool = (allQuestions || []).filter(q => normalizedSubjects.includes(normalizeSubjectKey(q.subject)));
+  const mix = getTourDifficultyMix(currentTourId);
+
+  const easyBlock = buildDirectionDifficultyBlock(pool, normalizedSubjects, mix.easy, 'easy');
+  const mediumBlock = buildDirectionDifficultyBlock(pool, normalizedSubjects, mix.medium, 'medium');
+  const hardBlock = buildDirectionDifficultyBlock(pool, normalizedSubjects, mix.hard, 'hard');
+
+  const ordered = []
+    .concat(easyBlock)
+    .concat(mediumBlock)
+    .concat(hardBlock);
+
+  if (ordered.length !== 15) {
+    console.warn('[buildDirectionTourQuestions] expected 15, got', ordered.length);
+  }
+
+  return ordered.slice(0, 15);
+}
+
 function buildTourQuestions(allQuestions) {
   const pool = (allQuestions || []).filter(q => q && q.id);
   const mix = getTourDifficultyMix(currentTourId);
@@ -3744,7 +4135,10 @@ function buildTourQuestions(allQuestions) {
         }
 
 tourQuestionsAllCache = qData;              // сохраняем весь пул тура для статистики
-tourQuestionsSelected = buildTourQuestions(qData);
+const useDirectionMode = isDirectionTourMode();
+tourQuestionsSelected = useDirectionMode
+  ? buildDirectionTourQuestions(qData, selectedDirectionKey)
+  : buildTourQuestions(qData);
 
 questions = tourQuestionsSelected;          // тест идёт по 15
 
@@ -4329,8 +4723,13 @@ if (questionTimerInterval) {
             console.error("Progress save failed", e); 
         }
 
-        const percent = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
+        const prevUnlocked = unlockedDirectionKeys.slice();
+        await syncDirectionState();
+        if (unlockedDirectionKeys.length > prevUnlocked.length || shouldOpenDirectionModal()) {
+          pendingDirectionModal = true;
+        }
 
+        const percent = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
 // ✅ Сброс подсказки Practice (в обычном туре она не должна показываться)
 const resHint = document.getElementById('res-hint');
 if (resHint) {
@@ -4382,6 +4781,11 @@ function showScreen(screenId) {
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
    const screen = document.getElementById(screenId);
   if (screen) screen.classList.remove('hidden');
+
+  if (screenId === 'home-screen' && pendingDirectionModal) {
+    pendingDirectionModal = false;
+    openDirectionSelectModal({ force: true });
+  }
 
   if (screenId === 'cabinet-screen') {
     refreshCabinetAccessUI();
@@ -4460,9 +4864,28 @@ safeAddListener('subject-confirm-yes', 'click', () => {
   applySelectedSubjectsToHomeUI(selected);
   const selectModal = document.getElementById('subject-select-modal');
   const confirmModal = document.getElementById('subject-confirm-modal');
-  if (selectModal) selectModal.classList.add('hidden');
+   if (selectModal) selectModal.classList.add('hidden');
   if (confirmModal) confirmModal.classList.add('hidden');
 });
+
+safeAddListener('direction-save-btn', 'click', () => {
+  saveSelectedDirectionFromModal();
+});
+
+safeAddListener('direction-close-btn', 'click', () => {
+  const modal = document.getElementById('direction-select-modal');
+  if (modal) modal.classList.add('hidden');
+});
+
+const directionList = document.getElementById('direction-list');
+if (directionList) {
+  directionList.addEventListener('change', () => {
+    const saveBtn = document.getElementById('direction-save-btn');
+    if (!saveBtn) return;
+    const selectedInput = directionList.querySelector('input[name="direction-radio"]:checked');
+    saveBtn.disabled = !selectedInput;
+  });
+}
 
 const tourSubjectPickList = document.getElementById('tour-subject-pick-list');
 if (tourSubjectPickList) {
@@ -4768,6 +5191,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
