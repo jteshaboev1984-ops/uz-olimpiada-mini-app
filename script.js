@@ -192,7 +192,8 @@ function normalizePracticeFilters(raw) {
   const difficulty = typeof f.difficulty === 'string' ? f.difficulty : 'all';
   let count = Number(f.count);
   if (!Number.isFinite(count) || count <= 0) count = 20;
-  count = Math.max(5, Math.min(200, Math.floor(count)));
+  // разрешаем маленькие сессии (1–200)
+  count = Math.max(1, Math.min(200, Math.floor(count)));
   const practiceTourId = getPracticeTourIdValue(f.practiceTourId);
   return { subjects, difficulty, count, practiceTourId };
 }
@@ -4767,6 +4768,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
