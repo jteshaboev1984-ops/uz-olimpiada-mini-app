@@ -738,6 +738,28 @@
             <button id="subject-confirm-back" class="btn-secondary">Вернуться</button>
         </div>
     </div>
+
+    <!-- DIRECTION SELECT MODAL -->
+<div class="modal hidden" id="direction-select-modal">
+  <div class="modal-card direction-card">
+    <div class="practice-modal-header">
+      <h3 id="direction-title" data-i18n="direction_title">Направление</h3>
+      <button class="close-icon-btn" id="direction-close-btn" type="button" aria-label="Close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <p id="direction-subtitle" data-i18n="direction_subtitle">
+      Выберите направление. Доступные направления открываются по результатам туров.
+    </p>
+
+    <div id="direction-list" class="direction-list"></div>
+
+    <div class="modal-actions">
+      <button class="btn-primary" id="direction-save-btn" data-i18n="btn_continue">Продолжить</button>
+    </div>
+  </div>
+</div>
     
     <div class="modal hidden" id="tour-subject-pick-modal">
         <div class="modal-card tour-subject-card">
@@ -936,5 +958,6 @@
     <script src="./script.js?v=31" defer></script>
 </body>
 </html>
+
 
 
