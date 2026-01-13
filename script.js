@@ -505,11 +505,58 @@ function savePracticeSeenIds(practiceTourId, seenSet) {
   }
 }
 
+async function loadPracticeSeenIdsFromDb(practiceTourId, subjectKeys) {
+  try {
+    if (!supabaseClient || !internalDbId) return new Set();
+
+    const tourId = getPracticeTourIdValue(practiceTourId);
+    if (!tourId) return new Set();
+
+    // subjectKeys: массив нормализованных ключей предметов (bio, chem, sat, ielts...)
+    const keys = Array.isArray(subjectKeys)
+  ? subjectKeys
+      .map(k => String(k || '').trim())
+      .map(k => normalizeSubjectKey(k) || k.toLowerCase())
+      .filter(Boolean)
+  : [];
+
+
+    let q = supabaseClient
+      .from('user_answers')
+      .select('question_id')
+      .eq('user_id', internalDbId)
+      .eq('mode', 'practice')
+      .eq('tour_id', Number(tourId));
+
+    if (keys.length) {
+      q = q.in('subject_key', keys);
+    }
+
+    const { data, error } = await q;
+    if (error) throw error;
+
+    const s = new Set();
+    (data || []).forEach(row => {
+      if (row && row.question_id != null) s.add(String(row.question_id));
+    });
+    return s;
+  } catch (e) {
+    console.warn('[practice] load seen ids from DB failed', e);
+    return new Set();
+  }
+}
+  
 async function getPracticeQuestionsForTour(practiceTourId) {
   const normalizedTourId = getPracticeTourIdValue(practiceTourId);
-  if (!normalizedTourId || String(normalizedTourId) === String(currentTourId)) {
-    return tourQuestionsCache || [];
-  }
+  if (!normalizedTourId) {
+  return [];
+}
+
+// если это текущий тур — используем полный кеш вопросов тура, а не выбранный пул
+if (String(normalizedTourId) === String(currentTourId)) {
+  return tourQuestionsAllCache || tourQuestionsCache || [];
+}
+
 
   const cacheKey = `${normalizedTourId}:${currentLang}`;
   if (practiceTourQuestionsCache.has(cacheKey)) {
@@ -1273,9 +1320,26 @@ async function beginPracticeNew(filters) {
     pool = pool.filter(q => String(q.difficulty || '').toLowerCase() === want);
   }
 
-const seenIds = loadPracticeSeenIds(practiceTourId);
+// ✅ "Пройдено" в practice считаем по БАЗЕ (и дополняем локальным кэшем)
+const localSeen = loadPracticeSeenIds(practiceTourId);
+
+// subjects уже есть в practiceFilters; для БД используем subject_key
+const subjectsForDb = (practiceFilters.subjects || [])
+  .map(s => normalizeSubjectKey(s))
+  .filter(s => s && s !== 'all');
+
+const dbSeen = await loadPracticeSeenIdsFromDb(practiceTourId, subjectsForDb);
+
+const seenIds = new Set([...localSeen, ...dbSeen]);
+
 const unseen = pool.filter(q => !seenIds.has(String(q.id)));
 const targetCount = practiceFilters.count || 20;
+
+// ✅ Если новых вопросов уже нет — не запускаем practice (всё пройдено)
+if (!unseen.length) {
+  alert('Практика завершена: по выбранному предмету в этом туре новых вопросов больше нет.');
+  return;
+}
 
 let limited = [];
 
@@ -4557,6 +4621,26 @@ questionTimerInterval = setInterval(() => {
       isCorrect: finalIsCorrect
     };
 
+    // ✅ сохраняем practice-ответ в БД (чтобы "новые/пройденные" работало честно)
+try {
+  const subjKey = normalizeSubjectKey(q.subject);
+  await supabaseClient.from('user_answers').upsert({
+    user_id: internalDbId,
+    mode: 'practice',
+    tour_id: Number(getPracticeTourIdValue(practiceFilters.practiceTourId)),
+    question_id: Number(q.id),
+    answer: String(selectedAnswer),
+    selected_option: String(selectedAnswer),
+    is_correct: finalIsCorrect,
+    language: currentLang,
+    time_taken_ms: Math.max(0, Math.floor((questionTimeSec || 0) * 1000)),
+    subject_key: subjKey || null
+  }, { onConflict: 'user_id,mode,tour_id,question_id' });
+} catch (e) {
+  console.error('[PRACTICE] save to user_answers failed', e);
+}
+
+    
     // пересчёт correctCount по practiceAnswers
     correctCount = Object.values(practiceAnswers).filter(x => x && x.isCorrect === true).length;
 
@@ -5205,6 +5289,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
