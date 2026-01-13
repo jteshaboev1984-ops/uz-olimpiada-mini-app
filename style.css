@@ -526,6 +526,43 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .stat-list-info h4 { font-size: 14px; margin-bottom: 2px; }
 .stat-list-info p { font-size: 11px; color: #999; }
 .stat-list-value { font-weight: 700; font-size: 14px; }
+/* DIRECTION MODAL */
+.direction-card {
+  max-width: 520px;
+}
+
+.direction-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.direction-item {
+  border: 1px solid #e6e6ea;
+  border-radius: 14px;
+  padding: 12px 12px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  cursor: pointer;
+  background: #fff;
+}
+
+.direction-item input {
+  margin-top: 4px;
+}
+
+.direction-item-title {
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.direction-item-sub {
+  opacity: .75;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
 
 /* Лидерборд: двухстрочный дизайн и защита от длинных имен */
 .l-info {
@@ -926,6 +963,7 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 
 /* HOME: spacing between subject cards and actions */
 .section-header{ margin-top: 18px; margin-bottom: 10px; }
+
 
 
 
