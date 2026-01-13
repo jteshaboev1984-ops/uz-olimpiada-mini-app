@@ -4082,7 +4082,15 @@ function buildDirectionTourQuestions(allQuestions, directionKey) {
 }
 
 function buildTourQuestions(allQuestions) {
-  const pool = (allQuestions || []).filter(q => q && q.id);
+  let pool = (allQuestions || []).filter(q => q && q.id);
+
+  // ✅ SUBJECT MODE: показываем вопросы только выбранного предмета
+  // activeSubject у вас хранится как нормализованный ключ (bio, chem, sat, ielts и т.д.)
+  const subjKey = String(activeSubject || '').trim();
+  if (subjKey) {
+    pool = pool.filter(q => normalizeSubjectKey(q.subject) === subjKey);
+  }
+
   const mix = getTourDifficultyMix(currentTourId);
 
   const easyPool = pool.filter(q => diffRank(q.difficulty) === 'easy');
@@ -5197,6 +5205,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
