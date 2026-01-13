@@ -294,6 +294,76 @@ function getDirectionTitle(direction) {
   return direction.title_uz || fallback;
 }
 
+function renderDirectionsHomeSection() {
+  const header = document.getElementById('directions-header');
+  const grid = document.getElementById('directions-grid');
+  if (!header || !grid) return;
+
+  const available = getAvailableDirectionsForUser();
+
+  // если направлений нет (или ещё не анлокнули) — скрываем блок
+  if (!available || available.length === 0) {
+    header.classList.add('hidden');
+    grid.classList.add('hidden');
+    grid.innerHTML = '';
+    return;
+  }
+
+  header.classList.remove('hidden');
+  grid.classList.remove('hidden');
+  grid.innerHTML = '';
+
+  available.forEach(dir => {
+    const key = String(dir.key || '');
+    if (!key) return;
+
+    const title = getDirectionTitle(dir) || key;
+
+    const card = document.createElement('div');
+    card.className = 'subject-card' + (String(selectedDirectionKey) === key ? ' is-active' : '');
+    card.innerHTML = `
+      <div class="subject-top">
+        <div class="subject-head">
+          <div class="sub-icon violet"><i class="fa-solid fa-layer-group"></i></div>
+          <h3>${escapeHTML(title)}</h3>
+        </div>
+        <div class="tour-progress" aria-label="Direction">
+          <div class="tour-dots"></div>
+          <div class="tour-label"></div>
+        </div>
+      </div>
+
+      <div class="subject-preinfo">
+        <span class="pre-pill pre-pill-muted">${escapeHTML(key)}</span>
+      </div>
+
+      <div class="subject-inline hidden"></div>
+    `;
+
+    card.addEventListener('click', async () => {
+      selectedDirectionKey = key;
+
+      // сохраняем выбор в users.direction_selected_key (как у вас уже принято)
+      try {
+        if (supabaseClient && internalDbId) {
+          const { data, error } = await supabaseClient
+            .from('users')
+            .update({ direction_selected_key: key })
+            .eq('id', internalDbId)
+            .select('direction_selected_key')
+            .maybeSingle();
+
+          if (!error && data) currentUserData = { ...currentUserData, ...data };
+        }
+      } catch (e) {}
+
+      renderDirectionsHomeSection();
+    });
+
+    grid.appendChild(card);
+  });
+}
+  
 function normalizeSelectedDirection() {
   const available = getAvailableDirectionsForUser();
   const availableKeys = new Set(available.map(item => String(item.key)));
@@ -344,7 +414,6 @@ function openDirectionSelectModal({ force = false } = {}) {
       <input type="radio" name="direction-radio" value="${escapeHTML(key)}" ${selectedKey === key ? 'checked' : ''}>
       <div>
         <div class="direction-item-title">${escapeHTML(getDirectionTitle(direction))}</div>
-        <div class="direction-item-sub">${escapeHTML(subjects.map(subjectDisplayName).join(', '))}</div>
       </div>
     `;
     listEl.appendChild(label);
@@ -385,13 +454,9 @@ async function saveSelectedDirectionFromModal() {
   selectedDirectionKey = nextKey;
   modal.classList.add('hidden');
 
-  const allowedSubjects = getAllowedSubjectsByDirection(selectedDirectionKey);
-  if (allowedSubjects.length) {
-    applyDirectionSubjectsToHomeUI(allowedSubjects);
-    ensureActiveSubjectValid(allowedSubjects);
-  } else {
-    initSubjectSelectionFlow();
-  }
+   // ✅ ВАЖНО: блок "Предметы" на главном НЕ трогаем.
+  // Направление живёт отдельно и просто отображается/выбирается в своём блоке.
+  renderDirectionsHomeSection();
 }
 
 async function syncDirectionState({ forceModal = false } = {}) {
@@ -416,6 +481,8 @@ async function syncDirectionState({ forceModal = false } = {}) {
       console.error('[directions] auto-select save failed', e);
     }
   }
+  renderDirectionsHomeSection();
+  
   if (forceModal && shouldOpenDirectionModal()) {
     openDirectionSelectModal({ force: true });
   }
@@ -5304,6 +5371,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
