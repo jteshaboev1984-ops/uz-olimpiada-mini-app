@@ -275,9 +275,15 @@ async function fetchUserDirections(force = false) {
 }
 
 function getAvailableDirectionsForUser() {
+  // 🔓 TEMP: показать все направления для теста
+  if (typeof DEV_UNLOCK_ALL_DIRECTIONS !== 'undefined' && DEV_UNLOCK_ALL_DIRECTIONS) {
+    return (directionsMeta || []);
+  }
+
   const unlocked = new Set((unlockedDirectionKeys || []).map(item => String(item)));
   return (directionsMeta || []).filter(item => unlocked.has(String(item.key)));
 }
+
 
 function getDirectionTitle(direction) {
   if (!direction) return '';
@@ -303,12 +309,19 @@ function normalizeSelectedDirection() {
 }
 
 function shouldOpenDirectionModal() {
+  // 🔓 TEMP: всегда показываем модалку направлений для теста
+  if (typeof DEV_UNLOCK_ALL_DIRECTIONS !== 'undefined' && DEV_UNLOCK_ALL_DIRECTIONS) {
+    const available = getAvailableDirectionsForUser();
+    return available.length > 0;
+  }
+
   const available = getAvailableDirectionsForUser();
   if (available.length <= 1) return false;
   normalizeSelectedDirection();
   const hasSubjects = getAllowedSubjectsByDirection(selectedDirectionKey).length > 0;
   return !selectedDirectionKey || !hasSubjects;
 }
+
 
 function openDirectionSelectModal({ force = false } = {}) {
   const modal = document.getElementById('direction-select-modal');
@@ -5291,6 +5304,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
