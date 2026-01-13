@@ -2170,6 +2170,11 @@ if (isTourEnded) {
     updateMainButton('inactive');                                             // не активен и не завершён
   }
 }
+    // ✅ После того как currentTourId определён и прогресс прочитан — перерисовать карточки
+  // Иначе при первом рендере будет "Тур —/7" и серые dots
+  renderSubjectTabsUI?.();
+  renderAllSubjectCardProgress?.();
+  renderHomeContextUI?.();
 
   isInitialized = true;
 }
@@ -4762,6 +4767,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
