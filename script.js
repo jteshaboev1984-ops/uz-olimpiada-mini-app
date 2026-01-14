@@ -5151,33 +5151,36 @@ function setHomePage(index, { save = true } = {}) {
 }
 
 
-  function updateHomeMainButtonByPage() {
+ function updateHomeMainButtonByPage() {
   // 0 = subjects, 1 = directions
   const isDirections = (homePageIndex === 1);
 
   if (!isDirections) {
-    // обычный предметный режим (как сейчас)
-    updateMainButton(tourCompleted ? 'completed' : (tourEnded && !tourTaken ? 'ended_not_taken' : 'active'), currentTourTitle);
+    // предметы => старт тура по предмету
+    updateMainButton(
+      tourCompleted ? 'completed' : (tourEnded && !tourTaken ? 'ended_not_taken' : 'active'),
+      currentTourTitle
+    );
     return;
   }
 
-  // режим направлений
+  // направления => старт тура по направлению
   const key = selectedDirectionKey;
-  if (!key) {
-    // если нет выбранного направления — ведём к выбору
-updateMainButton(
-  'active',
-  tSafe('choose_direction', 'Выбрать направление'),
-  () => openDirectionSelectModal({ force: true })
-);
-return;
 
-// если направление выбрано — стартуем тур направлений
-updateMainButton(
-  'active',
-  tSafe('start_direction_tour', 'Начать тур по направлению'),
-  () => handleStartClick({ mode: 'direction', directionKey: key })
-);
+  if (!key) {
+    updateMainButton(
+      'active',
+      tSafe('choose_direction', 'Выбрать направление'),
+      () => openDirectionSelectModal({ force: true })
+    );
+    return;
+  }
+
+  updateMainButton(
+    'active',
+    tSafe('start_direction_tour', 'Начать тур по направлению'),
+    () => handleStartClick({ mode: 'direction', directionKey: key })
+  );
 }
   
 let homePagerInitialized = false;
@@ -5725,3 +5728,4 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
