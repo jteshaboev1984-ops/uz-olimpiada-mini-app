@@ -5325,9 +5325,15 @@ if (subjectsGrid) {
         if (other !== card) other.classList.remove('is-expanded');
       });
       if (shouldExpand) {
-        card.classList.add('is-expanded');
-        renderSubjectInlineStats(card, subject);
-      } else {
+  card.classList.add('is-expanded');
+
+  // ✅ если статистика ещё не подгрузилась — подгружаем
+  if ((!tourQuestionsAllCache || tourQuestionsAllCache.length === 0) && typeof fetchStatsData === 'function') {
+    await fetchStatsData();
+  }
+
+  renderSubjectInlineStats(card, subject);
+} else {
         card.classList.remove('is-expanded');
       }
     }
@@ -5635,6 +5641,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
