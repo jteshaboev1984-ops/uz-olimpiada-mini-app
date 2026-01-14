@@ -5119,6 +5119,9 @@ function setHomePage(index, { save = true } = {}) {
   homePageIndex = nextIndex;
   track.style.transform = `translateX(-${nextIndex * 100}%)`;
 
+// ✅ меняем главную кнопку под страницу
+updateHomeMainButtonByPage();
+
   dotsWrap.querySelectorAll('.dot').forEach((dot, idx) => {
     dot.classList.toggle('is-active', idx === nextIndex);
   });
@@ -5130,6 +5133,36 @@ function setHomePage(index, { save = true } = {}) {
   }
 }
 
+  function updateHomeMainButtonByPage() {
+  // 0 = subjects, 1 = directions
+  const isDirections = (homePageIndex === 1);
+
+  if (!isDirections) {
+    // обычный предметный режим (как сейчас)
+    updateMainButton(tourCompleted ? 'completed' : (tourEnded && !tourTaken ? 'ended_not_taken' : 'active'), currentTourTitle);
+    return;
+  }
+
+  // режим направлений
+  const key = selectedDirectionKey;
+  if (!key) {
+    // если нет выбранного направления — ведём к выбору
+    updateMainButton('active', tSafe('choose_direction', 'Выбрать направление'));
+    const btn = document.getElementById('main-action-btn');
+    if (btn) {
+      btn.onclick = () => openDirectionSelectModal({ force: true });
+    }
+    return;
+  }
+
+  // если направление выбрано — стартуем тур направлений
+  updateMainButton('active', tSafe('start_direction_tour', 'Начать тур по направлению'));
+  const btn = document.getElementById('main-action-btn');
+  if (btn) {
+    btn.onclick = () => handleStartClick({ mode: 'direction', directionKey: key });
+  }
+}
+  
 let homePagerInitialized = false;
 function initHomePager() {
   if (homePagerInitialized) return;
@@ -5641,6 +5674,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
