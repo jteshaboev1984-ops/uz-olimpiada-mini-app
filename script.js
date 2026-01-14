@@ -359,7 +359,27 @@ function renderDirectionsHomeSection() {
 
       <div class="subject-inline hidden"></div>
     `;
+// ✅ заполняем индикатор туров как в предметах
+const dotsEl = card.querySelector('.tour-dots');
+const labelEl = card.querySelector('.tour-label');
 
+const totalTours = 7;
+const tourNumber = getCurrentTourNumber(); // у вас уже есть эта функция
+const isValidTour = Number.isFinite(tourNumber) && tourNumber > 0;
+const activeCount = isValidTour ? Math.min(totalTours, tourNumber) : 0;
+
+if (labelEl) {
+  const tourLabel = tSafe('tour_label', 'Тур');
+  labelEl.textContent = isValidTour
+    ? `${tourLabel} ${activeCount} / ${totalTours}`
+    : `${tourLabel} — / ${totalTours}`;
+}
+
+if (dotsEl) {
+  dotsEl.innerHTML = Array.from({ length: totalTours }, (_, idx) => (
+    `<span class="tour-dot${idx < activeCount ? ' is-active' : ''}"></span>`
+  )).join('');
+}
     grid.appendChild(card);
 
     if (expandedDirectionKey && expandedDirectionKey === key) {
@@ -2784,9 +2804,18 @@ function fillProfileForm(data) {
     userAnswersCache = (rawAns || []).filter(a => allowedIds.has(a.question_id));
 
     refreshCabinetAccessUI();
-    renderAllSubjectCardProgress();
-    renderDirectionsHomeSection();
-    renderHomeContextUI();
+
+// ✅ 1) Сначала — прогресс предметов
+renderAllSubjectCardProgress();
+
+// ✅ 2) Потом — направления (им тоже нужны данные)
+renderDirectionsHomeSection();
+
+// ✅ 3) И ещё раз прогресс (после направлений безопасно, но не обязательно)
+renderAllSubjectCardProgress();
+
+renderHomeContextUI();
+
     return;
   }
 
@@ -5159,9 +5188,13 @@ function showScreen(screenId) {
   if (screen) screen.classList.remove('hidden');
 
   if (screenId === 'home-screen') {
-    initHomePager();
-    setHomePage(homePageIndex, { save: false });
-  }
+  initHomePager();
+  setHomePage(homePageIndex, { save: false });
+
+  // ✅ дорисовать индикаторы, если данные уже в кеше
+  renderAllSubjectCardProgress();
+  renderDirectionsHomeSection();
+}
 
   if (screenId === 'cabinet-screen') {
     refreshCabinetAccessUI();
@@ -5602,6 +5635,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
