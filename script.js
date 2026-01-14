@@ -5118,28 +5118,38 @@ if (resHint) {
 }
 
 function setHomePage(index, { save = true } = {}) {
+  const pager = document.getElementById('home-pager');
   const track = document.getElementById('home-track');
   const dotsWrap = document.getElementById('home-pager-dots');
-  if (!track || !dotsWrap) return;
+  if (!pager || !track || !dotsWrap) return;
 
   const totalPages = 2;
   const nextIndex = Math.max(0, Math.min(totalPages - 1, Number(index) || 0));
   homePageIndex = nextIndex;
-  track.style.transform = `translateX(-${nextIndex * 100}%)`;
 
-// ✅ меняем главную кнопку под страницу
-updateHomeMainButtonByPage();
+  const isSnap = pager.classList.contains('home-snap');
+
+  if (isSnap) {
+    // ✅ Нативный скролл (как банковские карусели)
+    const pageWidth = pager.clientWidth; // важный момент: ширина viewport
+    pager.scrollTo({ left: nextIndex * pageWidth, behavior: 'smooth' });
+  } else {
+    // ✅ Старый режим (transform)
+    track.style.transform = `translateX(-${nextIndex * 100}%)`;
+  }
+
+  // ✅ меняем главную кнопку под страницу
+  updateHomeMainButtonByPage();
 
   dotsWrap.querySelectorAll('.dot').forEach((dot, idx) => {
     dot.classList.toggle('is-active', idx === nextIndex);
   });
 
   if (save) {
-    try {
-      localStorage.setItem('homePageIndex', String(nextIndex));
-    } catch (e) {}
+    try { localStorage.setItem('homePageIndex', String(nextIndex)); } catch (e) {}
   }
 }
+
 
   function updateHomeMainButtonByPage() {
   // 0 = subjects, 1 = directions
@@ -5184,6 +5194,36 @@ function initHomePager() {
   } catch (e) {}
 
   setHomePage(homePageIndex, { save: false });
+
+    // ✅ В режиме home-snap индекс страницы определяется скроллом
+  const isSnap = pager.classList.contains('home-snap');
+  if (isSnap) {
+    let tmr = null;
+    pager.addEventListener('scroll', () => {
+      clearTimeout(tmr);
+      tmr = setTimeout(() => {
+        const pageWidth = pager.clientWidth || 1;
+        const idx = Math.round(pager.scrollLeft / pageWidth);
+        if (idx !== homePageIndex) {
+          homePageIndex = idx;
+          updateHomeMainButtonByPage();
+
+          const dotsWrap = document.getElementById('home-pager-dots');
+          if (dotsWrap) {
+            dotsWrap.querySelectorAll('.dot').forEach((dot, i) => {
+              dot.classList.toggle('is-active', i === homePageIndex);
+            });
+          }
+
+          try { localStorage.setItem('homePageIndex', String(homePageIndex)); } catch (e) {}
+        }
+      }, 80);
+    }, { passive: true });
+
+    // ✅ touch-свайп-логика ниже не нужна в snap-режиме
+    return;
+  }
+
 
   let startX = 0;
   let startY = 0;
@@ -5685,6 +5725,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
