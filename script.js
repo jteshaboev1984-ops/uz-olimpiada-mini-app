@@ -5622,7 +5622,6 @@ safeAddListener('prev-button', 'click', () => {
   }
 });
   
-
 function getCertificateDisplayName() {
   const tgName = [telegramData.firstName, telegramData.lastName].filter(Boolean).join(' ').trim();
   if (currentUserData && (currentUserData.full_name || currentUserData.name)) {
@@ -5727,6 +5726,7 @@ window.addEventListener('beforeunload', () => {
 
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
-};
+);
+
 
 
