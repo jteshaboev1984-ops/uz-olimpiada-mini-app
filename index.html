@@ -296,11 +296,14 @@
            <h1 class="greeting"><span data-i18n="greeting_hi">Salom</span>, <span id="home-user-name">Ishtirokchi</span>!</h1>
             <p class="subtitle" data-i18n="greeting_sub">Olimpiadaga xush kelibsiz.</p>
 
-            <div class="section-header"><h2 id="subjects-title" data-i18n="subjects_title">Fanlar</h2></div>
+         <div class="home-pager" id="home-pager">
+              <div class="home-track" id="home-track">
+                <section class="home-page" data-page="subjects">
+                  <div class="section-header"><h2 id="subjects-title" data-i18n="subjects_title">Fanlar</h2></div>
 
-           <div class="subjects-grid">
+                 <div class="subjects-grid" id="subjects-grid">
 
-  <div class="subject-card" data-subject="math">
+  <div class="subject-card" data-subject="math">   
     <div class="subject-top">
       <div class="subject-head">
         <div class="sub-icon blue"><i class="fa-solid fa-calculator"></i></div>
@@ -531,43 +534,88 @@
   </div>
 
 </div>
-             <!-- Directions section (appears after Subjects) -->
-            <div class="section-header hidden" id="directions-header">
-              <h2 id="directions-title" data-i18n="directions_title">Yo'nalishlar</h2>
+                  <div class="section-header"><h2 data-i18n="home_actions">Действия</h2></div>
+                 <div class="action-grid home-actions" id="actions-subject">
+                  <div class="action-card" data-action="practice">
+                    <div class="icon-circle green"><i class="fa-solid fa-dumbbell"></i></div>
+                    <div class="action-text">
+                      <span data-i18n="menu_practice">Amaliyot</span>
+                    </div>
+                  </div>
+
+                  <div class="action-card" data-action="mistakes">
+                    <div class="icon-circle red"><i class="fa-solid fa-clipboard-check"></i></div>
+                    <div class="action-text">
+                      <span data-i18n="menu_mistakes">Xatolar tahlili</span>
+                    </div>
+                  </div>
+
+                  <div class="action-card" data-action="leaderboard">
+                    <div class="icon-circle gold"><i class="fa-solid fa-trophy"></i></div>
+                    <div class="action-text">
+                      <span data-i18n="btn_leaderboard">Reyting</span>
+                    </div>
+                  </div>
+
+                  <div class="action-card" data-action="certificates">
+                    <div class="icon-circle purple"><i class="fa-solid fa-certificate"></i></div>
+                    <div class="action-text">
+                      <span data-i18n="menu_certs">Sertifikatlar</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="home-page" data-page="directions">
+                <div class="section-header" id="directions-header">
+                  <h2 id="directions-title" data-i18n="directions_title">Yo'nalishlar</h2>
+                </div>
+
+                <div class="subjects-grid" id="directions-grid"></div>
+
+                <div class="home-empty hidden" id="directions-empty">
+                  <div class="home-empty-title">Направления пока закрыты</div>
+                  <div class="home-empty-sub">Откроются по прогрессу.</div>
+                </div>
+
+                <div class="section-header"><h2 data-i18n="home_actions">Действия</h2></div>
+                <div class="action-grid home-actions" id="actions-direction">
+                  <div class="action-card" data-action="practice">
+                    <div class="icon-circle green"><i class="fa-solid fa-dumbbell"></i></div>
+                    <div class="action-text">
+                      <span data-i18n="menu_practice">Amaliyot</span>
+                    </div>
+                  </div>
+
+                  <div class="action-card" data-action="mistakes">
+                    <div class="icon-circle red"><i class="fa-solid fa-clipboard-check"></i></div>
+                    <div class="action-text">
+                      <span data-i18n="menu_mistakes">Xatolar tahlili</span>
+                    </div>
+                  </div>
+
+                  <div class="action-card" data-action="leaderboard">
+                    <div class="icon-circle gold"><i class="fa-solid fa-trophy"></i></div>
+                    <div class="action-text">
+                      <span data-i18n="btn_leaderboard">Reyting</span>
+                    </div>
+                  </div>
+
+                  <div class="action-card" data-action="certificates">
+                    <div class="icon-circle purple"><i class="fa-solid fa-certificate"></i></div>
+                    <div class="action-text">
+                      <span data-i18n="menu_certs">Sertifikatlar</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
             </div>
 
-            <div class="subjects-grid hidden" id="directions-grid"></div>
-
-            <div class="section-header"><h2 data-i18n="home_actions">Действия</h2></div>
-           <div class="action-grid">
-  <div class="action-card" id="home-practice-btn">
-    <div class="icon-circle green"><i class="fa-solid fa-dumbbell"></i></div>
-    <div class="action-text">
-      <span data-i18n="menu_practice">Amaliyot</span>
-    </div>
-  </div>
-
-  <div class="action-card" id="home-mistakes-btn">
-    <div class="icon-circle red"><i class="fa-solid fa-clipboard-check"></i></div>
-    <div class="action-text">
-      <span data-i18n="menu_mistakes">Xatolar tahlili</span>
-    </div>
-  </div>
-
-  <div class="action-card" id="leaderboard-btn">
-    <div class="icon-circle gold"><i class="fa-solid fa-trophy"></i></div>
-    <div class="action-text">
-      <span data-i18n="btn_leaderboard">Reyting</span>
-    </div>
-  </div>
-
-  <div class="action-card" id="home-cert-btn">
-    <div class="icon-circle purple"><i class="fa-solid fa-certificate"></i></div>
-    <div class="action-text">
-      <span data-i18n="menu_certs">Sertifikatlar</span>
-    </div>
-  </div>
-</div>
+            <div class="home-pager-dots" id="home-pager-dots" aria-hidden="true">
+              <span class="dot is-active"></span>
+              <span class="dot"></span>
+            </div>
+          </div>
 
             <div class="resources-accordion" id="resources-accordion">
                 <button class="accordion-toggle" id="resources-accordion-toggle" type="button" aria-expanded="false" aria-controls="resources-accordion-content">
@@ -1058,6 +1106,7 @@
     <script src="./script.js?v=31" defer></script>
 </body>
 </html>
+
 
 
 
