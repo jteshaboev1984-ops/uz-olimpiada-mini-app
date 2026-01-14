@@ -2822,25 +2822,18 @@ function fillProfileForm(data) {
 
 function calculateDirectionStats(directionKey) {
   const answers = (userAnswersCache || []).filter(a =>
-  a.mode === 'direction' &&
-  String(a.direction_id) === String(directionKey)
-);
+    a.mode === 'direction' &&
+    String(a.direction_id) === String(directionKey)
+  );
 
-const total = answers.length;
-const correct = answers.filter(a => a.is_correct).length;
+  const total = answers.length;
+  const correct = answers.filter(a => a.is_correct).length;
 
-return {
-  total,
-  correct,
-  timeSec: total * 60 // или позже заменим на реальное время
-};
-  let correct = 0;
-  let timeSec = 0;
-  allQuestions.forEach(q => {
-    if (answersMap.get(q.id)) correct += 1;
-    timeSec += Number(q.time_limit_seconds || 0);
-  });
-  return { total: allQuestions.length, correct, timeSec };
+  return {
+    total,
+    correct,
+    timeSec: total * 60 // TEMP
+  };
 }
 
   function renderSubjectInlineStats(card, prefix) {
@@ -5609,6 +5602,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
