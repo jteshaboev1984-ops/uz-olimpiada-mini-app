@@ -4503,21 +4503,22 @@ questions = tourQuestionsSelected;          // тест идёт по 15
         handleStartClick({ mode: 'subject' });
     } 
 
-    function updateMainButton(state, title) {
-        const activeBtn = document.getElementById('main-action-btn');
-        const certCards = document.querySelectorAll('[data-action="certificates"]');
-        if (!activeBtn) return;
-const hintEl = document.getElementById('main-action-hint');
-const setHint = (text) => {
-  if (!hintEl) return;
-  if (text) {
-    hintEl.textContent = text;
-    hintEl.classList.remove('hidden');
-  } else {
-    hintEl.textContent = '';
-    hintEl.classList.add('hidden');
-  }
-};
+    function updateMainButton(state, title, onClick) {
+  const activeBtn = document.getElementById('main-action-btn');
+  const certCards = document.querySelectorAll('[data-action="certificates"]');
+  if (!activeBtn) return;
+
+  const hintEl = document.getElementById('main-action-hint');
+  const setHint = (text) => {
+    if (!hintEl) return;
+    if (text) {
+      hintEl.textContent = text;
+      hintEl.classList.remove('hidden');
+    } else {
+      hintEl.textContent = '';
+      hintEl.classList.add('hidden');
+    }
+  };
 
 // t() может вернуть ключ, если перевода нет — тогда используем fallback
 const tSafe = (key, fallback) => {
@@ -4576,17 +4577,24 @@ setHint(tSafe('main_btn_practice_hint', 'Практика доступна по�
   });
 
         } else {
-            const displayTitle = formatTourTitle(title || t('start_tour_btn'));
-            newBtn.innerHTML = `<i class="fa-solid fa-play"></i> ${displayTitle}`;
-            newBtn.className = 'btn-primary';
-            newBtn.disabled = false;
-            newBtn.style.background = "";
-            certCards.forEach(card => card.classList.add('hidden'));
-            newBtn.addEventListener('click', startTourWithSubjectPick);
+    const displayTitle = formatTourTitle(title || t('start_tour_btn'));
+    newBtn.innerHTML = `<i class="fa-solid fa-play"></i> ${displayTitle}`;
+    newBtn.className = 'btn-primary';
+    newBtn.disabled = false;
+    newBtn.style.background = "";
+    certCards.forEach(card => card.classList.add('hidden'));
 
-          setHint(tSafe('main_btn_start_hint', 'Нажмите, чтобы начать текущий тур'));
-        }
+    // ✅ ВАЖНО: если пришёл кастомный обработчик — используем его,
+    // иначе сохраняем дефолтное поведение предметов
+    if (typeof onClick === 'function') {
+      newBtn.addEventListener('click', onClick);
+    } else {
+      newBtn.addEventListener('click', startTourWithSubjectPick);
     }
+
+    setHint(tSafe('main_btn_start_hint', 'Нажмите, чтобы начать текущий тур'));
+  }
+}
 
     safeAddListener('confirm-start', 'click', () => {
         const warningModal = document.getElementById('warning-modal');
@@ -5147,20 +5155,19 @@ updateHomeMainButtonByPage();
   const key = selectedDirectionKey;
   if (!key) {
     // если нет выбранного направления — ведём к выбору
-    updateMainButton('active', tSafe('choose_direction', 'Выбрать направление'));
-    const btn = document.getElementById('main-action-btn');
-    if (btn) {
-      btn.onclick = () => openDirectionSelectModal({ force: true });
-    }
-    return;
-  }
+updateMainButton(
+  'active',
+  tSafe('choose_direction', 'Выбрать направление'),
+  () => openDirectionSelectModal({ force: true })
+);
+return;
 
-  // если направление выбрано — стартуем тур направлений
-  updateMainButton('active', tSafe('start_direction_tour', 'Начать тур по направлению'));
-  const btn = document.getElementById('main-action-btn');
-  if (btn) {
-    btn.onclick = () => handleStartClick({ mode: 'direction', directionKey: key });
-  }
+// если направление выбрано — стартуем тур направлений
+updateMainButton(
+  'active',
+  tSafe('start_direction_tour', 'Начать тур по направлению'),
+  () => handleStartClick({ mode: 'direction', directionKey: key })
+);
 }
   
 let homePagerInitialized = false;
@@ -5678,6 +5685,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
