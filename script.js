@@ -2756,11 +2756,18 @@ function fillProfileForm(data) {
 
   // 2) Ответы пользователя по этим вопросам (JOIN к questions)
   const { data: ansData, error: aErr } = await supabaseClient
-    .from('user_answers')
-    .select('question_id, is_correct, questions!inner(id, tour_id, language)')
-    .eq('user_id', internalDbId)
-    .eq('questions.language', currentLang)
-    .in('questions.tour_id', tourIds.map(id => Number(id)).filter(Number.isFinite));
+  .from('user_answers')
+  .select(`
+    question_id,
+    is_correct,
+    mode,
+    direction_id,
+    questions!inner(id, tour_id, language, subject)
+  `)
+  .eq('user_id', internalDbId)
+  .eq('questions.language', currentLang)
+  .eq('mode', 'direction')
+  .in('questions.tour_id', tourIds.map(id => Number(id)).filter(Number.isFinite));
 
   // Если JOIN не сработал — fallback: берём ответы без JOIN и фильтруем по allowedIds
   if (aErr) {
@@ -2784,9 +2791,12 @@ function fillProfileForm(data) {
   }
 
   userAnswersCache = (ansData || []).map(a => ({
-    question_id: a.question_id,
-    is_correct: a.is_correct
-  }));
+  question_id: a.question_id,
+  is_correct: a.is_correct,
+  mode: a.mode,
+  direction_id: a.direction_id,
+  subject: a.questions?.subject || null
+}));
 
   refreshCabinetAccessUI();
   renderAllSubjectCardProgress();
@@ -2811,11 +2821,19 @@ function fillProfileForm(data) {
 }
 
 function calculateDirectionStats(directionKey) {
-  const subjects = getAllowedSubjectsByDirection(directionKey);
-  if (!subjects.length) return { total: 0, correct: 0, timeSec: 0 };
-  const allowed = new Set(subjects.map(item => normalizeSubjectKey(item)).filter(Boolean));
-  const allQuestions = (tourQuestionsAllCache || []).filter(q => allowed.has(normalizeSubjectKey(q.subject)));
-  const answersMap = new Map((userAnswersCache || []).map(a => [a.question_id, !!a.is_correct]));
+  const answers = (userAnswersCache || []).filter(a =>
+  a.mode === 'direction' &&
+  String(a.direction_id) === String(directionKey)
+);
+
+const total = answers.length;
+const correct = answers.filter(a => a.is_correct).length;
+
+return {
+  total,
+  correct,
+  timeSec: total * 60 // или позже заменим на реальное время
+};
   let correct = 0;
   let timeSec = 0;
   allQuestions.forEach(q => {
@@ -5147,11 +5165,6 @@ function showScreen(screenId) {
    const screen = document.getElementById(screenId);
   if (screen) screen.classList.remove('hidden');
 
- if (screenId === 'home-screen' && pendingDirectionModal) {
-    pendingDirectionModal = false;
-    openDirectionSelectModal({ force: true });
-  }
-
   if (screenId === 'home-screen') {
     initHomePager();
     setHomePage(homePageIndex, { save: false });
@@ -5596,6 +5609,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
