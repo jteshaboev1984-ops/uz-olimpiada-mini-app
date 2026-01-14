@@ -5715,19 +5715,16 @@ function shareCertificate() {
 
   alert(t('cert_share_unavailable'));
 }
-// Cleanup on page unload
-window.addEventListener('beforeunload', () => {
-  if (timerInterval) {
-    clearInterval(timerInterval);
-    timerInterval = null;
-  }
-  isTestActive = false;
+  // Cleanup on page unload
+  window.addEventListener('beforeunload', () => {
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+    isTestActive = false;
+  });
 });
 
- // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
+  // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
-
-
-
-
-
+});
