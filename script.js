@@ -5347,30 +5347,34 @@ safeAddListener('tour-subject-pick-cancel', 'click', () => {
 
 const subjectsGrid = document.getElementById('subjects-grid');
 if (subjectsGrid) {
-  subjectsGrid.addEventListener('click', (event) => {
+  subjectsGrid.addEventListener('click', async (event) => {   // ✅ async
     const card = event.target.closest('.subject-card[data-subject]');
-    if (card) {
-      const subject = normalizeSubjectKey(card.dataset.subject);
-      if (!subject) return;
-      setActiveSubject(subject);
-      const shouldExpand = !card.classList.contains('is-expanded');
-      document.querySelectorAll('.subject-card[data-subject].is-expanded').forEach(other => {
-        if (other !== card) other.classList.remove('is-expanded');
-      });
-      if (shouldExpand) {
-  card.classList.add('is-expanded');
+    if (!card) return;
 
-  // ✅ если статистика ещё не подгрузилась — подгружаем
-  if ((!tourQuestionsAllCache || tourQuestionsAllCache.length === 0) && typeof fetchStatsData === 'function') {
-    await fetchStatsData();
-  }
+    const subject = normalizeSubjectKey(card.dataset.subject);
+    if (!subject) return;
 
-  renderSubjectInlineStats(card, subject);
-} else {
-        card.classList.remove('is-expanded');
+    setActiveSubject(subject);
+
+    const shouldExpand = !card.classList.contains('is-expanded');
+
+    document.querySelectorAll('.subject-card[data-subject].is-expanded').forEach(other => {
+      if (other !== card) other.classList.remove('is-expanded');
+    });
+
+    if (shouldExpand) {
+      card.classList.add('is-expanded');
+
+      // ✅ если статистика ещё не подгрузилась — подгружаем
+      if ((!tourQuestionsAllCache || tourQuestionsAllCache.length === 0) && typeof fetchStatsData === 'function') {
+        await fetchStatsData();
       }
+
+      renderSubjectInlineStats(card, subject);
+    } else {
+      card.classList.remove('is-expanded');
     }
- });
+  });
 }
 
 const directionsGrid = document.getElementById('directions-grid');
@@ -5674,6 +5678,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
