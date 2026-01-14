@@ -30,7 +30,11 @@ document.addEventListener('DOMContentLoaded', function () {
   let directionSubjectsMap = {};
   let unlockedDirectionKeys = [];
   let selectedDirectionKey = null;
+  let expandedDirectionKey = null;
   let pendingDirectionModal = false;
+  let practiceContext = { mode: 'subject', directionKey: null };
+  let reviewContext = { mode: 'subject', directionKey: null };
+  let homePageIndex = 0;
   let reviewState = {
     tours: [],
     progressByTourId: {},
@@ -178,6 +182,13 @@ function formatMMSS(sec) {
   return `${mm}:${ss}`;
 }
 
+function formatAccuracyPercent(correct, total) {
+  const t = Number(total || 0);
+  if (t <= 0) return '0%';
+  const c = Number(correct || 0);
+  return `${Math.round((c / t) * 100)}%`;
+}
+
 function normalizePracticeFilters(raw) {
   const f = raw || {};
   let subjects = [];
@@ -297,19 +308,25 @@ function getDirectionTitle(direction) {
 function renderDirectionsHomeSection() {
   const header = document.getElementById('directions-header');
   const grid = document.getElementById('directions-grid');
+  const emptyState = document.getElementById('directions-empty');
   if (!header || !grid) return;
+  header.classList.remove('hidden');
 
   const available = getAvailableDirectionsForUser();
+  const availableKeys = new Set((available || []).map(item => String(item.key)));
+  if (expandedDirectionKey && !availableKeys.has(String(expandedDirectionKey))) {
+    expandedDirectionKey = null;
+  }
 
   // если направлений нет (или ещё не анлокнули) — скрываем блок
   if (!available || available.length === 0) {
-    header.classList.add('hidden');
     grid.classList.add('hidden');
+    if (emptyState) emptyState.classList.remove('hidden');
     grid.innerHTML = '';
     return;
   }
 
-  header.classList.remove('hidden');
+  if (emptyState) emptyState.classList.add('hidden');
   grid.classList.remove('hidden');
   grid.innerHTML = '';
 
@@ -318,9 +335,12 @@ function renderDirectionsHomeSection() {
     if (!key) return;
 
     const title = getDirectionTitle(dir) || key;
+    const stats = calculateDirectionStats(key);
+    const accuracyLabel = stats.total > 0 ? formatAccuracyPercent(stats.correct, stats.total) : '—';
 
     const card = document.createElement('div');
     card.className = 'subject-card' + (String(selectedDirectionKey) === key ? ' is-active' : '');
+    card.dataset.direction = key;
     card.innerHTML = `
       <div class="subject-top">
         <div class="subject-head">
@@ -334,33 +354,18 @@ function renderDirectionsHomeSection() {
       </div>
 
       <div class="subject-preinfo">
-        <span class="pre-pill pre-pill-muted">${escapeHTML(key)}</span>
+        <span class="pre-pill" data-kind="accuracy">${escapeHTML(accuracyLabel)}</span>
       </div>
 
       <div class="subject-inline hidden"></div>
     `;
 
-    card.addEventListener('click', async () => {
-      selectedDirectionKey = key;
-
-      // сохраняем выбор в users.direction_selected_key (как у вас уже принято)
-      try {
-        if (supabaseClient && internalDbId) {
-          const { data, error } = await supabaseClient
-            .from('users')
-            .update({ direction_selected_key: key })
-            .eq('id', internalDbId)
-            .select('direction_selected_key')
-            .maybeSingle();
-
-          if (!error && data) currentUserData = { ...currentUserData, ...data };
-        }
-      } catch (e) {}
-
-      renderDirectionsHomeSection();
-    });
-
     grid.appendChild(card);
+
+    if (expandedDirectionKey && expandedDirectionKey === key) {
+      card.classList.add('is-expanded');
+      renderDirectionInlineStats(card, key);
+    }
   });
 }
   
@@ -819,12 +824,7 @@ function getAllowedSubjectsByDirection(directionKey) {
   return Array.from(new Set(getDirectionSubjectFallback(key)));
 }
 
-function isDirectionTourMode() {
-  const allowed = getAllowedSubjectsByDirection(selectedDirectionKey);
-  return Array.isArray(allowed) && allowed.length > 0;
-}
-
-function getSubjectCards({ includeHidden = true, includeDirectionOnly = isDirectionTourMode() } = {}) {
+function getSubjectCards({ includeHidden = true, includeDirectionOnly = false } = {}) {
   return Array.from(document.querySelectorAll('.subject-card[data-subject]')).filter(card => {
     if (!includeHidden && card.classList.contains('is-hidden')) return false;
     const isDirectionOnly = card.dataset.directionOnly === 'true';
@@ -834,21 +834,23 @@ function getSubjectCards({ includeHidden = true, includeDirectionOnly = isDirect
 }
 
 function getAvailableSubjectKeys(options = {}) {
-  const { includeHidden = true, includeDirectionOnly = isDirectionTourMode() } = options;
+  const { includeHidden = true, includeDirectionOnly = false } = options;
   return getSubjectCards({ includeHidden, includeDirectionOnly })
     .map(card => normalizeSubjectKey(card.dataset.subject))
     .filter(Boolean);
 }
 
 function getSubjectOrderForCurrentMode() {
-  if (isDirectionTourMode()) {
-    return getAllowedSubjectsByDirection(selectedDirectionKey);
+  if (reviewContext.mode === 'direction') {
+    const directionList = getAllowedSubjectsByDirection(reviewContext.directionKey);
+    if (directionList.length) return directionList;
   }
+  const selected = getSelectedSubjects();
+  if (selected.length) return selected;
   return ['math', 'chem', 'bio', 'it', 'eco', 'sat', 'ielts'];
 }
 
 function getSelectedSubjects() {
-  if (isDirectionTourMode()) return [];
   let raw = null;
   try {
     raw = localStorage.getItem(SUBJECTS_STORAGE_KEY);
@@ -898,10 +900,9 @@ function clearSubjectsLock() {
 }
 
 function ensureActiveSubjectValid(selected) {
-  const directionList = isDirectionTourMode() ? getAllowedSubjectsByDirection(selectedDirectionKey) : [];
   const list = Array.isArray(selected) && selected.length
     ? selected
-    : (directionList.length ? directionList : getAvailableSubjectKeys({ includeHidden: false, includeDirectionOnly: isDirectionTourMode() }));
+    : getAvailableSubjectKeys({ includeHidden: false, includeDirectionOnly: false });
   if (!list.length) return;
 
   let saved = null;
@@ -919,47 +920,22 @@ function ensureActiveSubjectValid(selected) {
 function applySelectedSubjectsToHomeUI(selected) {
   const list = Array.isArray(selected) ? selected : [];
   const allowed = new Set(list);
-  const isDirectionMode = isDirectionTourMode();
   document.querySelectorAll('.subject-card[data-subject]').forEach(card => {
     const key = normalizeSubjectKey(card.dataset.subject);
     const isDirectionOnly = card.dataset.directionOnly === 'true';
     if (!list.length) {
-      const shouldShow = isDirectionMode ? !isDirectionOnly : !isDirectionOnly;
-      card.classList.toggle('is-hidden', !shouldShow);
+      card.classList.toggle('is-hidden', isDirectionOnly);
     } else {
       card.classList.toggle('is-hidden', !allowed.has(key));
     }
   });
   renderSubjectTabsUI();
 }
-
-function applyDirectionSubjectsToHomeUI(subjects) {
-  const list = Array.isArray(subjects) ? subjects.map(s => normalizeSubjectKey(s)).filter(Boolean) : [];
-  const allowed = new Set(list);
-  document.querySelectorAll('.subject-card[data-subject]').forEach(card => {
-    const key = normalizeSubjectKey(card.dataset.subject);
-    card.classList.toggle('is-hidden', !allowed.has(key));
-  });
-  renderSubjectTabsUI();
-  renderAllSubjectCardProgress();
-  renderHomeContextUI();
-}
-
 function isSelectedSubjectsValid(list) {
   return Array.isArray(list) && list.length >= 1 && list.length <= 3;
 }
 
 function initSubjectSelectionFlow() {
-  if (shouldOpenDirectionModal()) {
-    openDirectionSelectModal({ force: true });
-    return;
-  }
-  if (isDirectionTourMode()) {
-    const subjects = getAllowedSubjectsByDirection(selectedDirectionKey);
-    applyDirectionSubjectsToHomeUI(subjects);
-    ensureActiveSubjectValid(subjects);
-    return;
-  }
   const selected = getSelectedSubjects();
   const locked = isSubjectsLocked();
 
@@ -1054,9 +1030,16 @@ function getPracticeSubjectOptions() {
     'business',
     'accounting',
     'global_perspectives',
-    'sat',
-    'ielts'
-  ];
+    ];
+  const directionSubjects = practiceContext.mode === 'direction'
+    ? getAllowedSubjectsByDirection(practiceContext.directionKey)
+        .map(key => normalizeSubjectKey(key))
+        .filter(Boolean)
+    : [];
+  if (directionSubjects.length) {
+    return { subjectList: directionSubjects, allowAll: false };
+  }
+
   const available = new Set(subjects.map(s => normalizeSubjectKey(s)));
   const list = allowedSubjects.filter(key => available.has(key));
   const subjectList = list.length ? list : allowedSubjects.slice();
@@ -1173,6 +1156,9 @@ function openPracticeConfigModal({ canContinue }) {
   let nextSubjects = currentSubjects.filter(key => allowedSet.has(normalizeSubjectKey(key)));
   if (subjectList.length === 1 && nextSubjects.length === 0) {
     nextSubjects = [subjectList[0]];
+  }
+  if (practiceContext.mode === 'direction' && subjectList.length && nextSubjects.length === 0) {
+    nextSubjects = subjectList.slice();
   }
   practiceFilters = normalizePracticeFilters({
     ...practiceFilters,
@@ -2792,6 +2778,7 @@ function fillProfileForm(data) {
 
     refreshCabinetAccessUI();
     renderAllSubjectCardProgress();
+    renderDirectionsHomeSection();
     renderHomeContextUI();
     return;
   }
@@ -2803,6 +2790,7 @@ function fillProfileForm(data) {
 
   refreshCabinetAccessUI();
   renderAllSubjectCardProgress();
+  renderDirectionsHomeSection();
   renderHomeContextUI();
 }
 
@@ -2820,6 +2808,21 @@ function fillProfileForm(data) {
   });
 
   return { total: subjectQuestions.length, correct };
+}
+
+function calculateDirectionStats(directionKey) {
+  const subjects = getAllowedSubjectsByDirection(directionKey);
+  if (!subjects.length) return { total: 0, correct: 0, timeSec: 0 };
+  const allowed = new Set(subjects.map(item => normalizeSubjectKey(item)).filter(Boolean));
+  const allQuestions = (tourQuestionsAllCache || []).filter(q => allowed.has(normalizeSubjectKey(q.subject)));
+  const answersMap = new Map((userAnswersCache || []).map(a => [a.question_id, !!a.is_correct]));
+  let correct = 0;
+  let timeSec = 0;
+  allQuestions.forEach(q => {
+    if (answersMap.get(q.id)) correct += 1;
+    timeSec += Number(q.time_limit_seconds || 0);
+  });
+  return { total: allQuestions.length, correct, timeSec };
 }
 
   function renderSubjectInlineStats(card, prefix) {
@@ -2886,6 +2889,59 @@ function fillProfileForm(data) {
         <strong>${tourCorrect}</strong>
       </div>
     </div>
+ `;
+}
+
+function renderDirectionInlineStats(card, directionKey) {
+  if (!card) return;
+  const inlineEl = card.querySelector('.subject-inline');
+  if (!inlineEl) return;
+
+  inlineEl.classList.remove('hidden');
+  const stats = calculateDirectionStats(directionKey);
+  const accuracy = stats.total > 0 ? formatAccuracyPercent(stats.correct, stats.total) : '—';
+  const timeLabel = stats.timeSec > 0 ? formatMMSS(stats.timeSec) : '—';
+
+  inlineEl.innerHTML = `
+    <div class="subject-inline-section">
+      <div class="subject-inline-title">${tSafe('overall_title', 'Итого')}</div>
+      <div class="subject-inline-row">
+        <span>${tSafe('accuracy_label', 'Точность')}</span>
+        <strong>${accuracy}</strong>
+      </div>
+      <div class="subject-inline-row">
+        <span>${tSafe('correct_txt', 'Верно')}</span>
+        <strong>${stats.correct}/${stats.total}</strong>
+      </div>
+      <div class="subject-inline-row">
+        <span>${tSafe('stat_time', 'Время')}</span>
+        <strong>${timeLabel}</strong>
+      </div>
+    </div>
+
+    <div class="subject-inline-section">
+      <div class="subject-inline-title">${tSafe('recommendations_title', 'Рекомендации темы')}</div>
+      <div class="subject-inline-row">
+        <span>${tSafe('recommendations_placeholder', 'Скоро появятся')}</span>
+      </div>
+    </div>
+
+    <div class="subject-inline-section direction-inline-actions">
+      <div class="action-grid">
+        <div class="action-card" data-action="tour">
+          <div class="icon-circle blue"><i class="fa-solid fa-play"></i></div>
+          <div class="action-text"><span>${tSafe('start_tour_btn', 'Начать тур')}</span></div>
+        </div>
+        <div class="action-card" data-action="practice">
+          <div class="icon-circle green"><i class="fa-solid fa-dumbbell"></i></div>
+          <div class="action-text"><span>${tSafe('menu_practice', 'Практика')}</span></div>
+        </div>
+        <div class="action-card" data-action="mistakes">
+          <div class="icon-circle red"><i class="fa-solid fa-clipboard-check"></i></div>
+          <div class="action-text"><span>${tSafe('menu_mistakes', 'Ошибки')}</span></div>
+        </div>
+      </div>
+    </div>
   `;
 }
  
@@ -2920,9 +2976,7 @@ function fillProfileForm(data) {
     function setActiveSubject(prefix) {
         const normalized = normalizeSubjectKey(prefix);
         if (!normalized) return;
-        const selected = isDirectionTourMode()
-          ? getAllowedSubjectsByDirection(selectedDirectionKey)
-          : getSelectedSubjects();
+        const selected = getSelectedSubjects();
         if (selected.length && !selected.includes(normalized)) return;
         activeSubject = normalized;
         try {
@@ -3048,20 +3102,15 @@ function fillProfileForm(data) {
                 pillProgress.textContent = labelEl.textContent || '—';
             }
 
-            if (pillAccuracy) {
+           if (pillAccuracy) {
                 const stats = calculateSubjectStats(prefix);
                 const total = Number(stats.total || 0);
                 const correct = Number(stats.correct || 0);
 
-                if (total > 0) {
-                    pillAccuracy.textContent = `${tSafe('correct_txt', 'Верно')} ${correct}/${total}`;
-                } else {
-                    pillAccuracy.textContent = tSafe('no_data', 'Нет данных');
-                }
+                pillAccuracy.textContent = total > 0 ? formatAccuracyPercent(correct, total) : '—';
             }
         }
     }
-
 
     function renderAllSubjectCardProgress() {
         document.querySelectorAll('.subject-card[data-subject]').forEach(card => {
@@ -3115,7 +3164,6 @@ function fillProfileForm(data) {
     }
 
     function openSubjectSelectModal(options = {}) {
-        if (isDirectionTourMode()) return;
         if (isSubjectsLocked()) return;
         const modal = document.getElementById('subject-select-modal');
         if (!modal) return;
@@ -3745,15 +3793,14 @@ function fillProfileForm(data) {
             return aIndex - bIndex;
         });
         // Оставляем только выбранные предметы (и исключаем sat/ielts пока скрыты)
-const selected = isDirectionTourMode()
-  ? getAllowedSubjectsByDirection(selectedDirectionKey)
+const selected = reviewContext.mode === 'direction'
+  ? getAllowedSubjectsByDirection(reviewContext.directionKey)
   : ((typeof getSelectedSubjects === 'function') ? getSelectedSubjects() : []);
 const allowed = new Set(
   (selected.length ? selected : ['math', 'chem', 'bio', 'it', 'eco'])
     .map(s => String(s).toLowerCase())
     .filter(s => !['sat', 'ielts'].includes(s))
 );
-
 const filteredStats = subjectStats.filter(s => allowed.has(String(s.key).toLowerCase()));
 
 const filteredErrors = {};
@@ -3951,7 +3998,8 @@ Object.keys(errorsBySubject || {}).forEach(k => {
         renderReviewErrorCard();
     }
 
-  const handleMistakesClick = () => {
+ const handleMistakesClick = (options = {}) => {
+        const { mode = 'subject', directionKey = null } = options;
         if (!hasCompletedTourAccess()) {
             showAccessLockModal();
             return;
@@ -3966,37 +4014,101 @@ Object.keys(errorsBySubject || {}).forEach(k => {
             return;
         }
 
-        practiceMode = false;
+    practiceMode = false;
         isTestActive = false;
+        reviewContext = { mode, directionKey: mode === 'direction' ? directionKey : null };
         resetReviewState();
         showScreen('review-screen');
         showReviewView('tours');
         loadReviewTours();
     };
 
-     const handlePracticeClick = () => {
+     const handlePracticeClick = (options = {}) => {
+        const { mode = 'subject', directionKey = null } = options;
+        practiceContext = { mode, directionKey: mode === 'direction' ? directionKey : null };
         startPracticeMode();
     };
 
+    function resolveDirectionKey(directionKey) {
+        const key = directionKey || selectedDirectionKey;
+        if (!key) {
+            openDirectionSelectModal({ force: true });
+            return null;
+        }
+        return key;
+    }
+
+    function handleHomeAction(action, context = 'subject', directionKey = null) {
+        if (!action) return;
+
+        if (action === 'leaderboard') {
+            showScreen('leaderboard-screen');
+            setLeaderboardFilter('republic');
+            return;
+        }
+
+        if (action === 'certificates') {
+            openCertificates();
+            return;
+        }
+
+        if (context === 'direction') {
+            const resolved = resolveDirectionKey(directionKey);
+            if (!resolved) return;
+            if (action === 'tour') {
+                handleStartClick({ mode: 'direction', directionKey: resolved });
+                return;
+            }
+            if (action === 'practice') {
+                practiceReturnScreen = 'home-screen';
+                handlePracticeClick({ mode: 'direction', directionKey: resolved });
+                return;
+            }
+            if (action === 'mistakes') {
+                reviewReturnScreen = 'home-screen';
+                handleMistakesClick({ mode: 'direction', directionKey: resolved });
+                return;
+            }
+        }
+
+        if (action === 'practice') {
+            practiceReturnScreen = 'home-screen';
+            handlePracticeClick({ mode: 'subject' });
+            return;
+        }
+        if (action === 'mistakes') {
+            reviewReturnScreen = 'home-screen';
+            handleMistakesClick({ mode: 'subject' });
+            return;
+        }
+    }
+
+    function initHomeActions() {
+        const containers = [
+            { id: 'actions-subject', context: 'subject' },
+            { id: 'actions-direction', context: 'direction' }
+        ];
+        containers.forEach(({ id, context }) => {
+            const container = document.getElementById(id);
+            if (!container) return;
+            container.addEventListener('click', (event) => {
+                const target = event.target.closest('.action-card[data-action]');
+                if (!target) return;
+                handleHomeAction(target.dataset.action, context, selectedDirectionKey);
+            });
+        });
+    }
+
     safeAddListener('btn-mistakes', 'click', () => {
         reviewReturnScreen = 'cabinet-screen';
-        handleMistakesClick();
-    });
-    safeAddListener('home-mistakes-btn', 'click', () => {
-        reviewReturnScreen = 'home-screen';
-        handleMistakesClick();
+        handleMistakesClick({ mode: 'subject' });
     });
 
     safeAddListener('btn-practice', 'click', () => {
         practiceReturnScreen = 'cabinet-screen';
-        handlePracticeClick();
-    });
-    safeAddListener('home-practice-btn', 'click', () => {
-        practiceReturnScreen = 'home-screen';
-        handlePracticeClick();
-    });
+        handlePracticeClick({ mode: 'subject' });
+    });   
  
-
     safeAddListener('close-lock-review-modal', 'click', () => {
         const modal = document.getElementById('review-lock-modal');
         if (modal) modal.classList.add('hidden');
@@ -4263,7 +4375,8 @@ function buildTourQuestions(allQuestions) {
   return ordered.slice(0, 15);
 }
   
-  async function handleStartClick() {
+  async function handleStartClick(options = {}) {
+        const { mode = 'subject', directionKey = null } = options;
         if (tourCompleted) {
             const modal = document.getElementById('tour-info-modal');
             if (modal) modal.classList.remove('hidden');
@@ -4289,9 +4402,13 @@ function buildTourQuestions(allQuestions) {
         }
 
 tourQuestionsAllCache = qData;              // сохраняем весь пул тура для статистики
-const useDirectionMode = isDirectionTourMode();
+const useDirectionMode = mode === 'direction' && (directionKey || selectedDirectionKey);
+const resolvedDirectionKey = directionKey || selectedDirectionKey;
+if (mode === 'direction' && resolvedDirectionKey) {
+  selectedDirectionKey = resolvedDirectionKey;
+}
 tourQuestionsSelected = useDirectionMode
-  ? buildDirectionTourQuestions(qData, selectedDirectionKey)
+  ? buildDirectionTourQuestions(qData, resolvedDirectionKey)
   : buildTourQuestions(qData);
 
 questions = tourQuestionsSelected;          // тест идёт по 15
@@ -4332,9 +4449,9 @@ questions = tourQuestionsSelected;          // тест идёт по 15
         if (modal) modal.classList.add('hidden');
     }
 
-    function startTourWithSubjectPick() {
+   function startTourWithSubjectPick() {
         if (tourCompleted) {
-            handleStartClick();
+            handleStartClick({ mode: 'subject' });
             return;
         }
         const selected = getSelectedSubjects();
@@ -4343,12 +4460,12 @@ questions = tourQuestionsSelected;          // тест идёт по 15
             return;
         }
         if (selected.length === 1) setActiveSubject(selected[0]);
-        handleStartClick();
-    }
+        handleStartClick({ mode: 'subject' });
+    } 
 
     function updateMainButton(state, title) {
         const activeBtn = document.getElementById('main-action-btn');
-        const certCard = document.getElementById('home-cert-btn');
+        const certCards = document.querySelectorAll('[data-action="certificates"]');
         if (!activeBtn) return;
 const hintEl = document.getElementById('main-action-hint');
 const setHint = (text) => {
@@ -4376,7 +4493,7 @@ const tSafe = (key, fallback) => {
   newBtn.innerHTML = `<i class="fa-solid fa-clock"></i> ${t('no_active_tour')}`;
   newBtn.className = 'btn-inactive';
   newBtn.disabled = true;
-  if (certCard) certCard.classList.add('hidden');
+  certCards.forEach(card => card.classList.add('hidden'));
 
   setHint(''); // подсказка не нужна
 
@@ -4386,7 +4503,7 @@ const tSafe = (key, fallback) => {
             newBtn.disabled = false;
             newBtn.style.background = "linear-gradient(135deg, #34C759 0%, #30D158 100%)"; 
             newBtn.style.color = "#fff";
-            if (certCard) certCard.classList.remove('hidden'); 
+            certCards.forEach(card => card.classList.remove('hidden'));
 
           const nowTour = new Date();
           const end = currentTourEndDate ? new Date(currentTourEndDate) : null;
@@ -4410,7 +4527,7 @@ newBtn.addEventListener('click', () => {
   newBtn.disabled = false;
   newBtn.style.background = "";
 
-  if (certCard) certCard.classList.add('hidden');
+ certCards.forEach(card => card.classList.add('hidden'));
 
 setHint(tSafe('main_btn_practice_hint', 'Практика доступна после завершения тура'));
           
@@ -4424,7 +4541,7 @@ setHint(tSafe('main_btn_practice_hint', 'Практика доступна по�
             newBtn.className = 'btn-primary';
             newBtn.disabled = false;
             newBtn.style.background = "";
-            if (certCard) certCard.classList.add('hidden'); 
+            certCards.forEach(card => card.classList.add('hidden'));
             newBtn.addEventListener('click', startTourWithSubjectPick);
 
           setHint(tSafe('main_btn_start_hint', 'Нажмите, чтобы начать текущий тур'));
@@ -4952,6 +5069,74 @@ if (resHint) {
   openPracticeConfigModal({ canContinue });
 }
 
+function setHomePage(index, { save = true } = {}) {
+  const track = document.getElementById('home-track');
+  const dotsWrap = document.getElementById('home-pager-dots');
+  if (!track || !dotsWrap) return;
+
+  const totalPages = 2;
+  const nextIndex = Math.max(0, Math.min(totalPages - 1, Number(index) || 0));
+  homePageIndex = nextIndex;
+  track.style.transform = `translateX(-${nextIndex * 100}%)`;
+
+  dotsWrap.querySelectorAll('.dot').forEach((dot, idx) => {
+    dot.classList.toggle('is-active', idx === nextIndex);
+  });
+
+  if (save) {
+    try {
+      localStorage.setItem('homePageIndex', String(nextIndex));
+    } catch (e) {}
+  }
+}
+
+let homePagerInitialized = false;
+function initHomePager() {
+  if (homePagerInitialized) return;
+  const pager = document.getElementById('home-pager');
+  const track = document.getElementById('home-track');
+  if (!pager || !track) return;
+  homePagerInitialized = true;
+
+  try {
+    const saved = Number(localStorage.getItem('homePageIndex') || 0);
+    if (Number.isFinite(saved)) homePageIndex = saved;
+  } catch (e) {}
+
+  setHomePage(homePageIndex, { save: false });
+
+  let startX = 0;
+  let startY = 0;
+  let deltaX = 0;
+  let deltaY = 0;
+
+  pager.addEventListener('touchstart', (event) => {
+    const touch = event.touches[0];
+    startX = touch?.clientX || 0;
+    startY = touch?.clientY || 0;
+    deltaX = 0;
+    deltaY = 0;
+  }, { passive: true });
+
+  pager.addEventListener('touchmove', (event) => {
+    const touch = event.touches[0];
+    if (!touch) return;
+    deltaX = touch.clientX - startX;
+    deltaY = touch.clientY - startY;
+  }, { passive: true });
+
+  pager.addEventListener('touchend', () => {
+    if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)) {
+      const next = deltaX < 0 ? homePageIndex + 1 : homePageIndex - 1;
+      setHomePage(next, { save: true });
+    }
+    startX = 0;
+    startY = 0;
+    deltaX = 0;
+    deltaY = 0;
+  });
+}
+
 function showScreen(screenId) {
   // Находим наш индикатор загрузки и скрываем его
   const loader = document.getElementById('app-loader');
@@ -4962,14 +5147,19 @@ function showScreen(screenId) {
    const screen = document.getElementById(screenId);
   if (screen) screen.classList.remove('hidden');
 
-  if (screenId === 'home-screen' && pendingDirectionModal) {
+ if (screenId === 'home-screen' && pendingDirectionModal) {
     pendingDirectionModal = false;
     openDirectionSelectModal({ force: true });
   }
 
+  if (screenId === 'home-screen') {
+    initHomePager();
+    setHomePage(homePageIndex, { save: false });
+  }
+
   if (screenId === 'cabinet-screen') {
     refreshCabinetAccessUI();
-  }
+  } 
 
   window.scrollTo(0, 0);
 }
@@ -5075,7 +5265,7 @@ if (tourSubjectPickList) {
     const subject = btn.dataset.subject;
     if (subject) setActiveSubject(subject);
     closeTourSubjectPickModal();
-    handleStartClick();
+    handleStartClick({ mode: 'subject' });
   });
 }
 
@@ -5083,7 +5273,7 @@ safeAddListener('tour-subject-pick-cancel', 'click', () => {
   closeTourSubjectPickModal();
 });
 
-const subjectsGrid = document.querySelector('.subjects-grid');
+const subjectsGrid = document.getElementById('subjects-grid');
 if (subjectsGrid) {
   subjectsGrid.addEventListener('click', (event) => {
     const card = event.target.closest('.subject-card[data-subject]');
@@ -5102,8 +5292,46 @@ if (subjectsGrid) {
         card.classList.remove('is-expanded');
       }
     }
-  });
+ });
 }
+
+const directionsGrid = document.getElementById('directions-grid');
+if (directionsGrid) {
+  directionsGrid.addEventListener('click', async (event) => {
+    const actionCard = event.target.closest('.action-card[data-action]');
+    if (actionCard) {
+      const directionCard = event.target.closest('.subject-card[data-direction]');
+      const directionKey = directionCard ? directionCard.dataset.direction : null;
+      if (!directionKey) return;
+      event.stopPropagation();
+      handleHomeAction(actionCard.dataset.action, 'direction', directionKey);
+      return;
+    }
+
+    const card = event.target.closest('.subject-card[data-direction]');
+    if (!card) return;
+    const key = String(card.dataset.direction || '');
+    if (!key) return;
+
+    selectedDirectionKey = key;
+    expandedDirectionKey = expandedDirectionKey === key ? null : key;
+
+    try {
+      if (supabaseClient && internalDbId) {
+        const { data, error } = await supabaseClient
+          .from('users')
+          .update({ direction_selected_key: key })
+          .eq('id', internalDbId)
+          .select('direction_selected_key')
+          .maybeSingle();
+
+        if (!error && data) currentUserData = { ...currentUserData, ...data };
+      }
+    } catch (e) {}
+
+    renderDirectionsHomeSection();
+  });
+} 
 
 const resourcesAccordion = document.getElementById('resources-accordion');
 const resourcesToggle = document.getElementById('resources-accordion-toggle');
@@ -5114,6 +5342,9 @@ if (resourcesAccordion && resourcesToggle && resourcesContent) {
     resourcesToggle.setAttribute('aria-expanded', String(isOpen));
   });
 }
+
+initHomePager();
+initHomeActions();
 
 function renderBooksList() {
   const listEl = document.getElementById('books-list');
@@ -5181,11 +5412,6 @@ safeAddListener('btn-edit-profile', 'click', () => {
 
 safeAddListener('reg-back-btn', 'click', () => showScreen('cabinet-screen'));
 
-safeAddListener('leaderboard-btn', 'click', () => {
-  showScreen('leaderboard-screen');
-  setLeaderboardFilter('republic');
-});
-
 safeAddListener('lb-back', 'click', () => showScreen('home-screen'));
 
 safeAddListener('open-about-btn', 'click', () => {
@@ -5216,7 +5442,6 @@ safeAddListener('exit-app-btn', 'click', () => {
   }
 });
 
-safeAddListener('home-cert-btn', 'click', () => openCertificates());
 safeAddListener('download-certificate-res-btn', 'click', () => openCertificates());
 safeAddListener('btn-open-certs-cab', 'click', () => openCertificates());
 safeAddListener('certs-back-btn', 'click', () => showScreen('cabinet-screen'));
@@ -5371,6 +5596,7 @@ window.addEventListener('beforeunload', () => {
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
 });
+
 
 
 
