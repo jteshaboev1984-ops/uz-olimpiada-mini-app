@@ -5726,7 +5726,7 @@ window.addEventListener('beforeunload', () => {
 
  // Запускаем нашу безопасную функцию после загрузки DOM и объявления всех функций
   startApp();
-});
+
 
 
 
