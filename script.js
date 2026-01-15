@@ -3016,11 +3016,7 @@ function renderDirectionInlineStats(card, directionKey) {
 
      <div class="subject-inline-section direction-inline-actions">
      <div class="action-grid">
-  <div class="action-card" data-action="tour">
-    <div class="icon-circle blue"><i class="fa-solid fa-play"></i></div>
-    <div class="action-text"><span>${tSafe('start_tour_btn', 'Начать тур')}</span></div>
-  </div>
-        <div class="action-card" data-action="practice">
+          <div class="action-card" data-action="practice">
           <div class="icon-circle green"><i class="fa-solid fa-dumbbell"></i></div>
           <div class="action-text"><span>${tSafe('menu_practice', 'Практика')}</span></div>
         </div>
@@ -5756,6 +5752,7 @@ function shareCertificate() {
   // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
 });
+
 
 
 
