@@ -1012,21 +1012,24 @@ html, body{
 .section-header{ margin-top: 18px; margin-bottom: 10px; }
 
 .home-pager{
-  overflow-x: hidden;
-  overflow-y: visible;
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
+  overflow-x:hidden;
+  overflow-y:visible;
+  width:100%;
+  max-width:100%;
+  box-sizing:border-box;
+  transition: height 220ms ease; /* ✅ чтобы “пустота” не прыгала */
 }
 
 .home-track{
-  display: flex;
-  flex-wrap: nowrap;
-  width: 100%;              /* ✅ важно: чтобы translateX(-100%) = 1 экран */
-  transition: transform 220ms ease;
-  will-change: transform;
-  box-sizing: border-box;
+  display:flex;
+  flex-wrap:nowrap;
+  width:200%;
+  transition:transform 220ms ease;
+  will-change:transform;
+  box-sizing:border-box;
+  align-items:flex-start; /* ✅ важно: контент страниц “прилипает” к верху */
 }
+
 .screen{
   height: 100%;
   overflow-y: auto;
@@ -1081,6 +1084,7 @@ html, body{
 .home-empty{ background:#fff; border-radius:18px; padding:14px; border:1px solid rgba(0,0,0,.06); box-shadow:0 8px 18px rgba(15,23,42,.05); }
 .home-empty-title{ font-weight:800; font-size:14px; margin-bottom:6px; }
 .home-empty-sub{ font-size:12px; color: var(--text-sec); line-height:1.35; }
+
 
 
 
