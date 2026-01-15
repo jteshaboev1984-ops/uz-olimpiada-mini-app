@@ -5151,6 +5151,7 @@ function setHomePage(index, { save = true } = {}) {
 }
 
 
+
  function updateHomeMainButtonByPage() {
   // 0 = subjects, 1 = directions
   const isDirections = (homePageIndex === 1);
@@ -5727,4 +5728,5 @@ function shareCertificate() {
   // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
 });
+
 
