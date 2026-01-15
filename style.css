@@ -961,75 +961,61 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
   margin-bottom: 0;
 }
 
-.home-page-indicator{
-  display:flex;
-  gap:8px;
-  margin:10px 0 14px;
-}
-
-.home-page-indicator .bar{
-  height:4px;
-  flex:1;
-  border-radius:999px;
-  background:#E5E5EA;
-}
-
-.home-page-indicator .bar.is-active{
-  background: var(--primary);
-}
-
 .home-pager-dots{ display:none; }
 
 /* HOME: spacing between subject cards and actions */
 .section-header{ margin-top: 18px; margin-bottom: 10px; }
-
-:root{
-  --peek: 16px;   /* сколько видно следующей карточки */
-  --gap: 12px;    /* расстояние между страницами */
-}
-
-.home-pager.home-snap{
-  overflow: hidden;
-  padding-left: 16px;                 /* чтобы первая страница не прилипала к краю */
-}
-
-/* это и есть scroll container */
-.home-pager.home-snap{
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
-}
-.home-pager.home-snap::-webkit-scrollbar{ display:none; }
-
-/* лента */
-.home-pager.home-snap .home-track{
-  display: flex;
-  gap: var(--gap);
-  padding-right: var(--peek);         /* ✅ оставляем место для “peek” справа */
-}
-
-/* каждая страница почти на всю ширину — минус peek */
-.home-pager.home-snap .home-page{
-  flex: 0 0 calc(100% - var(--peek));
-  width: calc(100% - var(--peek));
-  scroll-snap-align: start;
-  box-sizing: border-box;
-}
 
 #subjects-grid,
 #directions-grid{
   grid-template-columns: 1fr;   /* ✅ одна колонка — без вылета */
 }
 
+.home-pager{
+  overflow: hidden;
+}
 
-.home-pager-dots{ display:flex; justify-content:center; gap:8px; margin-top:10px; }
-.home-pager-dots .dot{ width:7px; height:7px; border-radius:999px; background:#E5E5EA; }
-.home-pager-dots .dot.is-active{ background: var(--primary); }
+.home-track{
+  display: flex;
+  width: 200%;
+  transition: transform 220ms ease;
+  will-change: transform;
+}
+
+.home-page{
+  flex: 0 0 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.home-pager-dots{
+  display:flex;
+  justify-content:center;
+  gap:8px;
+  margin:10px 0 14px;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+.home-pager-dots.is-hidden{
+  opacity: 0;
+  transform: translateY(-2px);
+  pointer-events: none;
+}
+
+.home-pager-dots .dot{
+  width:7px;
+  height:7px;
+  border-radius:999px;
+  background:#E5E5EA;
+}
+
 
 .home-empty{ background:#fff; border-radius:18px; padding:14px; border:1px solid rgba(0,0,0,.06); box-shadow:0 8px 18px rgba(15,23,42,.05); }
 .home-empty-title{ font-weight:800; font-size:14px; margin-bottom:6px; }
 .home-empty-sub{ font-size:12px; color: var(--text-sec); line-height:1.35; }
+
 
 
 
