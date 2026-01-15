@@ -413,12 +413,17 @@ if (dotsEl) {
 }
     grid.appendChild(card);
 
-    if (expandedDirectionKey && expandedDirectionKey === key) {
+ if (expandedDirectionKey && expandedDirectionKey === key) {
       card.classList.add('is-expanded');
       renderDirectionInlineStats(card, key);
     }
   });
-}
+
+  const homeScreen = document.getElementById('home-screen');
+  if (homeScreen && !homeScreen.classList.contains('hidden')) {
+    showHomeDotsTemporarily(3500);
+  }
+}   
   
 function normalizeSelectedDirection() {
   const available = getAvailableDirectionsForUser();
@@ -2974,6 +2979,9 @@ function renderDirectionInlineStats(card, directionKey) {
   const stats = calculateDirectionStats(directionKey);
   const accuracy = stats.total > 0 ? formatAccuracyPercent(stats.correct, stats.total) : '—';
   const timeLabel = stats.timeSec > 0 ? formatMMSS(stats.timeSec) : '—';
+  const subjectList = getAllowedSubjectsByDirection(directionKey);
+  const subjectNames = (subjectList || []).map(key => subjectDisplayName(key)).filter(Boolean);
+  const subjectsText = subjectNames.length ? subjectNames.join(', ') : '—';
 
   inlineEl.innerHTML = `
     <div class="subject-inline-section">
@@ -2989,6 +2997,13 @@ function renderDirectionInlineStats(card, directionKey) {
       <div class="subject-inline-row">
         <span>${tSafe('stat_time', 'Время')}</span>
         <strong>${timeLabel}</strong>
+      </div>
+    </div>
+
+    <div class="subject-inline-section">
+      <div class="subject-inline-title">${tSafe('direction_subjects', 'Предметы направления')}</div>
+      <div class="subject-inline-row">
+        <span>${escapeHTML(subjectsText)}</span>
       </div>
     </div>
 
@@ -3012,6 +3027,10 @@ function renderDirectionInlineStats(card, directionKey) {
         <div class="action-card" data-action="mistakes">
           <div class="icon-circle red"><i class="fa-solid fa-clipboard-check"></i></div>
           <div class="action-text"><span>${tSafe('menu_mistakes', 'Ошибки')}</span></div>
+        </div>
+        <div class="action-card" data-action="certificates">
+          <div class="icon-circle purple"><i class="fa-solid fa-certificate"></i></div>
+          <div class="action-text"><span>${tSafe('menu_certs', 'Сертификаты')}</span></div>
         </div>
       </div>
     </div>
@@ -3078,9 +3097,13 @@ function renderDirectionInlineStats(card, directionKey) {
             const isActive = normalizeSubjectKey(card.dataset.subject) === activeSubject;
             card.classList.toggle('is-active', isActive);
         });
-    }
+   }
     function renderHomeContextUI() {
         renderNextEventCard();
+        const homeScreen = document.getElementById('home-screen');
+        if (homeScreen && !homeScreen.classList.contains('hidden')) {
+          showHomeDotsTemporarily(3500);
+        }
     }
 
     function renderNextEventCard() {
@@ -5180,7 +5203,6 @@ function setHomePage(index, { save = true } = {}) {
 updateHomeMainButtonByPage();
 showHomeDotsTemporarily(3500);
 // dots теперь не индикатор страниц — это хинт
-showHomeSwipeHint();
 
   if (save) {
   try { localStorage.setItem('homePageIndex', String(nextIndex)); } catch (e) {}
@@ -5266,22 +5288,7 @@ function initHomePager() {
   });
 }
 
-  let homeSwipeHintTimer = null;
-
-function showHomeSwipeHint(ms = 3500) {
-  const dots = document.getElementById('home-pager-dots');
-  if (!dots) return;
-
-  dots.classList.remove('is-hidden');
-
-  if (homeSwipeHintTimer) clearTimeout(homeSwipeHintTimer);
-  homeSwipeHintTimer = setTimeout(() => {
-    dots.classList.add('is-hidden');
-  }, ms);
-}
-
-  
-function showScreen(screenId) {
+  function showScreen(screenId) {
   // Находим наш индикатор загрузки и скрываем его
   const loader = document.getElementById('app-loader');
   if (loader) loader.style.display = 'none';
@@ -5749,6 +5756,7 @@ function shareCertificate() {
   // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
 });
+
 
 
 
