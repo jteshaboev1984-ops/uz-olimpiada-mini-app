@@ -305,6 +305,30 @@ function getDirectionTitle(direction) {
   return direction.title_uz || fallback;
 }
 
+  function getDirectionIconSpec(directionKey) {
+  const subjects = getAllowedSubjectsByDirection(directionKey);
+
+  const has = (arr) => arr.some(k => subjects.includes(k));
+
+  // Экономика/бизнес/учёт/финансы
+  if (has(['eco', 'economics', 'business', 'accounting', 'finance'])) {
+    return { color: 'gold', icon: 'fa-chart-line' };
+  }
+
+  // STEM: математика/физика/IT/CS/Thinking
+  if (has(['math', 'physics', 'it', 'computer_science', 'thinking_skills'])) {
+    return { color: 'blue', icon: 'fa-atom' };
+  }
+
+  // Life sciences: био/химия/GP
+  if (has(['bio', 'biology', 'chem', 'chemistry', 'global_perspectives'])) {
+    return { color: 'green', icon: 'fa-dna' };
+  }
+
+  // По умолчанию (универсально)
+  return { color: 'violet', icon: 'fa-layer-group' };
+}
+  
 function renderDirectionsHomeSection() {
   const header = document.getElementById('directions-header');
   const grid = document.getElementById('directions-grid');
@@ -313,24 +337,30 @@ function renderDirectionsHomeSection() {
   header.classList.remove('hidden');
 
   const available = getAvailableDirectionsForUser();
-  const availableKeys = new Set((available || []).map(item => String(item.key)));
-  if (expandedDirectionKey && !availableKeys.has(String(expandedDirectionKey))) {
-    expandedDirectionKey = null;
-  }
+const availableKeys = new Set((available || []).map(item => String(item.key)));
+if (expandedDirectionKey && !availableKeys.has(String(expandedDirectionKey))) {
+  expandedDirectionKey = null;
+}
 
-  // если направлений нет (или ещё не анлокнули) — скрываем блок
-  if (!available || available.length === 0) {
-    grid.classList.add('hidden');
-    if (emptyState) emptyState.classList.remove('hidden');
-    grid.innerHTML = '';
-    return;
-  }
+// ✅ если направление выбрано — показываем только его
+const list = selectedDirectionKey
+  ? (available || []).filter(d => String(d.key) === String(selectedDirectionKey))
+  : available;
 
-  if (emptyState) emptyState.classList.add('hidden');
-  grid.classList.remove('hidden');
+// если направлений нет — скрываем блок
+if (!list || list.length === 0) {
+  grid.classList.add('hidden');
+  if (emptyState) emptyState.classList.remove('hidden');
   grid.innerHTML = '';
+  return;
+}
 
-  available.forEach(dir => {
+if (emptyState) emptyState.classList.add('hidden');
+grid.classList.remove('hidden');
+grid.innerHTML = '';
+
+list.forEach(dir => {
+
     const key = String(dir.key || '');
     if (!key) return;
 
@@ -341,10 +371,11 @@ function renderDirectionsHomeSection() {
     const card = document.createElement('div');
     card.className = 'subject-card' + (String(selectedDirectionKey) === key ? ' is-active' : '');
     card.dataset.direction = key;
+    const iconSpec = getDirectionIconSpec(key);
     card.innerHTML = `
       <div class="subject-top">
         <div class="subject-head">
-          <div class="sub-icon violet"><i class="fa-solid fa-layer-group"></i></div>
+          <div class="sub-icon ${iconSpec.color}"><i class="fa-solid ${iconSpec.icon}"></i></div>
           <h3>${escapeHTML(title)}</h3>
         </div>
         <div class="tour-progress" aria-label="Direction">
@@ -2547,6 +2578,8 @@ if (!isInitialized) {
     }
 
      fillProfileForm(authData);
+    homePageIndex = 0;
+    try { localStorage.setItem('homePageIndex', '0'); } catch (e) {}
     showScreen('home-screen');
     initSubjectSelectionFlow();
     await fetchStatsData();
@@ -4417,11 +4450,13 @@ function buildTourQuestions(allQuestions) {
   
   async function handleStartClick(options = {}) {
         const { mode = 'subject', directionKey = null } = options;
-        if (tourCompleted) {
-            const modal = document.getElementById('tour-info-modal');
-            if (modal) modal.classList.remove('hidden');
-            return;
-        }
+
+// ✅ блокируем только предметный тур, направление должно работать отдельно
+if (mode === 'subject' && tourCompleted) {
+  const modal = document.getElementById('tour-info-modal');
+  if (modal) modal.classList.remove('hidden');
+  return;
+}
 
         if (!currentTourId) {
             alert(t('no_active_tour'));
@@ -5117,6 +5152,20 @@ if (resHint) {
   openPracticeConfigModal({ canContinue });
 }
 
+  let homeDotsTimer = null;
+
+function showHomeDotsTemporarily(ms = 3500) {
+  const dotsWrap = document.getElementById('home-pager-dots');
+  if (!dotsWrap) return;
+
+  dotsWrap.classList.remove('is-hidden');
+
+  if (homeDotsTimer) clearTimeout(homeDotsTimer);
+  homeDotsTimer = setTimeout(() => {
+    dotsWrap.classList.add('is-hidden');
+  }, ms);
+}
+
 function setHomePage(index, { save = true } = {}) {
   const pager = document.getElementById('home-pager');
   const track = document.getElementById('home-track');
@@ -5127,30 +5176,16 @@ function setHomePage(index, { save = true } = {}) {
   const nextIndex = Math.max(0, Math.min(totalPages - 1, Number(index) || 0));
   homePageIndex = nextIndex;
 
-  const isSnap = pager.classList.contains('home-snap');
-
-  if (isSnap) {
-    // ✅ Нативный скролл (как банковские карусели)
-    const pageWidth = pager.clientWidth; // важный момент: ширина viewport
-    pager.scrollTo({ left: nextIndex * pageWidth, behavior: 'smooth' });
-  } else {
-    // ✅ Старый режим (transform)
-    track.style.transform = `translateX(-${nextIndex * 100}%)`;
-  }
-
-  // ✅ меняем главную кнопку под страницу
-  updateHomeMainButtonByPage();
-
-  dotsWrap.querySelectorAll('.dot').forEach((dot, idx) => {
-    dot.classList.toggle('is-active', idx === nextIndex);
-  });
+  track.style.transform = `translateX(-${nextIndex * 100}%)`;
+updateHomeMainButtonByPage();
+showHomeDotsTemporarily(3500);
+// dots теперь не индикатор страниц — это хинт
+showHomeSwipeHint();
 
   if (save) {
-    try { localStorage.setItem('homePageIndex', String(nextIndex)); } catch (e) {}
+  try { localStorage.setItem('homePageIndex', String(nextIndex)); } catch (e) {}
   }
 }
-
-
 
  function updateHomeMainButtonByPage() {
   // 0 = subjects, 1 = directions
@@ -5199,36 +5234,6 @@ function initHomePager() {
 
   setHomePage(homePageIndex, { save: false });
 
-    // ✅ В режиме home-snap индекс страницы определяется скроллом
-  const isSnap = pager.classList.contains('home-snap');
-  if (isSnap) {
-    let tmr = null;
-    pager.addEventListener('scroll', () => {
-      clearTimeout(tmr);
-      tmr = setTimeout(() => {
-        const pageWidth = pager.clientWidth || 1;
-        const idx = Math.round(pager.scrollLeft / pageWidth);
-        if (idx !== homePageIndex) {
-          homePageIndex = idx;
-          updateHomeMainButtonByPage();
-
-          const dotsWrap = document.getElementById('home-pager-dots');
-          if (dotsWrap) {
-            dotsWrap.querySelectorAll('.dot').forEach((dot, i) => {
-              dot.classList.toggle('is-active', i === homePageIndex);
-            });
-          }
-
-          try { localStorage.setItem('homePageIndex', String(homePageIndex)); } catch (e) {}
-        }
-      }, 80);
-    }, { passive: true });
-
-    // ✅ touch-свайп-логика ниже не нужна в snap-режиме
-    return;
-  }
-
-
   let startX = 0;
   let startY = 0;
   let deltaX = 0;
@@ -5261,6 +5266,21 @@ function initHomePager() {
   });
 }
 
+  let homeSwipeHintTimer = null;
+
+function showHomeSwipeHint(ms = 3500) {
+  const dots = document.getElementById('home-pager-dots');
+  if (!dots) return;
+
+  dots.classList.remove('is-hidden');
+
+  if (homeSwipeHintTimer) clearTimeout(homeSwipeHintTimer);
+  homeSwipeHintTimer = setTimeout(() => {
+    dots.classList.add('is-hidden');
+  }, ms);
+}
+
+  
 function showScreen(screenId) {
   // Находим наш индикатор загрузки и скрываем его
   const loader = document.getElementById('app-loader');
@@ -5278,6 +5298,7 @@ function showScreen(screenId) {
   // ✅ дорисовать индикаторы, если данные уже в кеше
   renderAllSubjectCardProgress();
   renderDirectionsHomeSection();
+  showHomeDotsTemporarily(3500);  
 }
 
   if (screenId === 'cabinet-screen') {
@@ -5728,5 +5749,6 @@ function shareCertificate() {
   // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
 });
+
 
 
