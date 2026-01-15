@@ -5185,6 +5185,16 @@ function showHomeDotsTemporarily(ms = 3500) {
   }, ms);
 }
 
+  function updateHomePagerDots(activeIndex) {
+  const dotsWrap = document.getElementById('home-pager-dots');
+  if (!dotsWrap) return;
+
+  const dots = Array.from(dotsWrap.querySelectorAll('.dot'));
+  dots.forEach((dot, idx) => {
+    dot.classList.toggle('is-active', idx === activeIndex);
+  });
+}
+  
 function setHomePage(index, { save = true } = {}) {
   const pager = document.getElementById('home-pager');
   const track = document.getElementById('home-track');
@@ -5752,6 +5762,7 @@ function shareCertificate() {
   // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
 });
+
 
 
 
