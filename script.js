@@ -420,9 +420,10 @@ if (dotsEl) {
   });
 
   const homeScreen = document.getElementById('home-screen');
-  if (homeScreen && !homeScreen.classList.contains('hidden')) {
-    showHomeDotsTemporarily(3500);
-  }
+if (homeScreen && !homeScreen.classList.contains('hidden')) {
+  showHomeDotsTemporarily(3500);
+}
+updateHomePagerHeight(); // ✅ подгон после перерендера направлений
 }   
   
 function normalizeSelectedDirection() {
@@ -5172,10 +5173,25 @@ function showHomeDotsTemporarily(ms = 3500) {
   function updateHomePagerDots(activeIndex) {
   const dotsWrap = document.getElementById('home-pager-dots');
   if (!dotsWrap) return;
-
   const dots = Array.from(dotsWrap.querySelectorAll('.dot'));
-  dots.forEach((dot, idx) => {
-    dot.classList.toggle('is-active', idx === activeIndex);
+  dots.forEach((dot, index) => {
+    dot.classList.toggle('is-active', index === activeIndex);
+  });
+}
+
+function updateHomePagerHeight() {
+  const pager = document.getElementById('home-pager');
+  const track = document.getElementById('home-track');
+  if (!pager || !track) return;
+
+  const pageName = (homePageIndex === 1) ? 'directions' : 'subjects';
+  const activePage = track.querySelector(`.home-page[data-page="${pageName}"]`);
+  if (!activePage) return;
+
+  // ждём, пока DOM дорисуется (особенно после раскрытия карточек/рендера)
+  requestAnimationFrame(() => {
+    const h = activePage.scrollHeight;
+    if (h && Number.isFinite(h)) pager.style.height = `${h}px`;
   });
 }
   
@@ -5190,9 +5206,10 @@ function setHomePage(index, { save = true } = {}) {
  homePageIndex = nextIndex;
 
   track.style.transform = `translateX(-${nextIndex * 100}%)`;
-  updateHomePagerDots(nextIndex);
-  updateHomeMainButtonByPage();
-  showHomeDotsTemporarily(3500);
+updateHomePagerDots(nextIndex);
+updateHomeMainButtonByPage();
+showHomeDotsTemporarily(3500);
+updateHomePagerHeight(); // ✅ убирает пустоту до “Ресурсы”
 
   if (save) {
   try { localStorage.setItem('homePageIndex', String(nextIndex)); } catch (e) {}
@@ -5443,6 +5460,7 @@ if (subjectsGrid) {
     } else {
       card.classList.remove('is-expanded');
     }
+    updateHomePagerHeight(); // ✅ чтобы страница подстроилась под новую высоту
   });
 }
 
@@ -5746,6 +5764,7 @@ function shareCertificate() {
   // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
 });
+
 
 
 
