@@ -3014,12 +3014,12 @@ function renderDirectionInlineStats(card, directionKey) {
       </div>
     </div>
 
-    <div class="subject-inline-section direction-inline-actions">
-      <div class="action-grid">
-        <div class="action-card" data-action="tour">
-          <div class="icon-circle blue"><i class="fa-solid fa-play"></i></div>
-          <div class="action-text"><span>${tSafe('start_tour_btn', 'Начать тур')}</span></div>
-        </div>
+     <div class="subject-inline-section direction-inline-actions">
+     <div class="action-grid">
+  <div class="action-card" data-action="tour">
+    <div class="icon-circle blue"><i class="fa-solid fa-play"></i></div>
+    <div class="action-text"><span>${tSafe('start_tour_btn', 'Начать тур')}</span></div>
+  </div>
         <div class="action-card" data-action="practice">
           <div class="icon-circle green"><i class="fa-solid fa-dumbbell"></i></div>
           <div class="action-text"><span>${tSafe('menu_practice', 'Практика')}</span></div>
@@ -5197,17 +5197,17 @@ function setHomePage(index, { save = true } = {}) {
 
   const totalPages = 2;
   const nextIndex = Math.max(0, Math.min(totalPages - 1, Number(index) || 0));
-  homePageIndex = nextIndex;
+ homePageIndex = nextIndex;
 
   track.style.transform = `translateX(-${nextIndex * 100}%)`;
-updateHomeMainButtonByPage();
-showHomeDotsTemporarily(3500);
-// dots теперь не индикатор страниц — это хинт
+  updateHomePagerDots(nextIndex);
+  updateHomeMainButtonByPage();
+  showHomeDotsTemporarily(3500);
 
   if (save) {
   try { localStorage.setItem('homePageIndex', String(nextIndex)); } catch (e) {}
   }
-}
+} 
 
  function updateHomeMainButtonByPage() {
   // 0 = subjects, 1 = directions
@@ -5756,6 +5756,7 @@ function shareCertificate() {
   // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
 });
+
 
 
 
