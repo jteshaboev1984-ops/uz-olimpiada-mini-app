@@ -3013,23 +3013,7 @@ function renderDirectionInlineStats(card, directionKey) {
         <span>${tSafe('recommendations_placeholder', 'Скоро появятся')}</span>
       </div>
     </div>
-
-     <div class="subject-inline-section direction-inline-actions">
-     <div class="action-grid">
-          <div class="action-card" data-action="practice">
-          <div class="icon-circle green"><i class="fa-solid fa-dumbbell"></i></div>
-          <div class="action-text"><span>${tSafe('menu_practice', 'Практика')}</span></div>
-        </div>
-        <div class="action-card" data-action="mistakes">
-          <div class="icon-circle red"><i class="fa-solid fa-clipboard-check"></i></div>
-          <div class="action-text"><span>${tSafe('menu_mistakes', 'Ошибки')}</span></div>
-        </div>
-        <div class="action-card" data-action="certificates">
-          <div class="icon-circle purple"><i class="fa-solid fa-certificate"></i></div>
-          <div class="action-text"><span>${tSafe('menu_certs', 'Сертификаты')}</span></div>
-        </div>
-      </div>
-    </div>
+  </div>
   `;
 }
  
@@ -5762,6 +5746,7 @@ function shareCertificate() {
   // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
 });
+
 
 
 
