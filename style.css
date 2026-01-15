@@ -179,10 +179,13 @@ html, body{
 .active-subject-next { font-size: 12px; color: var(--text-sec); font-weight: 600; }
 .subjects-grid{
   display:grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr; /* ✅ всегда 1 колонка: без вылета на мобилке и без “скачков” на 517/521 */
   gap:12px;
+  width:100%;
+  max-width:100%;
+  min-width:0;
 }
-.subject-card { background: white; border-radius: 18px; padding: 16px; position: relative; box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06); transition: transform 0.12s, box-shadow 0.12s; cursor: pointer; border: 1px solid #F2F2F7; min-height: 108px; display: flex; flex-direction: column; justify-content: flex-start; gap: 10px; width: 100%; box-sizing: border-box; }
+.subject-card { background: white; border-radius: 18px; padding: 16px; position: relative; box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06); transition: transform 0.12s, box-shadow 0.12s; cursor: pointer; border: 1px solid #F2F2F7; min-height: 108px; display: flex; flex-direction: column; justify-content: flex-start; gap: 10px; max-width:100%; min-width:0; box-sizing:border-box; }
 .subject-card.is-active { border-color: rgba(0,122,255,0.35); box-shadow: 0 10px 22px rgba(0,122,255,0.15); background: #F7FAFF; }
 .subject-card:active { transform: scale(0.97); }
 .subject-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -1078,6 +1081,7 @@ html, body{
 .home-empty{ background:#fff; border-radius:18px; padding:14px; border:1px solid rgba(0,0,0,.06); box-shadow:0 8px 18px rgba(15,23,42,.05); }
 .home-empty-title{ font-weight:800; font-size:14px; margin-bottom:6px; }
 .home-empty-sub{ font-size:12px; color: var(--text-sec); line-height:1.35; }
+
 
 
 
