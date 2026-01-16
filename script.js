@@ -794,16 +794,16 @@ practiceTourQuestionsCache.set(cacheKey, result);
 return result;
 }
 
-  async function getCompletedToursForPractice() {
+ async function getCompletedToursForPractice() {
   if (!internalDbId) return [];
   if (practiceCompletedToursCache.userId === internalDbId && practiceCompletedToursCache.list.length) {
     return practiceCompletedToursCache.list;
   }
 
   const { data: toursData, error: toursError } = await supabaseClient
-  .from('tours')
-  .select('id, title, start_date, end_date, direction_id')
-  .order('start_date', { ascending: true });
+    .from('tours')
+    .select('id, title, start_date, end_date, direction_id')
+    .order('start_date', { ascending: true });
 
   if (toursError) {
     console.error('[practice] tours fetch error:', toursError);
@@ -812,7 +812,7 @@ return result;
 
   const { data: progressData, error: progressError } = await supabaseClient
     .from('tour_progress')
-    .select('tour_id, score')
+    .select('tour_id, score, mode, tour_no, direction_id, subject')
     .eq('user_id', internalDbId);
 
   if (progressError) {
@@ -820,24 +820,27 @@ return result;
     return [];
   }
 
+  // ✅ completedIds по факту наличия строки прогресса (score может быть 0)
   const completedIds = new Set(
     (progressData || [])
-      .filter(row => row && row.score !== null && row.score !== undefined)
+      .filter(row => row && row.tour_id != null)
       .map(row => String(row.tour_id))
   );
 
   let scopedTours = (toursData || []).slice();
 
-if (practiceContext.mode === 'direction') {
-  const dirId = getDirectionIdByKey(practiceContext.directionKey);
-  scopedTours = dirId ? scopedTours.filter(t => Number(t.direction_id) === Number(dirId)) : [];
-} else {
-  scopedTours = scopedTours.filter(t => t.direction_id == null);
-}
+  if (practiceContext.mode === 'direction') {
+    const dirId = getDirectionIdByKey(practiceContext.directionKey);
+    scopedTours = dirId ? scopedTours.filter(t => Number(t.direction_id) === Number(dirId)) : [];
+  } else {
+    scopedTours = scopedTours.filter(t => t.direction_id == null);
+  }
 
-const completedTours = scopedTours.filter(tour => completedIds.has(String(tour.id)));
+  const completedTours = scopedTours.filter(tour => completedIds.has(String(tour.id)));
 
-  practiceCompletedToursCache = { userId: internalDbId, list: completedTours };
+  practiceCompletedToursCache.userId = internalDbId;
+  practiceCompletedToursCache.list = completedTours;
+
   return completedTours;
 }
   
@@ -5937,6 +5940,7 @@ function shareCertificate() {
   // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
 });
+
 
 
 
