@@ -801,13 +801,15 @@ practiceTourQuestionsCache.set(cacheKey, result);
 return result;
 }
 
- async function getCompletedToursForPractice() {
+async function getCompletedToursForPractice() {
   if (!internalDbId) return [];
-  if (practiceCompletedToursCache.userId === internalDbId &&
-     practiceCompletedToursCache.scopeKey === scopeKey &&
-     practiceCompletedToursCache.list.length) {
-    return practiceCompletedToursCache.list;
-  }
+
+  const scopeKey = getPracticeScopeKey();
+  if (
+    practiceCompletedToursCache.userId === internalDbId &&
+    practiceCompletedToursCache.scopeKey === scopeKey &&
+    practiceCompletedToursCache.list.length
+  ) {
     return practiceCompletedToursCache.list;
   }
 
@@ -820,6 +822,9 @@ return result;
     console.error('[practice] tours fetch error:', toursError);
     return [];
   }
+
+  // дальше у тебя идёт логика фильтрации (scopedTours + end_date <= now)
+}
 
   const { data: progressData, error: progressError } = await supabaseClient
     .from('tour_progress')
@@ -6000,6 +6005,7 @@ function shareCertificate() {
   // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
 });
+
 
 
 
