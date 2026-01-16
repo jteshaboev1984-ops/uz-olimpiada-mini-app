@@ -829,10 +829,18 @@ function toMs(v) {
 }
 
 // ✅ “завершённые” = end_date <= сейчас
-const dateCompletedTours = scopedTours.filter(t => {
-  const endMs = toMs(t.end_date);
-  return endMs != null && endMs <= now;
-});
+let scopedTours = (toursData || []).slice();
+
+if (practiceContext.mode === 'direction') {
+  const dirId = getDirectionIdByKey(practiceContext.directionKey);
+  scopedTours = dirId ? scopedTours.filter(t => Number(t.direction_id) === Number(dirId)) : [];
+} else {
+  scopedTours = scopedTours.filter(t => t.direction_id == null);
+}
+
+// дальше уже можно:
+const dateCompletedTours = scopedTours.filter(t => { ... });
+
 
 practiceCompletedToursCache.userId = internalDbId;
 practiceCompletedToursCache.list = dateCompletedTours;
@@ -5936,6 +5944,7 @@ function shareCertificate() {
   // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
 });
+
 
 
 
