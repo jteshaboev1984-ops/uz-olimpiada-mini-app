@@ -110,6 +110,23 @@ async function startApp() {
 let practiceMode = false;
 let practiceAnswers = {}; // { [questionId]: { answer: string, isCorrect: boolean } }
 let practiceFilters = normalizePracticeFilters({ subjects: [], difficulty: 'all', count: 20, practiceTourId: null });
+
+// ✅ direction practice context helpers (для честного сохранения попыток/аналитики)
+let practiceActiveTourNo = null;
+let practiceActiveDirectionId = null;
+
+function parseTourNoFromTitle(title) {
+  const m = String(title || '').match(/(\d+)/);
+  const n = m ? parseInt(m[1], 10) : NaN;
+  return Number.isFinite(n) ? n : null;
+}
+
+function getDirectionIdByKey(directionKey) {
+  const key = String(directionKey || '').trim();
+  const found = (directionsMeta || []).find(d => String(d.key) === key);
+  return found ? Number(found.id) : null;
+}
+
 let practiceElapsedSec = 0;
 let practiceStopwatchInterval = null;
 let practiceReturnScreen = 'cabinet-screen';
@@ -708,12 +725,74 @@ if (String(normalizedTourId) === String(currentTourId)) {
     return practiceTourQuestionsCache.get(cacheKey);
   }
 
+  // ✅ Direction practice: questions из общего банка по subject_key + subject_tour_no
+if (practiceContext.mode === 'direction') {
+  const dirId = getDirectionIdByKey(practiceContext.directionKey);
+  if (!dirId) return [];
+
+  // 1) убедимся, что выбранный practiceTourId — это тур ЭТОГО направления, и вытащим tour_no
+  const { data: tRow, error: tErr } = await supabaseClient
+    .from('tours')
+    .select('id, title, direction_id')
+    .eq('id', Number(normalizedTourId))
+    .eq('direction_id', Number(dirId))
+    .maybeSingle();
+
+  if (tErr || !tRow) {
+    console.warn('[practice][direction] tour not found for direction:', { normalizedTourId, dirId, tErr });
+    return [];
+  }
+
+  const tourNo = parseTourNoFromTitle(tRow.title);
+  if (!tourNo) {
+    console.warn('[practice][direction] cannot parse tour_no from title:', tRow.title);
+    return [];
+  }
+
+  const allowed = getAllowedSubjectsByDirection(practiceContext.directionKey)
+    .map(k => String(k || '').trim())
+    .filter(Boolean);
+
+  if (!allowed.length) return [];
+
+  practiceActiveTourNo = tourNo;
+  practiceActiveDirectionId = dirId;
+
   const { data: qData, error: qErr } = await supabaseClient
     .from('questions')
-    .select('id, subject, topic, question_text, options_text, type, tour_id, time_limit_seconds, language, difficulty, image_url')
-    .eq('tour_id', normalizedTourId)
+    .select('id, subject, subject_key, subject_tour_no, topic, question_text, options_text, type, tour_id, time_limit_seconds, language, difficulty, image_url')
     .eq('language', currentLang)
+    .eq('subject_tour_no', Number(tourNo))
+    .in('subject_key', allowed)
     .order('id', { ascending: true });
+
+  if (qErr) {
+    console.error('[practice][direction] questions fetch error:', qErr);
+    return [];
+  }
+
+  const result = qData || [];
+  practiceTourQuestionsCache.set(cacheKey, result);
+  return result;
+}
+
+// ✅ Subject practice: как было (по tour_id)
+const { data: qData, error: qErr } = await supabaseClient
+  .from('questions')
+  .select('id, subject, topic, question_text, options_text, type, tour_id, time_limit_seconds, language, difficulty, image_url')
+  .eq('tour_id', normalizedTourId)
+  .eq('language', currentLang)
+  .order('id', { ascending: true });
+
+if (qErr) {
+  console.error('[practice] questions fetch error:', qErr);
+  return [];
+}
+
+const result = qData || [];
+practiceTourQuestionsCache.set(cacheKey, result);
+return result;
+
 
   if (qErr) {
     console.error('[practice] questions fetch error:', qErr);
@@ -732,9 +811,9 @@ async function getCompletedToursForPractice() {
   }
 
   const { data: toursData, error: toursError } = await supabaseClient
-    .from('tours')
-    .select('id, title, start_date, end_date')
-    .order('start_date', { ascending: true });
+  .from('tours')
+  .select('id, title, start_date, end_date, direction_id')
+  .order('start_date', { ascending: true });
 
   if (toursError) {
     console.error('[practice] tours fetch error:', toursError);
@@ -757,7 +836,17 @@ async function getCompletedToursForPractice() {
       .map(row => String(row.tour_id))
   );
 
-  const completedTours = (toursData || []).filter(tour => completedIds.has(String(tour.id)));
+  let scopedTours = (toursData || []).slice();
+
+if (practiceContext.mode === 'direction') {
+  const dirId = getDirectionIdByKey(practiceContext.directionKey);
+  scopedTours = dirId ? scopedTours.filter(t => Number(t.direction_id) === Number(dirId)) : [];
+} else {
+  scopedTours = scopedTours.filter(t => t.direction_id == null);
+}
+
+const completedTours = scopedTours.filter(tour => completedIds.has(String(tour.id)));
+
   practiceCompletedToursCache = { userId: internalDbId, list: completedTours };
   return completedTours;
 }
@@ -1431,9 +1520,10 @@ async function beginPracticeNew(filters) {
   let pool = await getPracticeQuestionsForTour(practiceTourId);
   pool = Array.isArray(pool) ? pool.slice() : [];
 
-  if (practiceTourId) {
-    pool = pool.filter(q => String(q.tour_id) === String(practiceTourId));
-  }
+  // ⚠️ Только для subject-режима: в direction pool уже собран по subject_tour_no + subject_key
+if (practiceTourId && practiceContext.mode !== 'direction') {
+  pool = pool.filter(q => String(q.tour_id) === String(practiceTourId));
+}
 
  const subjects = practiceFilters.subjects || [];
   const subjectSet = new Set(subjects.map(s => normalizeSubjectKey(s)));
@@ -4915,23 +5005,24 @@ questionTimerInterval = setInterval(() => {
 try {
   const subjKey = normalizeSubjectKey(q.subject);
   await supabaseClient.from('user_answers').upsert({
-    user_id: internalDbId,
-    mode: 'practice',
-    tour_id: Number(getPracticeTourIdValue(practiceFilters.practiceTourId)),
-    question_id: Number(q.id),
-    answer: String(selectedAnswer),
-    selected_option: String(selectedAnswer),
-    is_correct: finalIsCorrect,
-    language: currentLang,
-    time_taken_ms: Math.max(0, Math.floor((questionTimeSec || 0) * 1000)),
-    subject_key: subjKey || null
-  }, { onConflict: 'user_id,mode,tour_id,question_id' });
+  user_id: internalDbId,
+  mode: 'practice',
+  tour_id: Number(getPracticeTourIdValue(practiceFilters.practiceTourId)),
+  tour_no: practiceContext.mode === 'direction' ? (practiceActiveTourNo || null) : null,
+  direction_id: practiceContext.mode === 'direction' ? (practiceActiveDirectionId || null) : null,
+  question_id: Number(q.id),
+  answer: String(selectedAnswer),
+  selected_option: String(selectedAnswer),
+  is_correct: finalIsCorrect,
+  language: currentLang,
+  time_taken_ms: Math.max(0, Math.floor((questionTimeSec || 0) * 1000)),
+  subject_key: subjKey || null
+}, { onConflict: 'user_id,mode,tour_id,question_id' });
 } catch (e) {
   console.error('[PRACTICE] save to user_answers failed', e);
 }
 
-    
-    // пересчёт correctCount по practiceAnswers
+       // пересчёт correctCount по practiceAnswers
     correctCount = Object.values(practiceAnswers).filter(x => x && x.isCorrect === true).length;
 
     // сохранить сессию
@@ -5786,6 +5877,7 @@ function shareCertificate() {
   // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
 });
+
 
 
 
