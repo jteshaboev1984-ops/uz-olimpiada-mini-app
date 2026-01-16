@@ -887,6 +887,14 @@ function normalizeSubjectKey(raw) {
   return base;
 }
 
+function getQuestionSubjectKey(q) {
+  // ✅ предпочтительно subject_key из базы
+  const k = String(q?.subject_key || '').trim();
+  if (k) return k;
+  // fallback на старое поле subject
+  return normalizeSubjectKey(q?.subject);
+}
+  
 function sanitizeText(s) {
   return String(s || '')
     .replace(/[\u0000-\u001F\u007F]/g, '')   // control chars
@@ -1526,9 +1534,10 @@ if (practiceTourId && practiceContext.mode !== 'direction') {
 }
 
  const subjects = practiceFilters.subjects || [];
-  const subjectSet = new Set(subjects.map(s => normalizeSubjectKey(s)));
-  if (subjectSet.size && !subjectSet.has('all')) {
-    pool = pool.filter(q => subjectSet.has(normalizeSubjectKey(q.subject)));  
+const subjectSet = new Set(subjects.map(s => normalizeSubjectKey(s)).filter(Boolean));
+
+if (subjectSet.size && !subjectSet.has('all')) {
+  pool = pool.filter(q => subjectSet.has(getQuestionSubjectKey(q)));
 }
 
   if (practiceFilters.difficulty && practiceFilters.difficulty !== 'all') {
@@ -1557,26 +1566,87 @@ if (!unseen.length) {
   return;
 }
 
-let limited = [];
+// ✅ Определяем список “активных предметов” для баланса
+let activeSubjects = [];
 
-if (unseen.length >= targetCount) {
+// если пользователь выбрал конкретные предметы — балансируем по ним
+if (subjectSet.size && !subjectSet.has('all')) {
+  activeSubjects = Array.from(subjectSet);
+} else if (practiceContext.mode === 'direction') {
+  // иначе для направления — по составу направления
+  activeSubjects = (getAllowedSubjectsByDirection(practiceContext.directionKey) || [])
+    .map(s => normalizeSubjectKey(s))
+    .filter(Boolean);
+} else {
+  // subject-mode: один предмет (activeSubject) или по факту пула
+  const key = String(activeSubject || '').trim();
+  activeSubjects = key ? [key] : Array.from(new Set(pool.map(getQuestionSubjectKey).filter(Boolean)));
+}
+
+activeSubjects = activeSubjects.filter(Boolean);
+
+// ✅ Микс сложностей “лесенкой” масштабируем под targetCount
+function scaleMix(mix15, total) {
+  const base = (mix15.easy || 0) + (mix15.medium || 0) + (mix15.hard || 0) || 15;
+  let easy = Math.round(total * (mix15.easy || 0) / base);
+  let medium = Math.round(total * (mix15.medium || 0) / base);
+  let hard = total - easy - medium;
+  if (hard < 0) { hard = 0; medium = Math.max(0, total - easy); }
+  return { easy, medium, hard };
+}
+
+// ✅ берём номер тура из самих вопросов (надежнее, чем tour_id)
+const tourNo = Number((pool[0] && pool[0].subject_tour_no) || 1);
+const mix = scaleMix(getTourDifficultyMix(tourNo), targetCount);
+
+function buildPracticeBlock(src, difficulty, need) {
+  if (need <= 0) return [];
+  const diffPool = (src || []).filter(q => diffRank(q.difficulty) === difficulty);
+  if (!diffPool.length) return [];
+
+  const plan = distributeRoundRobin(activeSubjects, need);
+  let picked = [];
+
+  plan.forEach(({ subject, count }) => {
+    if (count <= 0) return;
+    const sp = diffPool.filter(q => getQuestionSubjectKey(q) === subject);
+    picked = picked.concat(pickNWithRepeats(sp, count));
+  });
+
+  if (picked.length < need) {
+    const remaining = need - picked.length;
+    picked = picked.concat(pickNWithRepeats(diffPool, remaining));
+  }
+
+  if (picked.length > need) picked = picked.slice(0, need);
+  return interleaveByAnswerType(picked);
+}
+
+// ✅ если пользователь зафиксировал difficulty — сохраняем ваш старый подход (только по этой сложности)
+let limited = [];
+if (practiceFilters.difficulty && practiceFilters.difficulty !== 'all') {
   const shuffledUnseen = unseen.slice();
   shuffleArray(shuffledUnseen);
   limited = shuffledUnseen.slice(0, targetCount);
 } else {
-  const shuffledUnseen = unseen.slice();
-  shuffleArray(shuffledUnseen);
-  limited = shuffledUnseen.slice(); // все новые, что есть
+  const easyBlock = buildPracticeBlock(unseen, 'easy', mix.easy);
+  const mediumBlock = buildPracticeBlock(unseen, 'medium', mix.medium);
+  const hardBlock = buildPracticeBlock(unseen, 'hard', mix.hard);
 
-  const remaining = targetCount - limited.length;
-  if (remaining > 0) {
-    // добор из полного пула (повторы разрешены, если новых не хватило)
-    limited = limited.concat(pickNWithRepeats(pool, remaining));
+  limited = ([]).concat(easyBlock, mediumBlock, hardBlock);
+
+  // добор, если где-то не хватило
+  if (limited.length < targetCount) {
+    const remaining = targetCount - limited.length;
+    const fallback = unseen.length ? unseen : pool;
+    limited = limited.concat(pickNWithRepeats(fallback, remaining));
   }
+
+  limited = limited.slice(0, targetCount);
 }
 
-// опционально перемешать итоговый список
 shuffleArray(limited);
+
 
   practiceQuestionOrder = limited.map(q => q.id);
   
