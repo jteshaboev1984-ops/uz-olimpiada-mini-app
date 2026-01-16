@@ -424,6 +424,7 @@ if (homeScreen && !homeScreen.classList.contains('hidden')) {
   showHomeDotsTemporarily(3500);
 }
 updateHomePagerHeight(); // ✅ подгон после перерендера направлений
+  setTimeout(() => syncHomePagerHeight(homePageIndex), 0);
 }   
   
 function normalizeSelectedDirection() {
@@ -3190,10 +3191,13 @@ function renderDirectionInlineStats(card, directionKey) {
     }
 
     function renderAllSubjectCardProgress() {
-        document.querySelectorAll('.subject-card[data-subject]').forEach(card => {
-            renderSubjectCardProgress(card.dataset.subject, card);
-        });
-    }
+  document.querySelectorAll('.subject-card[data-subject]').forEach(card => {
+    renderSubjectCardProgress(card.dataset.subject, card);
+  });
+
+  // ✅ после дорисовки карточек подогнать высоту pager под активную страницу
+  setTimeout(() => syncHomePagerHeight(homePageIndex), 0);
+}
 
     function renderSubjectSelectList(selected) {
         const listEl = document.getElementById('subject-select-list');
@@ -5208,14 +5212,26 @@ function setHomePage(index, { save = true } = {}) {
   track.style.transform = `translateX(-${nextIndex * 100}%)`;
 updateHomePagerDots(nextIndex);
 updateHomeMainButtonByPage();
+syncHomePagerHeight(nextIndex);
+setTimeout(() => syncHomePagerHeight(nextIndex), 0);
+
 showHomeDotsTemporarily(3500);
-updateHomePagerHeight(); // ✅ убирает пустоту до “Ресурсы”
 
   if (save) {
   try { localStorage.setItem('homePageIndex', String(nextIndex)); } catch (e) {}
   }
 } 
 
+function syncHomePagerHeight(activeIndex = homePageIndex) {
+  const pager = document.getElementById('home-pager');
+  const pages = document.querySelectorAll('#home-track .home-page');
+  const activePage = pages?.[activeIndex];
+  if (!pager || !activePage) return;
+
+  // высота по контенту активной страницы
+  pager.style.height = activePage.scrollHeight + 'px';
+}
+  
  function updateHomeMainButtonByPage() {
   // 0 = subjects, 1 = directions
   const isDirections = (homePageIndex === 1);
@@ -5312,6 +5328,8 @@ function initHomePager() {
   // ✅ дорисовать индикаторы, если данные уже в кеше
   renderAllSubjectCardProgress();
   renderDirectionsHomeSection();
+  syncHomePagerHeight(homePageIndex);
+  setTimeout(() => syncHomePagerHeight(homePageIndex), 0);
   showHomeDotsTemporarily(3500);  
 }
 
@@ -5761,9 +5779,14 @@ function shareCertificate() {
     isTestActive = false;
   });
 
+  window.addEventListener('resize', () => {
+  syncHomePagerHeight(homePageIndex);
+});
+
   // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
 });
+
 
 
 
