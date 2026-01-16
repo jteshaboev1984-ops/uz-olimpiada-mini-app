@@ -821,27 +821,23 @@ return result;
   }
 
   // ✅ completedIds по факту наличия строки прогресса (score может быть 0)
-  const completedIds = new Set(
-    (progressData || [])
-      .filter(row => row && row.tour_id != null)
-      .map(row => String(row.tour_id))
-  );
+ const now = Date.now();
 
-  let scopedTours = (toursData || []).slice();
+function toMs(v) {
+  const t = new Date(v).getTime();
+  return Number.isFinite(t) ? t : null;
+}
 
-  if (practiceContext.mode === 'direction') {
-    const dirId = getDirectionIdByKey(practiceContext.directionKey);
-    scopedTours = dirId ? scopedTours.filter(t => Number(t.direction_id) === Number(dirId)) : [];
-  } else {
-    scopedTours = scopedTours.filter(t => t.direction_id == null);
-  }
+// ✅ “завершённые” = end_date <= сейчас
+const dateCompletedTours = scopedTours.filter(t => {
+  const endMs = toMs(t.end_date);
+  return endMs != null && endMs <= now;
+});
 
-  const completedTours = scopedTours.filter(tour => completedIds.has(String(tour.id)));
+practiceCompletedToursCache.userId = internalDbId;
+practiceCompletedToursCache.list = dateCompletedTours;
 
-  practiceCompletedToursCache.userId = internalDbId;
-  practiceCompletedToursCache.list = completedTours;
-
-  return completedTours;
+return dateCompletedTours;
 }
   
 function normalizeSubjectKey(raw) {
@@ -5940,6 +5936,7 @@ function shareCertificate() {
   // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
 });
+
 
 
 
