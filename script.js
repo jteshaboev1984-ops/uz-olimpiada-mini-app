@@ -792,7 +792,7 @@ if (qErr) {
 const result = qData || [];
 practiceTourQuestionsCache.set(cacheKey, result);
 return result;
-
+}
 
   if (qErr) {
     console.error('[practice] questions fetch error:', qErr);
@@ -5947,6 +5947,7 @@ function shareCertificate() {
   // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
 });
+
 
 
 
