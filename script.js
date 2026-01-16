@@ -132,7 +132,7 @@ let practiceStopwatchInterval = null;
 let practiceReturnScreen = 'cabinet-screen';
 let reviewReturnScreen = 'cabinet-screen';
 let practiceTourQuestionsCache = new Map();
-let practiceCompletedToursCache = { userId: null, list: [] };
+let practiceCompletedToursCache = { userId: null, scopeKey: null, list: [] };
   // === TIMERS & BEHAVIOR METRICS ===
 
 // total test timer
@@ -188,6 +188,13 @@ function getPracticeTourIdValue(raw) {
   return str;
 }
 
+function getPracticeScopeKey() {
+  if (practiceContext.mode === 'direction') {
+    return `direction:${String(practiceContext.directionKey || '')}`;
+  }
+  return 'subject';
+}
+  
 function practiceStorageKey(practiceTourId) {
   const tourKey = getPracticeTourIdValue(practiceTourId) || String(currentTourId || '');
   return `practice_v1:${internalDbId}:${tourKey}:${currentLang}`;
@@ -720,7 +727,7 @@ if (String(normalizedTourId) === String(currentTourId)) {
 }
 
 
-  const cacheKey = `${normalizedTourId}:${currentLang}`;
+  const cacheKey = `${normalizedTourId}:${currentLang}:${getPracticeScopeKey()}`;
   if (practiceTourQuestionsCache.has(cacheKey)) {
     return practiceTourQuestionsCache.get(cacheKey);
   }
@@ -796,7 +803,11 @@ return result;
 
  async function getCompletedToursForPractice() {
   if (!internalDbId) return [];
-  if (practiceCompletedToursCache.userId === internalDbId && practiceCompletedToursCache.list.length) {
+  if (practiceCompletedToursCache.userId === internalDbId &&
+     practiceCompletedToursCache.scopeKey === scopeKey &&
+     practiceCompletedToursCache.list.length) {
+    return practiceCompletedToursCache.list;
+  }
     return practiceCompletedToursCache.list;
   }
 
@@ -845,8 +856,9 @@ if (practiceContext.mode === 'direction') {
  });
 
 practiceCompletedToursCache.userId = internalDbId;
+practiceCompletedToursCache.scopeKey = scopeKey;
 practiceCompletedToursCache.list = dateCompletedTours;
-
+  
 return dateCompletedTours;
 }
   
@@ -863,19 +875,33 @@ function normalizeSubjectKey(raw) {
 
   // 3) Маппинг вариантов написания в единые ключи
   const map = {
-    math: ['matematika', 'математика', 'math', 'mathematics'],
-    physics: ['fizika', 'физика', 'physics', 'phys'],
-    chem: ['kimyo', 'химия', 'chem', 'chemistry'],
-    bio:  ['biologiya', 'биология', 'bio', 'biology'],
-    it:   ['informatika', 'информатика', 'it', 'computer science', 'cs', 'computer_science'],
-    thinking_skills: ['thinking_skills', 'thinking skills', 'мышление', 'логика', 'critical thinking'],
-    global_perspectives: ['global_perspectives', 'global perspectives', 'global', 'perspectives'],
-    business: ['business', 'biznes', 'бизнес'],
-    accounting: ['accounting', 'buxgalteriya', 'бухгалтерия'],
-    eco:  ['iqtisodiyot', 'экономика', 'eco', 'economics', 'economy'],
-    sat:  ['sat'],
-    ielts:['ielts']
-  };
+  // ✅ канон: math
+  math: ['matematika', 'математика', 'math', 'mathematics'],
+
+  physics: ['fizika', 'физика', 'physics', 'phys'],
+
+  // ✅ канон: chemistry (НЕ chem)
+  chemistry: ['kimyo', 'химия', 'chem', 'chemistry'],
+
+  // ✅ канон: biology (НЕ bio)
+  biology: ['biologiya', 'биология', 'bio', 'biology'],
+
+  // ✅ канон: computer_science (НЕ it)
+  computer_science: ['informatika', 'информатика', 'it', 'computer science', 'cs', 'computer_science'],
+
+  thinking_skills: ['thinking_skills', 'thinking skills', 'мышление', 'логика', 'critical thinking'],
+  global_perspectives: ['global_perspectives', 'global perspectives', 'global', 'perspectives'],
+
+  business: ['business', 'biznes', 'бизнес'],
+  accounting: ['accounting', 'buxgalteriya', 'бухгалтерия'],
+
+  // ✅ канон: economics (НЕ eco)
+  economics: ['iqtisodiyot', 'экономика', 'eco', 'economics', 'economy'],
+
+  sat: ['sat'],
+  ielts: ['ielts']
+};
+
 
 
   for (const [key, arr] of Object.entries(map)) {
@@ -887,10 +913,8 @@ function normalizeSubjectKey(raw) {
 }
 
 function getQuestionSubjectKey(q) {
-  // ✅ предпочтительно subject_key из базы
   const k = String(q?.subject_key || '').trim();
-  if (k) return k;
-  // fallback на старое поле subject
+  if (k) return normalizeSubjectKey(k); // ✅ ключ из БД тоже приводим к канону
   return normalizeSubjectKey(q?.subject);
 }
   
@@ -1649,19 +1673,33 @@ if (practiceFilters.difficulty && practiceFilters.difficulty !== 'all') {
   const mediumBlock = buildPracticeBlock(unseen, 'medium', mix.medium);
   const hardBlock = buildPracticeBlock(unseen, 'hard', mix.hard);
 
-  limited = ([]).concat(easyBlock, mediumBlock, hardBlock);
+  // ✅ собираем blocks, но выдаём "лесенкой": easy -> medium -> hard -> repeat
+const blocks = {
+  easy: easyBlock.slice(),
+  medium: mediumBlock.slice(),
+  hard: hardBlock.slice()
+};
 
-  // добор, если где-то не хватило
-  if (limited.length < targetCount) {
-    const remaining = targetCount - limited.length;
-    const fallback = unseen.length ? unseen : pool;
-    limited = limited.concat(pickNWithRepeats(fallback, remaining));
+limited = [];
+const order = ['easy', 'medium', 'hard'];
+
+while (limited.length < targetCount && (blocks.easy.length || blocks.medium.length || blocks.hard.length)) {
+  for (const d of order) {
+    if (limited.length >= targetCount) break;
+    if (blocks[d].length) limited.push(blocks[d].shift());
   }
-
-  limited = limited.slice(0, targetCount);
 }
 
-shuffleArray(limited);
+// добор, если где-то не хватило
+if (limited.length < targetCount) {
+  const remaining = targetCount - limited.length;
+  const fallback = unseen.length ? unseen : pool;
+  limited = limited.concat(pickNWithRepeats(fallback, remaining));
+}
+
+limited = limited.slice(0, targetCount);
+
+// ❌ shuffleArray(limited);  // УБРАТЬ: он ломает лесенку
 
 
   practiceQuestionOrder = limited.map(q => q.id);
@@ -5962,6 +6000,7 @@ function shareCertificate() {
   // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
 });
+
 
 
 
