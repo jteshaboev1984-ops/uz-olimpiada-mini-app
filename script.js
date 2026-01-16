@@ -794,17 +794,7 @@ practiceTourQuestionsCache.set(cacheKey, result);
 return result;
 }
 
-  if (qErr) {
-    console.error('[practice] questions fetch error:', qErr);
-    return [];
-  }
-
-  const result = qData || [];
-  practiceTourQuestionsCache.set(cacheKey, result);
-  return result;
-}
-
-async function getCompletedToursForPractice() {
+  async function getCompletedToursForPractice() {
   if (!internalDbId) return [];
   if (practiceCompletedToursCache.userId === internalDbId && practiceCompletedToursCache.list.length) {
     return practiceCompletedToursCache.list;
@@ -5947,6 +5937,7 @@ function shareCertificate() {
   // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
 });
+
 
 
 
