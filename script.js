@@ -839,8 +839,10 @@ if (practiceContext.mode === 'direction') {
 }
 
 // дальше уже можно:
-const dateCompletedTours = scopedTours.filter(t => { ... });
-
+ const dateCompletedTours = scopedTours.filter(t => {
+   const endMs = toMs(t.end_date);
+   return endMs !== null && endMs <= now;
+ });
 
 practiceCompletedToursCache.userId = internalDbId;
 practiceCompletedToursCache.list = dateCompletedTours;
@@ -5944,6 +5946,7 @@ function shareCertificate() {
   // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
 });
+
 
 
 
