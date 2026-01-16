@@ -917,6 +917,23 @@ function escapeHTML(value) {
     .replace(/'/g, '&#039;');
 }
 
+function parseOptionsText(optionsText) {
+  if (!optionsText || typeof optionsText !== 'string') return [];
+
+  return optionsText
+    .split('\n')
+    .map(s => s.trim())
+    .filter(Boolean)
+    .map(line => {
+      // убираем "A)", "B.", "C -" и т.п.
+      const m = line.match(/^([A-ZА-Я])[\)\.\-:\s]+(.+)$/i);
+      return {
+        letter: m ? m[1].toUpperCase() : null,
+        text: m ? m[2].trim() : line
+      };
+    });
+}
+  
 function subjectDisplayName(key) {
   // key уже lower-case
   const k = String(key || '').toLowerCase();
@@ -4472,9 +4489,8 @@ function pickNWithRepeats(arr, n) {
 
 function getAnswerType(q) {
   if (!q) return 'input';
-  const optionsText = typeof q.options_text === 'string' ? q.options_text.trim() : '';
-  const options = Array.isArray(q.options) ? q.options : [];
-  if (optionsText.length > 0 || options.length > 0) return 'choice';
+  const options = parseOptionsText(q.options_text);
+  if (options.length > 0) return 'choice';
   return 'input';
 }
 
@@ -4981,30 +4997,30 @@ questionTimerInterval = setInterval(() => {
           }
         }
 
-        const optionsText = (q.options_text || '').trim();
-        if (optionsText !== '') {
-            const options = optionsText.split('\n');
-            const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
-            options.forEach((option, index) => {
-                if (option.trim()) {
-                    const letter = letters[index] || '';
-                    const btn = document.createElement('div');
-                    btn.className = 'option-card';
-                    btn.innerHTML = `<div class="option-circle">${letter}</div><div class="option-text">${option.trim()}</div>`;
-                    btn.onclick = () => {
-                        document.querySelectorAll('.option-card').forEach(b => b.classList.remove('selected'));
-                        btn.classList.add('selected');
-                        const optText = option.trim();
-                        const isLetterOption = optText.match(/^[A-DА-Г][)\.\s]/i);
-                        selectedAnswer = isLetterOption ? optText.charAt(0).toUpperCase() : optText;
-                        if (!selectedAnswer && letter) selectedAnswer = letter;
-                        if (!selectedAnswer) selectedAnswer = optText;
-                        hideAnswerRequiredToast();
-                    };
-                    container.appendChild(btn);
-                }
-            });
-        } else {
+        const options = parseOptionsText(q.options_text);
+
+if (options.length > 0) {
+    options.forEach((opt, index) => {
+        const letter = opt.letter || String.fromCharCode(65 + index);
+
+        const btn = document.createElement('div');
+        btn.className = 'option-card';
+        btn.innerHTML = `
+          <div class="option-circle">${letter}</div>
+          <div class="option-text">${escapeHTML(opt.text)}</div>
+        `;
+
+        btn.onclick = () => {
+            document.querySelectorAll('.option-card').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            selectedAnswer = letter; // 🔥 ВСЕГДА буква
+            hideAnswerRequiredToast();
+        };
+
+        container.appendChild(btn);
+    });
+}
+ else {
             const textarea = document.createElement('textarea');
             textarea.className = 'answer-input';
             textarea.placeholder = t('answer_placeholder');
@@ -5946,6 +5962,7 @@ function shareCertificate() {
   // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
 });
+
 
 
 
