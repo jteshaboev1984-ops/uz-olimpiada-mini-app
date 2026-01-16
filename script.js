@@ -921,7 +921,7 @@ function parseOptionsText(optionsText) {
   if (!optionsText || typeof optionsText !== 'string') return [];
 
   return optionsText
-    .split('\n')
+    .split(/\\n|\n/)
     .map(s => s.trim())
     .filter(Boolean)
     .map(line => {
@@ -5962,6 +5962,7 @@ function shareCertificate() {
   // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
 });
+
 
 
 
