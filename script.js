@@ -842,6 +842,7 @@ practiceCompletedToursCache.scopeKey = scopeKey;
 practiceCompletedToursCache.list = filteredTours;
 
 return filteredTours;
+}
   
 function normalizeSubjectKey(raw) {
   const s = String(raw || '').trim();
@@ -5974,4 +5975,5 @@ function shareCertificate() {
   // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
 });
+
 
