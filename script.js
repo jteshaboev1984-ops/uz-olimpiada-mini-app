@@ -788,7 +788,6 @@ async function getPracticeQuestionsForTour(practiceTourId) {
   const result = qData || [];
   practiceTourQuestionsCache.set(cacheKey, result);
   return result;
-}
 
 // ✅ Subject practice: как было (по tour_id)
 const { data: qData, error: qErr } = await supabaseClient
@@ -5986,6 +5985,7 @@ function shareCertificate() {
   // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
 });
+
 
 
 
