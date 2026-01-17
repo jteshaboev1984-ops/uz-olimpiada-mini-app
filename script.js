@@ -5963,7 +5963,7 @@ function shareCertificate() {
 
   // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
-});
+
 
 
 
