@@ -1,8 +1,18 @@
+console.log('[APP] script loaded', APP_VERSION, document.readyState);
+
 const APP_VERSION = '1.0';
 // TEMP: режим теста (показывать все направления)
 const DEV_UNLOCK_ALL_DIRECTIONS = true;
 
-document.addEventListener('DOMContentLoaded', function () {
+function onDomReady(fn) {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', fn, { once: true });
+  } else {
+    fn();
+  }
+}
+
+onDomReady(function () {
 
   // ✅ ВАЖНО: объявляем ДО использования
   let telegramUserId = null;
@@ -5986,6 +5996,7 @@ window.addEventListener('resize', () => {
   startApp();
   }
 });
+
 
 
 
