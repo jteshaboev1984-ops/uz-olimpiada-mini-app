@@ -715,11 +715,9 @@ async function loadPracticeSeenIdsFromDb(practiceTourId, subjectKeys) {
   }
 }
   
-async function getPracticeQuestionsForTour(practiceTourId) {
+  async function getPracticeQuestionsForTour(practiceTourId) {
   const normalizedTourId = getPracticeTourIdValue(practiceTourId);
-  if (!normalizedTourId) {
-    return [];
-  }
+  if (!normalizedTourId) return [];
 
   // если это текущий тур — используем полный кеш вопросов тура, а не выбранный пул
   if (String(normalizedTourId) === String(currentTourId)) {
@@ -737,7 +735,6 @@ async function getPracticeQuestionsForTour(practiceTourId) {
     const dirId = getDirectionIdByKey(practiceContext.directionKey);
     if (!dirId) return [];
 
-    // убеждаемся что тур принадлежит направлению и вытаскиваем tour_no
     const { data: tRow, error: tErr } = await supabaseClient
       .from('tours')
       .select('id, title, direction_id')
@@ -750,7 +747,6 @@ async function getPracticeQuestionsForTour(practiceTourId) {
     const tourNo = parseTourNoFromTitle(tRow.title);
     if (!tourNo) return [];
 
-    // ✅ subject_key должны быть канонизированы
     const allowed = getAllowedSubjectsByDirection(practiceContext.directionKey)
       .map(k => normalizeSubjectKey(k))
       .filter(Boolean);
@@ -788,23 +784,6 @@ async function getPracticeQuestionsForTour(practiceTourId) {
   const result = qData || [];
   practiceTourQuestionsCache.set(cacheKey, result);
   return result;
-
-// ✅ Subject practice: как было (по tour_id)
-const { data: qData, error: qErr } = await supabaseClient
-  .from('questions')
-  .select('id, subject, topic, question_text, options_text, type, tour_id, time_limit_seconds, language, difficulty, image_url')
-  .eq('tour_id', normalizedTourId)
-  .eq('language', currentLang)
-  .order('id', { ascending: true });
-
-if (qErr) {
-  console.error('[practice] questions fetch error:', qErr);
-  return [];
-}
-
-const result = qData || [];
-practiceTourQuestionsCache.set(cacheKey, result);
-return result;
 }
 
 async function getCompletedToursForPractice() {
@@ -5985,6 +5964,7 @@ function shareCertificate() {
   // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
 });
+
 
 
 
