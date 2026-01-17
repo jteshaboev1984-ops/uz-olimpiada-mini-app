@@ -820,18 +820,28 @@ async function getCompletedToursForPractice() {
     return Number.isFinite(t) ? t : null;
   };
 
-  // ✅ доступно только завершённое по end_date
   const dateCompletedTours = scopedTours.filter(t => {
-    const endMs = toMs(t.end_date);
-    return endMs !== null && endMs <= now;
-  });
+  const endMs = toMs(t.end_date);
+  return endMs !== null && endMs <= now;
+});
 
-  practiceCompletedToursCache.userId = internalDbId;
-  practiceCompletedToursCache.scopeKey = scopeKey;
-  practiceCompletedToursCache.list = dateCompletedTours;
+// ✅ completedIds: туры, где у пользователя вообще есть запись в tour_progress
+const completedIds = new Set(
+  (progressData || [])
+    .map(row => Number(row?.tour_id))
+    .filter(id => Number.isFinite(id))
+);
 
-  return dateCompletedTours;
-}
+// ✅ если записей в tour_progress нет — показываем все завершённые по дате
+const filteredTours = completedIds.size
+  ? dateCompletedTours.filter(t => completedIds.has(Number(t.id)))
+  : dateCompletedTours;
+
+practiceCompletedToursCache.userId = internalDbId;
+practiceCompletedToursCache.scopeKey = scopeKey;
+practiceCompletedToursCache.list = filteredTours;
+
+return filteredTours;
   
 function normalizeSubjectKey(raw) {
   const s = String(raw || '').trim();
@@ -5964,3 +5974,4 @@ function shareCertificate() {
   // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
 });
+
