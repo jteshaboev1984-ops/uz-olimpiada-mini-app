@@ -803,9 +803,27 @@ async function getCompletedToursForPractice() {
     .select('id, title, start_date, end_date, direction_id')
     .order('start_date', { ascending: true });
 
-  if (toursError) return [];
+  if (toursError) {
+    console.error('[practice] tours fetch error:', toursError);
+    return [];
+  }
 
-  // scope: subject vs direction
+  const { data: progressData, error: progressError } = await supabaseClient
+    .from('tour_progress')
+    .select('tour_id, score, mode, tour_no, direction_id, subject')
+    .eq('user_id', internalDbId);
+
+  if (progressError) {
+    console.error('[practice] progress fetch error:', progressError);
+    return [];
+  }
+
+  const now = Date.now();
+  function toMs(v) {
+    const t = new Date(v).getTime();
+    return Number.isFinite(t) ? t : null;
+  }
+
   let scopedTours = (toursData || []).slice();
   if (practiceContext.mode === 'direction') {
     const dirId = getDirectionIdByKey(practiceContext.directionKey);
@@ -814,34 +832,26 @@ async function getCompletedToursForPractice() {
     scopedTours = scopedTours.filter(t => t.direction_id == null);
   }
 
-  const now = Date.now();
-  const toMs = (v) => {
-    const t = new Date(v).getTime();
-    return Number.isFinite(t) ? t : null;
-  };
-
   const dateCompletedTours = scopedTours.filter(t => {
-  const endMs = toMs(t.end_date);
-  return endMs !== null && endMs <= now;
-});
+    const endMs = toMs(t.end_date);
+    return endMs !== null && endMs <= now;
+  });
 
-// ✅ completedIds: туры, где у пользователя вообще есть запись в tour_progress
-const completedIds = new Set(
-  (progressData || [])
-    .map(row => Number(row?.tour_id))
-    .filter(id => Number.isFinite(id))
-);
+  const completedIds = new Set(
+    (progressData || [])
+      .map(row => Number(row?.tour_id))
+      .filter(id => Number.isFinite(id))
+  );
 
-// ✅ если записей в tour_progress нет — показываем все завершённые по дате
-const filteredTours = completedIds.size
-  ? dateCompletedTours.filter(t => completedIds.has(Number(t.id)))
-  : dateCompletedTours;
+  const filteredTours = completedIds.size
+    ? dateCompletedTours.filter(t => completedIds.has(Number(t.id)))
+    : dateCompletedTours;
 
-practiceCompletedToursCache.userId = internalDbId;
-practiceCompletedToursCache.scopeKey = scopeKey;
-practiceCompletedToursCache.list = filteredTours;
+  practiceCompletedToursCache.userId = internalDbId;
+  practiceCompletedToursCache.scopeKey = scopeKey;
+  practiceCompletedToursCache.list = filteredTours;
 
-return filteredTours;
+  return filteredTours;
 }
   
 function normalizeSubjectKey(raw) {
@@ -5975,5 +5985,6 @@ function shareCertificate() {
   // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
 });
+
 
 
