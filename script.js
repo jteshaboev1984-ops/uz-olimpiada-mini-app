@@ -5978,13 +5978,15 @@ function shareCertificate() {
     isTestActive = false;
   });
 
-  window.addEventListener('resize', () => {
+window.addEventListener('resize', () => {
   syncHomePagerHeight(homePageIndex);
 });
 
-  // Запускаем нашу безопасную функцию после загрузки DOM
+    // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
+  }
 });
+
 
 
 
