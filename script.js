@@ -718,65 +718,72 @@ async function loadPracticeSeenIdsFromDb(practiceTourId, subjectKeys) {
 async function getPracticeQuestionsForTour(practiceTourId) {
   const normalizedTourId = getPracticeTourIdValue(practiceTourId);
   if (!normalizedTourId) {
-  return [];
-}
+    return [];
+  }
 
-// если это текущий тур — используем полный кеш вопросов тура, а не выбранный пул
-if (String(normalizedTourId) === String(currentTourId)) {
-  return tourQuestionsAllCache || tourQuestionsCache || [];
-}
+  // если это текущий тур — используем полный кеш вопросов тура, а не выбранный пул
+  if (String(normalizedTourId) === String(currentTourId)) {
+    return tourQuestionsAllCache || tourQuestionsCache || [];
+  }
 
-
+  // ✅ кэш должен учитывать scope (subject vs direction)
   const cacheKey = `${normalizedTourId}:${currentLang}:${getPracticeScopeKey()}`;
   if (practiceTourQuestionsCache.has(cacheKey)) {
     return practiceTourQuestionsCache.get(cacheKey);
   }
 
   // ✅ Direction practice: questions из общего банка по subject_key + subject_tour_no
-if (practiceContext.mode === 'direction') {
-  const dirId = getDirectionIdByKey(practiceContext.directionKey);
-  if (!dirId) return [];
+  if (practiceContext.mode === 'direction') {
+    const dirId = getDirectionIdByKey(practiceContext.directionKey);
+    if (!dirId) return [];
 
-  // 1) убедимся, что выбранный practiceTourId — это тур ЭТОГО направления, и вытащим tour_no
-  const { data: tRow, error: tErr } = await supabaseClient
-    .from('tours')
-    .select('id, title, direction_id')
-    .eq('id', Number(normalizedTourId))
-    .eq('direction_id', Number(dirId))
-    .maybeSingle();
+    // убеждаемся что тур принадлежит направлению и вытаскиваем tour_no
+    const { data: tRow, error: tErr } = await supabaseClient
+      .from('tours')
+      .select('id, title, direction_id')
+      .eq('id', Number(normalizedTourId))
+      .eq('direction_id', Number(dirId))
+      .maybeSingle();
 
-  if (tErr || !tRow) {
-    console.warn('[practice][direction] tour not found for direction:', { normalizedTourId, dirId, tErr });
-    return [];
+    if (tErr || !tRow) return [];
+
+    const tourNo = parseTourNoFromTitle(tRow.title);
+    if (!tourNo) return [];
+
+    // ✅ subject_key должны быть канонизированы
+    const allowed = getAllowedSubjectsByDirection(practiceContext.directionKey)
+      .map(k => normalizeSubjectKey(k))
+      .filter(Boolean);
+
+    if (!allowed.length) return [];
+
+    practiceActiveTourNo = tourNo;
+    practiceActiveDirectionId = dirId;
+
+    const { data: qData, error: qErr } = await supabaseClient
+      .from('questions')
+      .select('id, subject, subject_key, subject_tour_no, topic, question_text, options_text, type, tour_id, time_limit_seconds, language, difficulty, image_url')
+      .eq('language', currentLang)
+      .eq('subject_tour_no', Number(tourNo))
+      .in('subject_key', allowed)
+      .order('id', { ascending: true });
+
+    if (qErr) return [];
+
+    const result = qData || [];
+    practiceTourQuestionsCache.set(cacheKey, result);
+    return result;
   }
 
-  const tourNo = parseTourNoFromTitle(tRow.title);
-  if (!tourNo) {
-    console.warn('[practice][direction] cannot parse tour_no from title:', tRow.title);
-    return [];
-  }
-
-  const allowed = getAllowedSubjectsByDirection(practiceContext.directionKey)
-    .map(k => String(k || '').trim())
-    .filter(Boolean);
-
-  if (!allowed.length) return [];
-
-  practiceActiveTourNo = tourNo;
-  practiceActiveDirectionId = dirId;
-
+  // ✅ Subject practice: по tour_id
   const { data: qData, error: qErr } = await supabaseClient
     .from('questions')
-    .select('id, subject, subject_key, subject_tour_no, topic, question_text, options_text, type, tour_id, time_limit_seconds, language, difficulty, image_url')
+    .select('id, subject, subject_key, topic, question_text, options_text, type, tour_id, time_limit_seconds, language, difficulty, image_url')
+    .eq('tour_id', Number(normalizedTourId))
     .eq('language', currentLang)
-    .eq('subject_tour_no', Number(tourNo))
-    .in('subject_key', allowed)
     .order('id', { ascending: true });
 
-  if (qErr) {
-    console.error('[practice][direction] questions fetch error:', qErr);
-    return [];
-  }
+  if (qErr) return [];
 
   const result = qData || [];
   practiceTourQuestionsCache.set(cacheKey, result);
@@ -818,53 +825,34 @@ async function getCompletedToursForPractice() {
     .select('id, title, start_date, end_date, direction_id')
     .order('start_date', { ascending: true });
 
-  if (toursError) {
-    console.error('[practice] tours fetch error:', toursError);
-    return [];
+  if (toursError) return [];
+
+  // scope: subject vs direction
+  let scopedTours = (toursData || []).slice();
+  if (practiceContext.mode === 'direction') {
+    const dirId = getDirectionIdByKey(practiceContext.directionKey);
+    scopedTours = dirId ? scopedTours.filter(t => Number(t.direction_id) === Number(dirId)) : [];
+  } else {
+    scopedTours = scopedTours.filter(t => t.direction_id == null);
   }
 
-  // дальше у тебя идёт логика фильтрации (scopedTours + end_date <= now)
-}
+  const now = Date.now();
+  const toMs = (v) => {
+    const t = new Date(v).getTime();
+    return Number.isFinite(t) ? t : null;
+  };
 
-  const { data: progressData, error: progressError } = await supabaseClient
-    .from('tour_progress')
-    .select('tour_id, score, mode, tour_no, direction_id, subject')
-    .eq('user_id', internalDbId);
+  // ✅ доступно только завершённое по end_date
+  const dateCompletedTours = scopedTours.filter(t => {
+    const endMs = toMs(t.end_date);
+    return endMs !== null && endMs <= now;
+  });
 
-  if (progressError) {
-    console.error('[practice] progress fetch error:', progressError);
-    return [];
-  }
+  practiceCompletedToursCache.userId = internalDbId;
+  practiceCompletedToursCache.scopeKey = scopeKey;
+  practiceCompletedToursCache.list = dateCompletedTours;
 
-  // ✅ completedIds по факту наличия строки прогресса (score может быть 0)
- const now = Date.now();
-
-function toMs(v) {
-  const t = new Date(v).getTime();
-  return Number.isFinite(t) ? t : null;
-}
-
-// ✅ “завершённые” = end_date <= сейчас
-let scopedTours = (toursData || []).slice();
-
-if (practiceContext.mode === 'direction') {
-  const dirId = getDirectionIdByKey(practiceContext.directionKey);
-  scopedTours = dirId ? scopedTours.filter(t => Number(t.direction_id) === Number(dirId)) : [];
-} else {
-  scopedTours = scopedTours.filter(t => t.direction_id == null);
-}
-
-// дальше уже можно:
- const dateCompletedTours = scopedTours.filter(t => {
-   const endMs = toMs(t.end_date);
-   return endMs !== null && endMs <= now;
- });
-
-practiceCompletedToursCache.userId = internalDbId;
-practiceCompletedToursCache.scopeKey = scopeKey;
-practiceCompletedToursCache.list = dateCompletedTours;
-  
-return dateCompletedTours;
+  return dateCompletedTours;
 }
   
 function normalizeSubjectKey(raw) {
@@ -880,18 +868,13 @@ function normalizeSubjectKey(raw) {
 
   // 3) Маппинг вариантов написания в единые ключи
   const map = {
-  // ✅ канон: math
+  // ✅ канон как в БД
   math: ['matematika', 'математика', 'math', 'mathematics'],
-
   physics: ['fizika', 'физика', 'physics', 'phys'],
 
-  // ✅ канон: chemistry (НЕ chem)
   chemistry: ['kimyo', 'химия', 'chem', 'chemistry'],
-
-  // ✅ канон: biology (НЕ bio)
   biology: ['biologiya', 'биология', 'bio', 'biology'],
 
-  // ✅ канон: computer_science (НЕ it)
   computer_science: ['informatika', 'информатика', 'it', 'computer science', 'cs', 'computer_science'],
 
   thinking_skills: ['thinking_skills', 'thinking skills', 'мышление', 'логика', 'critical thinking'],
@@ -900,13 +883,11 @@ function normalizeSubjectKey(raw) {
   business: ['business', 'biznes', 'бизнес'],
   accounting: ['accounting', 'buxgalteriya', 'бухгалтерия'],
 
-  // ✅ канон: economics (НЕ eco)
   economics: ['iqtisodiyot', 'экономика', 'eco', 'economics', 'economy'],
 
   sat: ['sat'],
   ielts: ['ielts']
 };
-
 
 
   for (const [key, arr] of Object.entries(map)) {
@@ -6005,6 +5986,7 @@ function shareCertificate() {
   // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
 });
+
 
 
 
