@@ -1,18 +1,8 @@
-console.log('[APP] script loaded', APP_VERSION, document.readyState);
-
 const APP_VERSION = '1.0';
 // TEMP: режим теста (показывать все направления)
 const DEV_UNLOCK_ALL_DIRECTIONS = true;
 
-function onDomReady(fn) {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', fn, { once: true });
-  } else {
-    fn();
-  }
-}
-
-onDomReady(function () {
+document.addEventListener('DOMContentLoaded', function () {
 
   // ✅ ВАЖНО: объявляем ДО использования
   let telegramUserId = null;
@@ -142,7 +132,7 @@ let practiceStopwatchInterval = null;
 let practiceReturnScreen = 'cabinet-screen';
 let reviewReturnScreen = 'cabinet-screen';
 let practiceTourQuestionsCache = new Map();
-let practiceCompletedToursCache = { userId: null, scopeKey: null, list: [] };
+let practiceCompletedToursCache = { userId: null, list: [] };
   // === TIMERS & BEHAVIOR METRICS ===
 
 // total test timer
@@ -198,13 +188,6 @@ function getPracticeTourIdValue(raw) {
   return str;
 }
 
-function getPracticeScopeKey() {
-  if (practiceContext.mode === 'direction') {
-    return `direction:${String(practiceContext.directionKey || '')}`;
-  }
-  return 'subject';
-}
-  
 function practiceStorageKey(practiceTourId) {
   const tourKey = getPracticeTourIdValue(practiceTourId) || String(currentTourId || '');
   return `practice_v1:${internalDbId}:${tourKey}:${currentLang}`;
@@ -725,86 +708,95 @@ async function loadPracticeSeenIdsFromDb(practiceTourId, subjectKeys) {
   }
 }
   
-  async function getPracticeQuestionsForTour(practiceTourId) {
+async function getPracticeQuestionsForTour(practiceTourId) {
   const normalizedTourId = getPracticeTourIdValue(practiceTourId);
-  if (!normalizedTourId) return [];
+  if (!normalizedTourId) {
+  return [];
+}
 
-  // если это текущий тур — используем полный кеш вопросов тура, а не выбранный пул
-  if (String(normalizedTourId) === String(currentTourId)) {
-    return tourQuestionsAllCache || tourQuestionsCache || [];
-  }
+// если это текущий тур — используем полный кеш вопросов тура, а не выбранный пул
+if (String(normalizedTourId) === String(currentTourId)) {
+  return tourQuestionsAllCache || tourQuestionsCache || [];
+}
 
-  // ✅ кэш должен учитывать scope (subject vs direction)
-  const cacheKey = `${normalizedTourId}:${currentLang}:${getPracticeScopeKey()}`;
+
+  const cacheKey = `${normalizedTourId}:${currentLang}`;
   if (practiceTourQuestionsCache.has(cacheKey)) {
     return practiceTourQuestionsCache.get(cacheKey);
   }
 
   // ✅ Direction practice: questions из общего банка по subject_key + subject_tour_no
-  if (practiceContext.mode === 'direction') {
-    const dirId = getDirectionIdByKey(practiceContext.directionKey);
-    if (!dirId) return [];
+if (practiceContext.mode === 'direction') {
+  const dirId = getDirectionIdByKey(practiceContext.directionKey);
+  if (!dirId) return [];
 
-    const { data: tRow, error: tErr } = await supabaseClient
-      .from('tours')
-      .select('id, title, direction_id')
-      .eq('id', Number(normalizedTourId))
-      .eq('direction_id', Number(dirId))
-      .maybeSingle();
+  // 1) убедимся, что выбранный practiceTourId — это тур ЭТОГО направления, и вытащим tour_no
+  const { data: tRow, error: tErr } = await supabaseClient
+    .from('tours')
+    .select('id, title, direction_id')
+    .eq('id', Number(normalizedTourId))
+    .eq('direction_id', Number(dirId))
+    .maybeSingle();
 
-    if (tErr || !tRow) return [];
-
-    const tourNo = parseTourNoFromTitle(tRow.title);
-    if (!tourNo) return [];
-
-    const allowed = getAllowedSubjectsByDirection(practiceContext.directionKey)
-      .map(k => normalizeSubjectKey(k))
-      .filter(Boolean);
-
-    if (!allowed.length) return [];
-
-    practiceActiveTourNo = tourNo;
-    practiceActiveDirectionId = dirId;
-
-    const { data: qData, error: qErr } = await supabaseClient
-      .from('questions')
-      .select('id, subject, subject_key, subject_tour_no, topic, question_text, options_text, type, tour_id, time_limit_seconds, language, difficulty, image_url')
-      .eq('language', currentLang)
-      .eq('subject_tour_no', Number(tourNo))
-      .in('subject_key', allowed)
-      .order('id', { ascending: true });
-
-    if (qErr) return [];
-
-    const result = qData || [];
-    practiceTourQuestionsCache.set(cacheKey, result);
-    return result;
+  if (tErr || !tRow) {
+    console.warn('[practice][direction] tour not found for direction:', { normalizedTourId, dirId, tErr });
+    return [];
   }
 
-  // ✅ Subject practice: по tour_id
+  const tourNo = parseTourNoFromTitle(tRow.title);
+  if (!tourNo) {
+    console.warn('[practice][direction] cannot parse tour_no from title:', tRow.title);
+    return [];
+  }
+
+  const allowed = getAllowedSubjectsByDirection(practiceContext.directionKey)
+    .map(k => String(k || '').trim())
+    .filter(Boolean);
+
+  if (!allowed.length) return [];
+
+  practiceActiveTourNo = tourNo;
+  practiceActiveDirectionId = dirId;
+
   const { data: qData, error: qErr } = await supabaseClient
     .from('questions')
-    .select('id, subject, subject_key, topic, question_text, options_text, type, tour_id, time_limit_seconds, language, difficulty, image_url')
-    .eq('tour_id', Number(normalizedTourId))
+    .select('id, subject, subject_key, subject_tour_no, topic, question_text, options_text, type, tour_id, time_limit_seconds, language, difficulty, image_url')
     .eq('language', currentLang)
+    .eq('subject_tour_no', Number(tourNo))
+    .in('subject_key', allowed)
     .order('id', { ascending: true });
 
-  if (qErr) return [];
+  if (qErr) {
+    console.error('[practice][direction] questions fetch error:', qErr);
+    return [];
+  }
 
   const result = qData || [];
   practiceTourQuestionsCache.set(cacheKey, result);
   return result;
 }
 
-async function getCompletedToursForPractice() {
-  if (!internalDbId) return [];
+// ✅ Subject practice: как было (по tour_id)
+const { data: qData, error: qErr } = await supabaseClient
+  .from('questions')
+  .select('id, subject, topic, question_text, options_text, type, tour_id, time_limit_seconds, language, difficulty, image_url')
+  .eq('tour_id', normalizedTourId)
+  .eq('language', currentLang)
+  .order('id', { ascending: true });
 
-  const scopeKey = getPracticeScopeKey();
-  if (
-    practiceCompletedToursCache.userId === internalDbId &&
-    practiceCompletedToursCache.scopeKey === scopeKey &&
-    practiceCompletedToursCache.list.length
-  ) {
+if (qErr) {
+  console.error('[practice] questions fetch error:', qErr);
+  return [];
+}
+
+const result = qData || [];
+practiceTourQuestionsCache.set(cacheKey, result);
+return result;
+}
+
+ async function getCompletedToursForPractice() {
+  if (!internalDbId) return [];
+  if (practiceCompletedToursCache.userId === internalDbId && practiceCompletedToursCache.list.length) {
     return practiceCompletedToursCache.list;
   }
 
@@ -828,40 +820,34 @@ async function getCompletedToursForPractice() {
     return [];
   }
 
-  const now = Date.now();
-  function toMs(v) {
-    const t = new Date(v).getTime();
-    return Number.isFinite(t) ? t : null;
-  }
+  // ✅ completedIds по факту наличия строки прогресса (score может быть 0)
+ const now = Date.now();
 
-  let scopedTours = (toursData || []).slice();
-  if (practiceContext.mode === 'direction') {
-    const dirId = getDirectionIdByKey(practiceContext.directionKey);
-    scopedTours = dirId ? scopedTours.filter(t => Number(t.direction_id) === Number(dirId)) : [];
-  } else {
-    scopedTours = scopedTours.filter(t => t.direction_id == null);
-  }
+function toMs(v) {
+  const t = new Date(v).getTime();
+  return Number.isFinite(t) ? t : null;
+}
 
-  const dateCompletedTours = scopedTours.filter(t => {
-    const endMs = toMs(t.end_date);
-    return endMs !== null && endMs <= now;
-  });
+// ✅ “завершённые” = end_date <= сейчас
+let scopedTours = (toursData || []).slice();
 
-  const completedIds = new Set(
-    (progressData || [])
-      .map(row => Number(row?.tour_id))
-      .filter(id => Number.isFinite(id))
-  );
+if (practiceContext.mode === 'direction') {
+  const dirId = getDirectionIdByKey(practiceContext.directionKey);
+  scopedTours = dirId ? scopedTours.filter(t => Number(t.direction_id) === Number(dirId)) : [];
+} else {
+  scopedTours = scopedTours.filter(t => t.direction_id == null);
+}
 
-  const filteredTours = completedIds.size
-    ? dateCompletedTours.filter(t => completedIds.has(Number(t.id)))
-    : dateCompletedTours;
+// дальше уже можно:
+ const dateCompletedTours = scopedTours.filter(t => {
+   const endMs = toMs(t.end_date);
+   return endMs !== null && endMs <= now;
+ });
 
-  practiceCompletedToursCache.userId = internalDbId;
-  practiceCompletedToursCache.scopeKey = scopeKey;
-  practiceCompletedToursCache.list = filteredTours;
+practiceCompletedToursCache.userId = internalDbId;
+practiceCompletedToursCache.list = dateCompletedTours;
 
-  return filteredTours;
+return dateCompletedTours;
 }
   
 function normalizeSubjectKey(raw) {
@@ -877,26 +863,19 @@ function normalizeSubjectKey(raw) {
 
   // 3) Маппинг вариантов написания в единые ключи
   const map = {
-  // ✅ канон как в БД
-  math: ['matematika', 'математика', 'math', 'mathematics'],
-  physics: ['fizika', 'физика', 'physics', 'phys'],
-
-  chemistry: ['kimyo', 'химия', 'chem', 'chemistry'],
-  biology: ['biologiya', 'биология', 'bio', 'biology'],
-
-  computer_science: ['informatika', 'информатика', 'it', 'computer science', 'cs', 'computer_science'],
-
-  thinking_skills: ['thinking_skills', 'thinking skills', 'мышление', 'логика', 'critical thinking'],
-  global_perspectives: ['global_perspectives', 'global perspectives', 'global', 'perspectives'],
-
-  business: ['business', 'biznes', 'бизнес'],
-  accounting: ['accounting', 'buxgalteriya', 'бухгалтерия'],
-
-  economics: ['iqtisodiyot', 'экономика', 'eco', 'economics', 'economy'],
-
-  sat: ['sat'],
-  ielts: ['ielts']
-};
+    math: ['matematika', 'математика', 'math', 'mathematics'],
+    physics: ['fizika', 'физика', 'physics', 'phys'],
+    chem: ['kimyo', 'химия', 'chem', 'chemistry'],
+    bio:  ['biologiya', 'биология', 'bio', 'biology'],
+    it:   ['informatika', 'информатика', 'it', 'computer science', 'cs', 'computer_science'],
+    thinking_skills: ['thinking_skills', 'thinking skills', 'мышление', 'логика', 'critical thinking'],
+    global_perspectives: ['global_perspectives', 'global perspectives', 'global', 'perspectives'],
+    business: ['business', 'biznes', 'бизнес'],
+    accounting: ['accounting', 'buxgalteriya', 'бухгалтерия'],
+    eco:  ['iqtisodiyot', 'экономика', 'eco', 'economics', 'economy'],
+    sat:  ['sat'],
+    ielts:['ielts']
+  };
 
 
   for (const [key, arr] of Object.entries(map)) {
@@ -908,8 +887,10 @@ function normalizeSubjectKey(raw) {
 }
 
 function getQuestionSubjectKey(q) {
+  // ✅ предпочтительно subject_key из базы
   const k = String(q?.subject_key || '').trim();
-  if (k) return normalizeSubjectKey(k); // ✅ ключ из БД тоже приводим к канону
+  if (k) return k;
+  // fallback на старое поле subject
   return normalizeSubjectKey(q?.subject);
 }
   
@@ -1668,33 +1649,19 @@ if (practiceFilters.difficulty && practiceFilters.difficulty !== 'all') {
   const mediumBlock = buildPracticeBlock(unseen, 'medium', mix.medium);
   const hardBlock = buildPracticeBlock(unseen, 'hard', mix.hard);
 
-  // ✅ собираем blocks, но выдаём "лесенкой": easy -> medium -> hard -> repeat
-const blocks = {
-  easy: easyBlock.slice(),
-  medium: mediumBlock.slice(),
-  hard: hardBlock.slice()
-};
+  limited = ([]).concat(easyBlock, mediumBlock, hardBlock);
 
-limited = [];
-const order = ['easy', 'medium', 'hard'];
-
-while (limited.length < targetCount && (blocks.easy.length || blocks.medium.length || blocks.hard.length)) {
-  for (const d of order) {
-    if (limited.length >= targetCount) break;
-    if (blocks[d].length) limited.push(blocks[d].shift());
+  // добор, если где-то не хватило
+  if (limited.length < targetCount) {
+    const remaining = targetCount - limited.length;
+    const fallback = unseen.length ? unseen : pool;
+    limited = limited.concat(pickNWithRepeats(fallback, remaining));
   }
+
+  limited = limited.slice(0, targetCount);
 }
 
-// добор, если где-то не хватило
-if (limited.length < targetCount) {
-  const remaining = targetCount - limited.length;
-  const fallback = unseen.length ? unseen : pool;
-  limited = limited.concat(pickNWithRepeats(fallback, remaining));
-}
-
-limited = limited.slice(0, targetCount);
-
-// ❌ shuffleArray(limited);  // УБРАТЬ: он ломает лесенку
+shuffleArray(limited);
 
 
   practiceQuestionOrder = limited.map(q => q.id);
@@ -5988,16 +5955,10 @@ function shareCertificate() {
     isTestActive = false;
   });
 
-window.addEventListener('resize', () => {
+  window.addEventListener('resize', () => {
   syncHomePagerHeight(homePageIndex);
 });
 
-    // Запускаем нашу безопасную функцию после загрузки DOM
+  // Запускаем нашу безопасную функцию после загрузки DOM
   startApp();
-  }
 });
-
-
-
-
-
